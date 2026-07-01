@@ -17,11 +17,14 @@ export default function QuotesPage() {
       const res = await fetch('/api/quotes');
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data)) {
+      if (!res.ok) {
         setError(data?.error || 'Failed to load quotes.');
         setQuotes(null);
+      } else if (!Array.isArray(data.quotes)) {
+        setError('Invalid response from server.');
+        setQuotes(null);
       } else {
-        setQuotes(data);
+        setQuotes(data.quotes);
         setError(null);
       }
     } catch (err) {

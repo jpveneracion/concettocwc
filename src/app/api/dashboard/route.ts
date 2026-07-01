@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCompanyId } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const companyId = await getCompanyId();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const searchParams = req.nextUrl.searchParams;
     const period = (searchParams.get('period') as 'month' | 'year' | 'custom') || 'month';
     const startDate = searchParams.get('startDate');
@@ -49,23 +53,23 @@ export async function GET(req: NextRequest) {
       quoteStats,
     ] = await Promise.all([
       // Monthly sales
-      getMonthlySales(companyId, dateStart, dateEnd),
+      getMonthlySales(session.companyId, dateStart, dateEnd),
       // Yearly sales
-      getYearlySales(companyId),
+      getYearlySales(session.companyId),
       // Profit vs capital
-      getProfitAndCost(companyId, dateStart, dateEnd),
+      getProfitAndCost(session.companyId, dateStart, dateEnd),
       // Conversion rate
-      getConversionRate(companyId, dateStart, dateEnd),
+      getConversionRate(session.companyId, dateStart, dateEnd),
       // Average order value
-      getAverageOrderValue(companyId, dateStart, dateEnd),
+      getAverageOrderValue(session.companyId, dateStart, dateEnd),
       // Revenue trends (last 6 months)
-      getRevenueTrends(companyId),
+      getRevenueTrends(session.companyId),
       // Popular collections
-      getPopularCollections(companyId, dateStart, dateEnd),
+      getPopularCollections(session.companyId, dateStart, dateEnd),
       // Top customers
-      getTopCustomers(companyId, dateStart, dateEnd),
+      getTopCustomers(session.companyId, dateStart, dateEnd),
       // Quote stats (total, approved, pending)
-      getQuoteStats(companyId, dateStart, dateEnd),
+      getQuoteStats(session.companyId, dateStart, dateEnd),
     ]);
 
     const metrics = {
