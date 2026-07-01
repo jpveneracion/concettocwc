@@ -44,10 +44,10 @@ export async function GET(
     return NextResponse.json({
       ...quote,
       customer_name: quote.customer_name_encrypted
-        ? decryptPII(quote.customer_name_encrypted)
+        ? decryptPII(Buffer.from(quote.customer_name_encrypted))
         : quote.customer_name || '',
       customer_address: quote.customer_address_encrypted
-        ? decryptPII(quote.customer_address_encrypted)
+        ? decryptPII(Buffer.from(quote.customer_address_encrypted))
         : quote.customer_address || '',
       items,
     });

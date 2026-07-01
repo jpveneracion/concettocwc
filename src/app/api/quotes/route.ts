@@ -28,10 +28,10 @@ export async function GET() {
     const decryptedQuotes = quotes.map((q: any) => ({
       ...q,
       customer_name: q.customer_name_encrypted
-        ? decryptPII(q.customer_name_encrypted)
+        ? decryptPII(Buffer.from(q.customer_name_encrypted))
         : q.customer_name,
       customer_address: q.customer_address_encrypted
-        ? decryptPII(q.customer_address_encrypted)
+        ? decryptPII(Buffer.from(q.customer_address_encrypted))
         : q.customer_address,
     }));
 

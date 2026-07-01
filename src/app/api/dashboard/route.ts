@@ -244,7 +244,7 @@ async function getTopCustomers(companyId: string, startDate: string, endDate: st
 
   return result.map((row: any) => ({
     customerName: row.customer_name_encrypted
-      ? decryptPII(row.customer_name_encrypted)
+      ? decryptPII(Buffer.from(row.customer_name_encrypted))
       : 'Unknown',
     totalRevenue: Number(row.total_revenue),
     quoteCount: Number(row.quote_count),
