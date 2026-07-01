@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.4",
+    "bcrypt": "^6.0.0",
     "next": "^16.2.9",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "recharts": "^3.9.1"
   },
   "devDependencies": {
     "@types/node": "^20",
