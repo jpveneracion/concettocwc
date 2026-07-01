@@ -2,6 +2,20 @@ export type Unit = 'sqft' | 'sqm';
 export type MeasureUnit = 'in' | 'cm';
 export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'cancelled';
 
+export interface Company {
+  id: string;
+  code: string;
+  name: string;
+  address: string;
+  mobile: string;
+  email: string;
+  prepared_by: string;
+  terms: string;
+  del_note: string;
+  closing_note: string;
+  updated_at: string;
+}
+
 export interface Settings {
   id: string;
   company: string;
@@ -20,8 +34,6 @@ export interface Product {
   code: string;
   collection: string;
   description: string;
-  supplier_cost: number;
-  retail_price: number;
   unit: Unit;
   active: boolean;
   created_at: string;
@@ -80,3 +92,31 @@ export interface QuotePayload {
   delivery_fee: number;
   items: Omit<QuoteItem, 'id' | 'quote_id'>[];
 }
+
+// Dashboard metrics
+
+export interface DashboardMetrics {
+  monthlySales: number;
+  yearlySales: number;
+  profit: number;
+  profitMargin: number;
+  conversionRate: number;
+  totalQuotes: number;
+  approvedQuotes: number;
+  pendingQuotes: number;
+  averageOrderValue: number;
+  revenueTrends: Array<{ month: string; revenue: number }>;
+  popularCollections: Array<{ collection: string; count: number; revenue: number }>;
+  topCustomers: Array<{ customerName: string; totalRevenue: number; quoteCount: number }>;
+}
+
+export interface DateRange {
+  startDate: string; // ISO date string
+  endDate: string;   // ISO date string
+  period: 'month' | 'year' | 'custom';
+}
+
+// Cost categories (company-configurable)
+
+export type CostCategory = string; // e.g., "materials", "labor", "overhead"
+export type CostBreakdown = Record<CostCategory, number>;
