@@ -69,12 +69,13 @@ export default function DashboardPage() {
 
       setEncryptPhase('complete');
 
-      if (quotesData.encrypted > 0) {
-        console.log(`Encrypted ${quotesData.encrypted} quotes, verified ${quotesData.verified}, deleted ${quotesData.deleted}`);
+      console.log(`Quotes: encrypted ${quotesData.encrypted}, verified ${quotesData.verified}, deleted ${quotesData.deleted}`);
+      console.log(`Users: encrypted ${usersData.encrypted}, verified ${usersData.verified}, deleted ${usersData.deleted}`);
+      if (quotesData.errors?.length > 0) {
+        console.error('Quotes errors:', quotesData.errors);
       }
-
-      if (usersData.encrypted > 0) {
-        console.log(`Encrypted ${usersData.encrypted} users, verified ${usersData.verified}, deleted ${usersData.deleted}`);
+      if (usersData.errors?.length > 0) {
+        console.error('Users errors:', usersData.errors);
       }
 
       // Hide modal after showing complete

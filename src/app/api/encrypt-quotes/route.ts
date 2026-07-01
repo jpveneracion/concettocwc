@@ -43,8 +43,8 @@ export async function POST() {
 
           await sql`
             UPDATE quotes
-            SET customer_name_encrypted = ${nameEncrypted},
-                customer_address_encrypted = ${addressEncrypted}
+            SET customer_name_encrypted = ${nameEncrypted}::bytea,
+                customer_address_encrypted = ${addressEncrypted}::bytea
             WHERE id = ${quote.id}
           `;
 
@@ -99,6 +99,7 @@ export async function POST() {
     let deleted = 0;
     if (errors.length === 0 && quoteIds.length > 0) {
       try {
+        console.log('Attempting to delete plaintext for quotes:', quoteIds);
         const result = await sql`
           UPDATE quotes
           SET customer_name = NULL,
@@ -107,6 +108,7 @@ export async function POST() {
           RETURNING id
         `;
         deleted = result.length;
+        console.log('Deleted plaintext for', deleted, 'quotes');
       } catch (err) {
         console.error('Failed to delete plaintext:', err);
         return NextResponse.json({

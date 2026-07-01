@@ -25,15 +25,36 @@ export async function GET() {
     `;
 
     // Decrypt PII for response
-    const decryptedQuotes = quotes.map((q: any) => ({
-      ...q,
-      customer_name: q.customer_name_encrypted
-        ? decryptPII(Buffer.from(q.customer_name_encrypted))
-        : q.customer_name,
-      customer_address: q.customer_address_encrypted
-        ? decryptPII(Buffer.from(q.customer_address_encrypted))
-        : q.customer_address,
-    }));
+    const decryptedQuotes = quotes.map((q: any) => {
+      let customerName = q.customer_name;
+      let customerAddress = q.customer_address;
+
+      try {
+        if (q.customer_name_encrypted) {
+          const encrypted = q.customer_name_encrypted;
+          const buffer = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted);
+          customerName = decryptPII(buffer);
+        }
+      } catch (err) {
+        console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
+      }
+
+      try {
+        if (q.customer_address_encrypted) {
+          const encrypted = q.customer_address_encrypted;
+          const buffer = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted);
+          customerAddress = decryptPII(buffer);
+        }
+      } catch (err) {
+        console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);
+      }
+
+      return {
+        ...q,
+        customer_name: customerName,
+        customer_address: customerAddress,
+      };
+    });
 
     return NextResponse.json({
       companyCode: session.companyCode,

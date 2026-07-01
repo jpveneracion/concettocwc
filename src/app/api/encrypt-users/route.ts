@@ -40,7 +40,7 @@ export async function POST() {
 
           await sql`
             UPDATE users
-            SET email_encrypted = ${emailEncrypted}
+            SET email_encrypted = ${emailEncrypted}::bytea
             WHERE id = ${user.id}
           `;
 
