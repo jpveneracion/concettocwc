@@ -84,20 +84,22 @@ export async function POST() {
     let deleted = 0;
     if (errors.length === 0 && quoteIds.length > 0) {
       try {
-        await sql`
-          UPDATE quotes
-          SET customer_name = NULL,
-              customer_address = NULL
-          WHERE id = ANY(${quoteIds}::uuid[])
-        `;
-        deleted = quoteIds.length;
+        for (const quoteId of quoteIds) {
+          await sql`
+            UPDATE quotes
+            SET customer_name = NULL,
+                customer_address = NULL
+            WHERE id = ${quoteId}
+          `;
+          deleted++;
+        }
       } catch (err) {
         console.error('Failed to delete plaintext:', err);
         return NextResponse.json({
           success: false,
           encrypted,
           verified,
-          deleted: 0,
+          deleted,
           errors: [
             {
               recordId: 'batch',

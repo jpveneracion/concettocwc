@@ -74,19 +74,21 @@ export async function POST() {
     let deleted = 0;
     if (errors.length === 0 && userIds.length > 0) {
       try {
-        await sql`
-          UPDATE users
-          SET email = NULL
-          WHERE id = ANY(${userIds}::uuid[])
-        `;
-        deleted = userIds.length;
+        for (const userId of userIds) {
+          await sql`
+            UPDATE users
+            SET email = NULL
+            WHERE id = ${userId}
+          `;
+          deleted++;
+        }
       } catch (err) {
         console.error('Failed to delete plaintext:', err);
         return NextResponse.json({
           success: false,
           encrypted,
           verified,
-          deleted: 0,
+          deleted,
           errors: [
             {
               recordId: 'batch',
