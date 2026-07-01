@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 
-export default function ChangePasswordPage() {
+function ChangePasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentPassword, setCurrentPassword] = useState('');
@@ -157,5 +157,22 @@ export default function ChangePasswordPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function ChangePasswordPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="max-w-md">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        </div>
+      </AppLayout>
+    }>
+      <ChangePasswordForm />
+    </Suspense>
   );
 }

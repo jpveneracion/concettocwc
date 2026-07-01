@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 
@@ -11,7 +11,7 @@ type CollectionRow = {
   hasPricing: boolean;
 };
 
-export default function PricingSetupPage() {
+function PricingSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [collections, setCollections] = useState<CollectionRow[]>([]);
@@ -247,5 +247,13 @@ export default function PricingSetupPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function PricingSetupPageWrapper() {
+  return (
+    <Suspense fallback={<AppLayout><div className="max-w-3xl"><div className="animate-pulse">Loading...</div></div></AppLayout>}>
+      <PricingSetupPage />
+    </Suspense>
   );
 }

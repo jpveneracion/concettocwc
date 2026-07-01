@@ -97,7 +97,7 @@ export default function ProductsPage() {
     fetchProducts();
   }
 
-  const filtered = products.filter(
+  const filtered = (products || []).filter(
     (p) =>
       p.code.toLowerCase().includes(search.toLowerCase()) ||
       p.description.toLowerCase().includes(search.toLowerCase()) ||

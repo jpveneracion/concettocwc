@@ -1,22 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ResetPasswordPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+function RequestResetForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  const token = searchParams.get('token');
-
-  // If token exists, show reset form
-  if (token) {
-    return <ResetPasswordForm token={token} />;
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,6 +115,29 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
+
+  if (token) {
+    return <ResetPasswordForm token={token} />;
+  }
+
+  return <RequestResetForm />;
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
 
@@ -239,7 +253,7 @@ function ResetPasswordForm({ token }: { token: string }) {
                 </button>
 
                 <div className="text-center">
-                  <Link to="/login" className="text-sm text-gray-600 hover:text-gray-900">
+                  <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
                     ← Back to login
                   </Link>
                 </div>

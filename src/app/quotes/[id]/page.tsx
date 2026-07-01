@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import QuoteForm from '@/components/QuoteForm';
 import PrintDoc from '@/components/PrintDoc';
 import type { Quote, Settings } from '@/types';
 
-export default function QuoteDetailPage() {
+function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const printType = searchParams.get('print') as 'quotation' | 'po' | null;
@@ -70,5 +70,13 @@ export default function QuoteDetailPage() {
       </div>
       <QuoteForm existing={quote} quoteNumber={quote.quote_number} />
     </AppLayout>
+  );
+}
+
+export default function QuoteDetailPageWrapper() {
+  return (
+    <Suspense fallback={<AppLayout><div className="animate-pulse">Loading...</div></AppLayout>}>
+      <QuoteDetailPage />
+    </Suspense>
   );
 }

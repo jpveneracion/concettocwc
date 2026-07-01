@@ -64,7 +64,7 @@ export function decryptPII(encrypted: Buffer): string {
   decipher.setAuthTag(tag);
 
   try {
-    const decrypted = decipher.update(ciphertext, 'binary', 'utf8') + decipher.final('utf8');
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
     return decrypted;
   } catch (error) {
     throw new Error('Failed to decrypt: authentication tag verification failed or data corrupted');

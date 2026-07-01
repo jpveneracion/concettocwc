@@ -32,7 +32,7 @@ export default function TrendChart({ data }: TrendChartProps) {
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
             }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+            formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Revenue']}
           />
           <Line
             type="monotone"
