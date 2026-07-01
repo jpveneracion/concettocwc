@@ -75,12 +75,7 @@ export async function POST(req: Request) {
     const addressDecrypted = decryptPII(customerAddressEncrypted);
 
     if (nameDecrypted !== customer_name || addressDecrypted !== (customer_address ?? '')) {
-      console.error('Encryption verification failed', {
-        original: customer_name,
-        decrypted: nameDecrypted,
-        originalAddress: customer_address,
-        decryptedAddress: addressDecrypted,
-      });
+      console.error('Encryption verification failed - mismatch detected');
       return NextResponse.json(
         { error: 'Encryption verification failed. Please try again.' },
         { status: 500 }
