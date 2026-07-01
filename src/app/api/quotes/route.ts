@@ -114,7 +114,11 @@ export async function POST(req: Request) {
       `;
     }
 
-    return NextResponse.json(quote, { status: 201 });
+    return NextResponse.json({
+      ...quote,
+      customer_name,
+      customer_address,
+    }, { status: 201 });
   } catch (err) {
     console.error('POST /api/quotes', err);
     return NextResponse.json({ error: 'Failed to save quote' }, { status: 500 });
