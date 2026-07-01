@@ -18,7 +18,7 @@ export default function PrintDoc({ quote, settings, type }: Props) {
   return (
     <div className="print-doc" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', color: '#000', width: '100%', padding: '0', background: '#fff' }}>
       {/* Header */}
-      <div style={{ fontSize: '16pt', fontWeight: 700, letterSpacing: '1px', marginBottom: '4px' }}>{settings.company}</div>
+      <div style={{ fontSize: '16pt', fontWeight: 700, letterSpacing: '1px', marginBottom: '4px' }}>{settings.name}</div>
       <div style={{ textAlign: 'center', fontSize: '13pt', fontWeight: 700, textDecoration: 'underline', marginBottom: '12px' }}>{title}</div>
 
       {/* Info grid */}

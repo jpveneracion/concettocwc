@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import QuoteForm from '@/components/QuoteForm';
 
@@ -9,12 +8,25 @@ export default function NewQuotePage() {
 
   useEffect(() => {
     // Generate quote number from current count
+    // API will validate session and return company code
     fetch('/api/quotes')
-      .then((r) => r.json())
-      .then((quotes) => {
+      .then((r) => {
+        if (!r.ok) {
+          // Session invalid - redirect to login
+          window.location.href = '/login';
+          return null;
+        }
+        return r.json();
+      })
+      .then((data) => {
+        if (!data) return;
+
         const yr = new Date().getFullYear().toString().slice(-2);
-        const seq = (quotes.length + 1).toString().padStart(5, '0');
-        setQuoteNumber(`CWC-DF-QT-${yr}-${seq}`);
+        const seq = (data.quotes.length + 1).toString().padStart(5, '0');
+        setQuoteNumber(`${data.companyCode}-DF-QT-${yr}-${seq}`);
+      })
+      .catch(() => {
+        window.location.href = '/login';
       });
   }, []);
 

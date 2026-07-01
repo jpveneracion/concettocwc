@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
 export async function GET(req: Request) {
@@ -10,11 +11,19 @@ export async function GET(req: Request) {
   }
 
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const [product] = await sql`
-      SELECT id, code, collection, description,
-             supplier_cost::float, retail_price::float, unit
-      FROM products
-      WHERE UPPER(code) = ${code} AND active = true
+      SELECT
+        p.id, p.code, p.collection, p.description, p.unit,
+        COALESCE(cc.supplier_cost::float, 0) as supplier_cost,
+        COALESCE(cc.retail_price::float, 0) as retail_price
+      FROM products p
+      LEFT JOIN company_collections cc ON cc.collection = p.collection AND cc.company_id = ${session.companyId}
+      WHERE UPPER(p.code) = ${code} AND p.active = true
     `;
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);

@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import type { QuotePayload } from '@/types';
 
-async function getCompanyId() {
-  const headerList = await headers();
-  const companyId = headerList.get('x-company-id');
-  if (!companyId) throw new Error('Unauthorized');
-  return companyId;
-}
-
 export async function GET() {
   try {
-    const companyId = await getCompanyId();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const quotes = await sql`
       SELECT id, quote_number, customer_name, customer_address,
              customer_name_encrypted, customer_address_encrypted,
@@ -23,7 +20,7 @@ export async function GET() {
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
-      WHERE company_id = ${companyId}
+      WHERE company_id = ${session.companyId}
       ORDER BY created_at DESC
     `;
 
@@ -38,7 +35,10 @@ export async function GET() {
         : q.customer_address,
     }));
 
-    return NextResponse.json(decryptedQuotes);
+    return NextResponse.json({
+      companyCode: session.companyCode,
+      quotes: decryptedQuotes,
+    });
   } catch (err) {
     console.error('GET /api/quotes', err);
     return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 });
@@ -47,7 +47,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const companyId = await getCompanyId();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body: QuotePayload = await req.json();
     const {
       quote_number, customer_name, customer_address, quote_date,
@@ -89,7 +93,7 @@ export async function POST(req: Request) {
         quote_date, our_ref, installation_fee, delivery_fee,
         subtotal, total, total_area, panel_count
       ) VALUES (
-        ${companyId}, ${quote_number}, ${customer_name}, ${customer_address ?? ''},
+        ${session.companyId}, ${quote_number}, ${customer_name}, ${customer_address ?? ''},
         ${customerNameEncrypted}, ${customerAddressEncrypted},
         ${quote_date}, ${our_ref ?? ''},
         ${installation_fee}, ${delivery_fee},

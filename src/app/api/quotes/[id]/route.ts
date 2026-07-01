@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import type { QuotePayload } from '@/types';
-
-async function getCompanyId() {
-  const headerList = await headers();
-  const companyId = headerList.get('x-company-id');
-  if (!companyId) throw new Error('Unauthorized');
-  return companyId;
-}
 
 export async function GET(
   _req: Request,
@@ -17,7 +10,10 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const companyId = await getCompanyId();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const [quote] = await sql`
       SELECT id, quote_number, customer_name, customer_address,
              customer_name_encrypted, customer_address_encrypted,
@@ -27,7 +23,7 @@ export async function GET(
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
-      WHERE id = ${id}::uuid AND company_id = ${companyId}
+      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;
     if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -67,7 +63,11 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const companyId = await getCompanyId();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body: QuotePayload = await req.json();
     const {
       customer_name, customer_address, quote_date,
@@ -110,7 +110,7 @@ export async function PUT(
         total_area       = ${total_area},
         panel_count      = ${panel_count},
         updated_at       = now()
-      WHERE id = ${id}::uuid AND company_id = ${companyId}
+      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;
 
     // After successful update, delete plaintext columns immediately
@@ -118,7 +118,7 @@ export async function PUT(
       UPDATE quotes SET
         customer_name = NULL,
         customer_address = NULL
-      WHERE id = ${id}::uuid AND company_id = ${companyId}
+      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;
 
     // Replace items
@@ -161,7 +161,7 @@ export async function PUT(
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
-      WHERE id = ${id}::uuid AND company_id = ${companyId}
+      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;
 
     return NextResponse.json({
@@ -185,8 +185,11 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    const companyId = await getCompanyId();
-    await sql`DELETE FROM quotes WHERE id = ${id}::uuid AND company_id = ${companyId}`;
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    await sql`DELETE FROM quotes WHERE id = ${id}::uuid AND company_id = ${session.companyId}`;
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('DELETE /api/quotes/[id]', err);

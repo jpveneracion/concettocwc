@@ -5,7 +5,7 @@ import type { Product } from '@/types';
 
 type ProductRow = { code: string; description: string; _key: string };
 
-const emptySharedState = { collection: '', supplier_cost: '', markup_price: '' };
+const emptySharedState = { collection: '' };
 
 function newRow(): ProductRow {
   return { code: '', description: '', _key: crypto.randomUUID() };
@@ -68,10 +68,6 @@ export default function ProductsPage() {
       alert('Collection is required.'); return;
     }
 
-    const supplierCost = parseFloat(shared.supplier_cost) || 0;
-    const markupPrice = parseFloat(shared.markup_price) || 0;
-    const retailPrice = supplierCost + markupPrice;
-
     setSaving(true);
 
     const promises = validRows.map((row) =>
@@ -82,8 +78,6 @@ export default function ProductsPage() {
           code: row.code.toUpperCase(),
           collection: shared.collection,
           description: row.description,
-          supplier_cost: supplierCost,
-          retail_price: retailPrice,
           unit: 'sqft',
         }),
       })
@@ -125,33 +119,17 @@ export default function ProductsPage() {
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 mb-5">
           <h3 className="font-medium text-sm text-gray-700 mb-4">Add products (batch)</h3>
+          <p className="text-xs text-gray-500 mb-4">Note: Pricing is set per-company in Settings. Products here are shared across all companies.</p>
 
-          {/* Upper Part: Collection, Supplier Cost, Mark Up Price, Retail Price */}
+          {/* Collection */}
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Collection</label>
               <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={shared.collection} onChange={(e) => setShared({ ...shared, collection: e.target.value })} placeholder="e.g. Picasso" />
             </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Supplier cost (₱/sq.ft.)</label>
-              <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={shared.supplier_cost} onChange={(e) => setShared({ ...shared, supplier_cost: e.target.value })} placeholder="0.00" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Mark Up Price (₱/sq.ft.)</label>
-              <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={shared.markup_price} onChange={(e) => setShared({ ...shared, markup_price: e.target.value })} placeholder="0.00" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Retail Price (₱/sq.ft.)</label>
-              <input
-                type="text"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 font-medium"
-                value={((parseFloat(shared.supplier_cost) || 0) + (parseFloat(shared.markup_price) || 0)).toFixed(2)}
-                readOnly
-              />
-            </div>
           </div>
 
-          {/* Lower Part: Multiple Product Code + Description rows */}
+          {/* Product Code + Description rows */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-xs font-medium text-gray-600">Products ({productRows.length})</h4>
@@ -196,7 +174,7 @@ export default function ProductsPage() {
           </div>
 
           <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-400">All products will be saved with the same collection and pricing above.</p>
+            <p className="text-xs text-gray-400">All products will be saved with the collection above.</p>
             <button onClick={saveProducts} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
               {saving ? `Saving ${productRows.length} products...` : `💾 Save ${productRows.length} product${productRows.length > 1 ? 's' : ''}`}
             </button>
@@ -218,30 +196,23 @@ export default function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
-                {['Code', 'Collection', 'Description', 'Supplier cost', 'Mark Up', 'Retail price', ''].map((h) => (
+                {['Code', 'Collection', 'Description', 'Unit', ''].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => {
-                const supplierCost = Number(p.supplier_cost);
-                const retailPrice = Number(p.retail_price);
-                const markUp = retailPrice - supplierCost;
-                return (
-                  <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono font-medium">{p.code}</td>
-                    <td className="px-4 py-3 text-gray-500">{p.collection}</td>
-                    <td className="px-4 py-3">{p.description}</td>
-                    <td className="px-4 py-3">₱{supplierCost.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-green-700">₱{markUp.toFixed(2)}</td>
-                    <td className="px-4 py-3 font-medium text-blue-700">₱{retailPrice.toFixed(2)}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => deleteProduct(p.id, p.code)} className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50">🗑️</button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filtered.map((p) => (
+                <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono font-medium">{p.code}</td>
+                  <td className="px-4 py-3 text-gray-500">{p.collection}</td>
+                  <td className="px-4 py-3">{p.description}</td>
+                  <td className="px-4 py-3">{p.unit}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => deleteProduct(p.id, p.code)} className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50">🗑️</button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

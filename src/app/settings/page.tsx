@@ -1,10 +1,20 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
-import type { Settings } from '@/types';
+
+type CompanyForm = {
+  name: string;
+  address: string;
+  mobile: string;
+  email: string;
+  prepared_by: string;
+  terms: string;
+  del_note: string;
+  closing_note: string;
+};
 
 export default function SettingsPage() {
-  const [form, setForm] = useState<Partial<Settings>>({});
+  const [form, setForm] = useState<Partial<CompanyForm>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -27,7 +37,7 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2500);
   }
 
-  const field = (label: string, key: keyof Settings, placeholder = '') => (
+  const field = (label: string, key: keyof CompanyForm, placeholder = '') => (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
       <input
@@ -39,7 +49,7 @@ export default function SettingsPage() {
     </div>
   );
 
-  const textarea = (label: string, key: keyof Settings) => (
+  const textarea = (label: string, key: keyof CompanyForm) => (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
       <textarea
@@ -70,10 +80,25 @@ export default function SettingsPage() {
       </div>
 
       <div className="max-w-2xl space-y-5">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-medium text-sm text-gray-700">Product Pricing</h3>
+              <p className="text-xs text-gray-500 mt-1">Set pricing for each blinds family (collection)</p>
+            </div>
+            <a
+              href="/settings/pricing"
+              className="px-3 py-1.5 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50"
+            >
+              Manage Pricing →
+            </a>
+          </div>
+        </div>
+
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <h3 className="font-medium text-sm text-gray-700 mb-4">Company info</h3>
           <div className="space-y-3">
-            {field('Company name', 'company', 'CONCETTO')}
+            {field('Company name', 'name', 'CONCETTO WINDOW COVERINGS')}
             {field('Address', 'address', '107 Cruz na Daan, San Rafael, Bulacan 3008')}
             {field('Mobile', 'mobile', '0935-880 1914 / 0928-638 5433')}
             {field('Email', 'email', 'concettowindowcoverings@gmail.com')}
