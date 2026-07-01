@@ -126,13 +126,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="flex justify-between items-center text-xs text-gray-500 text-center mt-4">
+          <div className="flex justify-center items-center text-xs text-gray-500 text-center mt-4">
             <a href="/reset-password" className="text-blue-600 hover:underline">
               Forgot password?
-            </a>
-            <span className="text-gray-300">|</span>
-            <a href="/signup" className="text-blue-600 hover:underline font-medium">
-              Sign up
             </a>
           </div>
         </div>
