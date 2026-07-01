@@ -1,8 +1,9 @@
 'use client';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/quotes', label: 'Quotes', icon: '📄' },
   { href: '/quotes/new', label: 'New quote', icon: '➕' },
   { href: '/products', label: 'Products', icon: '🏷️' },
@@ -11,6 +12,13 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <aside className="w-52 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-4 gap-1">
@@ -34,6 +42,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Link>
           );
         })}
+        <div className="mt-auto pt-4 border-t border-gray-200">
+          <Link
+            href="/change-password"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <span>🔒</span>
+            Change Password
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 w-full"
+          >
+            <span>🚪</span>
+            Logout
+          </button>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto p-6">{children}</main>
     </div>
