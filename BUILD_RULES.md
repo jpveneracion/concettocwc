@@ -15,6 +15,7 @@ You are a senior Next.js full-stack developer. Build production-ready code that 
 - Follow existing architecture patterns exactly.
 - When using hooks that require wrappers (like useSearchParams needing Suspense), include the wrapper from the start
 - **API contract changes: AUDIT ALL clients before committing** — if you change what an API returns, grep for all fetch() calls to that API and update them in the SAME commit
+- **Before using ANY function/feature, VERIFY it exists in the codebase** — Don't assume PostgreSQL functions like `encrypt()`, `gen_salt()`, etc. exist. Grep the codebase first to see what's actually used. If it's not in the codebase, don't use it.
 
 ## SCOPE CONTROL
 - ONLY modify files explicitly requested

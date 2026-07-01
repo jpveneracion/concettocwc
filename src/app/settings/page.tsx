@@ -7,6 +7,7 @@ type CompanyForm = {
   address: string;
   mobile: string;
   email: string;
+  currency: string;
   prepared_by: string;
   terms: string;
   del_note: string;
@@ -102,6 +103,25 @@ export default function SettingsPage() {
             {field('Address', 'address', '107 Cruz na Daan, San Rafael, Bulacan 3008')}
             {field('Mobile', 'mobile', '0935-880 1914 / 0928-638 5433')}
             {field('Email', 'email', 'concettowindowcoverings@gmail.com')}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Currency</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={(form.currency as string) ?? 'PHP'}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+              >
+                <option value="USD">USD - US Dollar ($)</option>
+                <option value="EUR">EUR - Euro (€)</option>
+                <option value="GBP">GBP - British Pound (£)</option>
+                <option value="JPY">JPY - Japanese Yen (¥)</option>
+                <option value="AUD">AUD - Australian Dollar (A$)</option>
+                <option value="CAD">CAD - Canadian Dollar (C$)</option>
+                <option value="PHP">PHP - Philippine Peso (₱)</option>
+                <option value="SGD">SGD - Singapore Dollar (S$)</option>
+                <option value="HKD">HKD - Hong Kong Dollar (HK$)</option>
+                <option value="CNY">CNY - Chinese Yuan (¥)</option>
+              </select>
+            </div>
             {field('Prepared by', 'prepared_by', 'John Paul Veneracion')}
           </div>
         </div>

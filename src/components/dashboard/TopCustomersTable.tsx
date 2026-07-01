@@ -4,16 +4,24 @@ interface TopCustomersTableProps {
     totalRevenue: number;
     quoteCount: number;
   }>;
+  currency?: string;
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
+function formatCurrency(amount: number, currency: string = 'USD'): string {
+  const localeMap: Record<string, string> = {
+    USD: 'en-US', EUR: 'de-DE', GBP: 'en-GB', JPY: 'ja-JP',
+    AUD: 'en-AU', CAD: 'en-CA', PHP: 'en-PH', SGD: 'en-SG',
+    HKD: 'zh-HK', CNY: 'zh-CN',
+  };
+  return new Intl.NumberFormat(localeMap[currency] || 'en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 
-export default function TopCustomersTable({ customers }: TopCustomersTableProps) {
+export default function TopCustomersTable({ customers, currency = 'USD' }: TopCustomersTableProps) {
   if (customers.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -43,7 +51,7 @@ export default function TopCustomersTable({ customers }: TopCustomersTableProps)
               >
                 <td className="py-3 text-gray-900">{customer.customerName}</td>
                 <td className="py-3 text-right font-medium text-gray-900">
-                  {formatCurrency(customer.totalRevenue)}
+                  {formatCurrency(customer.totalRevenue, currency)}
                 </td>
                 <td className="py-3 text-right text-gray-600">{customer.quoteCount}</td>
               </tr>

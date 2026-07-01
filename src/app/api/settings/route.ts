@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const [company] = await sql`
-      SELECT id, code, name, address, mobile, email,
+      SELECT id, code, name, address, mobile, email, currency,
              prepared_by, terms, del_note, closing_note, updated_at
       FROM companies
       WHERE id = ${session.companyId}
@@ -31,7 +31,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { name, address, mobile, email, prepared_by, terms, del_note, closing_note } = body;
+    const { name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note } = body;
 
     const [company] = await sql`
       UPDATE companies SET
@@ -39,13 +39,14 @@ export async function PUT(req: Request) {
         address      = ${address},
         mobile       = ${mobile},
         email        = ${email},
+        currency     = ${currency},
         prepared_by  = ${prepared_by},
         terms        = ${terms},
         del_note     = ${del_note},
         closing_note = ${closing_note},
         updated_at   = now()
       WHERE id = ${session.companyId}
-      RETURNING id, code, name, address, mobile, email,
+      RETURNING id, code, name, address, mobile, email, currency,
                 prepared_by, terms, del_note, closing_note, updated_at
     `;
     return NextResponse.json(company);

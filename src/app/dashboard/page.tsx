@@ -14,10 +14,24 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [encrypting, setEncrypting] = useState(false);
+  const [currency, setCurrency] = useState<string>('USD');
 
   useEffect(() => {
     fetchMetrics();
+    fetchCurrency();
   }, [period]);
+
+  async function fetchCurrency() {
+    try {
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      if (data.currency) {
+        setCurrency(data.currency);
+      }
+    } catch (err) {
+      console.error('Failed to fetch currency:', err);
+    }
+  }
 
   async function fetchMetrics() {
     try {
@@ -45,9 +59,22 @@ export default function DashboardPage() {
   }
 
   function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    const localeMap: Record<string, string> = {
+      USD: 'en-US',
+      EUR: 'de-DE',
+      GBP: 'en-GB',
+      JPY: 'ja-JP',
+      AUD: 'en-AU',
+      CAD: 'en-CA',
+      PHP: 'en-PH',
+      SGD: 'en-SG',
+      HKD: 'zh-HK',
+      CNY: 'zh-CN',
+    };
+
+    return new Intl.NumberFormat(localeMap[currency] || 'en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -144,12 +171,12 @@ export default function DashboardPage() {
 
       {/* Charts and tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TrendChart data={metrics.revenueTrends} />
-        <PopularCollections collections={metrics.popularCollections} />
+        <TrendChart data={metrics.revenueTrends} currency={currency} />
+        <PopularCollections collections={metrics.popularCollections} currency={currency} />
       </div>
 
       <div className="mt-6">
-        <TopCustomersTable customers={metrics.topCustomers} />
+        <TopCustomersTable customers={metrics.topCustomers} currency={currency} />
       </div>
     </AppLayout>
   );
