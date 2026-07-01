@@ -87,13 +87,16 @@ export async function POST() {
     let deleted = 0;
     if (errors.length === 0 && userIds.length > 0) {
       try {
+        console.log('Attempting to delete plaintext for users:', userIds);
         const result = await sql`
           UPDATE users
           SET email = NULL
           WHERE id = ANY(${userIds}::uuid[])
+            AND email_encrypted IS NOT NULL
           RETURNING id
         `;
         deleted = result.length;
+        console.log('Deleted plaintext for', deleted, 'users');
       } catch (err) {
         console.error('Failed to delete plaintext:', err);
         return NextResponse.json({

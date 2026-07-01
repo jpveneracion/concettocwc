@@ -105,6 +105,8 @@ export async function POST() {
           SET customer_name = NULL,
               customer_address = NULL
           WHERE id = ANY(${quoteIds}::uuid[])
+            AND customer_name_encrypted IS NOT NULL
+            AND customer_address_encrypted IS NOT NULL
           RETURNING id
         `;
         deleted = result.length;
