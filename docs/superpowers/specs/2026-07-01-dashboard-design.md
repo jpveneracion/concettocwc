@@ -6,7 +6,7 @@
 
 ## Overview
 
-Create a business dashboard as the default landing page for authenticated users. Dashboard displays key business metrics with flexible date range filtering and configurable cost tracking per company.
+Create a business dashboard as the default landing page for authenticated users. Dashboard displays key business metrics with flexible date range filtering, configurable cost tracking per company, and immediate PII encryption for GDPR compliance.
 
 **Goals:**
 - Replace `/quotes` as default post-login redirect
@@ -14,6 +14,13 @@ Create a business dashboard as the default landing page for authenticated users.
 - Support flexible date range reporting (current month, current year, custom)
 - Enable configurable cost categories per tenant for multi-tenant SaaS flexibility
 - Scale efficiently with real-time on-demand calculations
+- Encrypt all PII data immediately for privacy compliance
+
+**Privacy & Security:**
+- Customer names, addresses encrypted at rest (AES-256-GCM)
+- User emails encrypted at rest
+- GDPR, UK GDPR, US state privacy law compliance
+- Dual-write strategy with plaintext backup during verification
 
 ---
 
@@ -42,9 +49,9 @@ Metrics calculated on-demand from raw `quotes` and `quote_items` data. Cost cate
 
 ## Database Schema Changes
 
-### 1. PII Encryption Foundation (NEW)
+### 1. PII Encryption (Active)
 
-**Add encrypted columns alongside existing PII fields (non-breaking):**
+**Add encrypted columns alongside existing PII fields:**
 
 ```sql
 -- Quotes table - customer PII
@@ -56,14 +63,29 @@ ADD COLUMN customer_address_encrypted bytea;
 ALTER TABLE users
 ADD COLUMN email_encrypted bytea,
 ADD COLUMN name_encrypted bytea;
+
+-- Encrypt existing data immediately
+UPDATE quotes
+SET customer_name_encrypted = pgp_sym_encrypt(customer_name, $encryption_key),
+    customer_address_encrypted = pgp_sym_encrypt(customer_address, $encryption_key)
+WHERE customer_name_encrypted IS NULL;
+
+UPDATE users
+SET email_encrypted = pgp_sym_encrypt(email, $encryption_key),
+    name_encrypted = pgp_sym_encrypt(name, $encryption_key)
+WHERE email_encrypted IS NULL;
 ```
 
 **Purpose:**
-- Future-proof for GDPR, UK GDPR, US state privacy laws
-- Zero migration pain when ready to enable encryption
-- Keep plaintext columns for now (app still works)
+- GDPR, UK GDPR, US state privacy law compliance
+- Protect customer PII at rest
+- Data breach protection
 
-**Implementation note:** Encrypted columns remain NULL until encryption is activated. See "PII Encryption Implementation" section below for migration strategy.
+**Implementation:**
+- App writes to BOTH encrypted and plaintext columns (dual-write for safety)
+- App reads from encrypted columns (decrypts on read)
+- Plaintext columns kept as backup during verification period (1-2 weeks)
+- After verification, plaintext columns can be dropped
 
 ### 2. Extend `company` table
 ```sql
@@ -102,11 +124,11 @@ Create `migrate-pii-encryption.sql` and `migrate-dashboard-costs.sql` with the s
 
 ## PII Encryption Implementation
 
-### Security Foundation
+### Active Encryption Strategy
 
-**Goal:** Prepare for PII protection without breaking existing functionality.
+**Goal:** Encrypt all PII data immediately upon deployment.
 
-**Strategy:** Add encrypted columns alongside plaintext, migrate incrementally.
+**Strategy:** Dual-write + encrypted-read pattern with plaintext backup during verification.
 
 ### Encryption Helper Functions
 
@@ -182,68 +204,140 @@ ENCRYPTION_KEY=<64-character-hex-string>
 
 **Never commit this key to git.** Add to `.gitignore` and provide to operations team.
 
-### Two-Phase Cutover Strategy
+### Deployment Strategy (One-Shot)
 
-**Phase 1: Foundations (This Dashboard Work)**
-- Add encrypted columns to database (NULL values)
-- Create `crypto.ts` helper functions
-- Add ENCRYPTION_KEY to environment
-- Update API responses to support both fields (plaintext for now)
-- **No encryption active yet** - app unchanged
+**Step 1: Deploy with encryption active**
 
-**Phase 2: Activate Encryption (Later)**
-1. **Deploy read-encrypted version:**
-   ```typescript
-   // API reads from encrypted, falls back to plaintext
-   customer_name: quote.customer_name_encrypted
-     ? decryptPII(quote.customer_name_encrypted)
-     : quote.customer_name
-   ```
+**Database migration runs:**
+1. Add encrypted columns
+2. Encrypt all existing PII data (UPDATE statements run immediately)
+3. All data now encrypted
 
-2. **Run backfill migration:**
-   ```sql
-   -- Encrypt all existing PII
-   UPDATE quotes
-   SET customer_name_encrypted = encrypt(quote.customer_name),
-       customer_address_encrypted = encrypt(quote.customer_address)
-   WHERE customer_name_encrypted IS NULL;
-   ```
+**App deployment:**
+- API reads decrypt PII on all responses
+- API writes encrypt PII on all creates/updates
+- Dual-write to plaintext columns (backup during verification)
 
-3. **Deploy write-encrypted version:**
-   ```typescript
-   // Create/update quotes encrypts PII
-   await db.quotes.create({
-     customer_name_encrypted: encryptPII(data.customer_name),
-     customer_address_encrypted: encryptPII(data.customer_address),
-     // Keep plaintext as backup for now
-   });
-   ```
+**Example API read:**
+```typescript
+// GET /api/quotes
+return quotes.map(q => ({
+  ...q,
+  customer_name: decryptPII(q.customer_name_encrypted),
+  customer_address: decryptPII(q.customer_address_encrypted),
+  // Plaintext columns ignored
+}));
+```
 
-4. **Verification phase (1-2 weeks):**
-   - Monitor for decryption errors
-   - Verify all data accessible
-   - Check performance impact
+**Example API write:**
+```typescript
+// POST /api/quotes
+await db.quotes.create({
+  customer_name_encrypted: encryptPII(data.customer_name),
+  customer_address_encrypted: encryptPII(data.customer_address),
+  // Also write to plaintext as backup
+  customer_name: data.customer_name,
+  customer_address: data.customer_address,
+  // ... rest of quote data
+});
+```
 
-5. **Optional: Drop plaintext columns:**
-   ```sql
-   ALTER TABLE quotes DROP COLUMN customer_name;
-   ALTER TABLE quotes DROP COLUMN customer_address;
-   ```
+### Verification Phase (1-2 Weeks Post-Deployment)
 
-### Current Scope (Dashboard Work)
+**Monitor:**
+- [ ] No decryption errors in logs
+- [ ] All customer data displays correctly
+- [ ] Performance impact <100ms per request
+- [ ] No data corruption
 
-**What we're doing now:**
-- ✅ Add encrypted columns (NULL)
-- ✅ Create `crypto.ts` helpers
-- ✅ Document encryption key setup
-- ✅ Keep app unchanged (still uses plaintext)
+**Manual verification:**
+- [ ] Open existing quotes - customer names visible
+- [ ] Create new quote - customer names saved and visible
+- [ ] Edit quote - customer names update correctly
+- [ ] User login - email works correctly
 
-**What we're NOT doing yet:**
-- ❌ Not encrypting data yet
-- ❌ Not changing app logic yet
-- ❌ Not removing plaintext columns yet
+### Optional: Remove Plaintext Backup (After Verification)
 
-This gives you PII readiness with zero disruption.
+**After 1-2 weeks of stable operation:**
+
+```sql
+-- Drop plaintext columns
+ALTER TABLE quotes DROP COLUMN customer_name;
+ALTER TABLE quotes DROP COLUMN customer_address;
+ALTER TABLE users DROP COLUMN email;
+ALTER TABLE users DROP COLUMN name;
+
+-- Remove dual-write code from API
+```
+
+**This is optional** - keeping plaintext backup is fine if you prefer safety over minimal storage overhead.
+
+---
+
+## Encryption Key Management
+
+### Key Generation
+
+**Generate once, never rotate (unless doing full data re-encryption):**
+
+```bash
+# Node.js one-liner to generate key
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Example output:** `a1b2c3d4e5f6...64-char-hex-string`
+
+### Environment Configuration
+
+**Add to `.env` (NEVER commit to git):**
+```bash
+ENCRYPTION_KEY=<your-64-char-hex-key>
+```
+
+**Add to `.gitignore`:**
+```
+.env
+.env.local
+.env.production
+```
+
+### Key Backup Procedures
+
+**CRITICAL:** If encryption key is lost, encrypted data is permanently unrecoverable.
+
+**Backup process:**
+1. Store key in secure password manager (1Password, LastPass, etc.)
+2. Store key in secure cloud storage with access controls (AWS Secrets Manager, Azure Key Vault)
+3. Document key location in ops wiki (access restricted)
+4. Never share key via email, Slack, or plain text
+
+**Key rotation (future):**
+- Generate new key
+- Re-encrypt all data with new key
+- Update environment
+- Keep old key until re-encryption verified complete
+
+### Security Considerations
+
+**Threat model:** Protects against database breach, not application compromise.
+
+**What encryption protects:**
+- ✅ Database backup theft
+- ✅ Database access via SQL injection
+- ✅ Unauthorized database admin access
+- ✅ Physical server theft (database files)
+
+**What encryption does NOT protect:**
+- ❌ Application-level attacks (if attacker can read process memory)
+- ❌ Logs that capture decrypted PII (ensure logs filter PII)
+- ❌ HTTPS man-in-the-middle (use TLS, separate concern)
+
+**Defense in depth:**
+1. Encryption at rest (this implementation)
+2. HTTPS in transit (already configured)
+3. Session-based authentication (already implemented)
+4. Company-id isolation (already implemented)
+5. Input validation (already implemented)
 
 ---
 
@@ -628,29 +722,44 @@ New page becomes default authenticated landing view.
 
 ## Implementation Order
 
-1. **PII encryption foundation** (non-breaking changes)
-   - Database migration (add encrypted columns)
+1. **PII encryption setup**
+   - Generate ENCRYPTION_KEY (64 hex chars), add to environment
    - Create `crypto.ts` helper functions
-   - Generate ENCRYPTION_KEY, add to environment
-   - Document key management procedures
+   - Document key management procedures (backup, rotation)
 
-2. **Database migration** (cost_categories, cost_breakdown columns)
+2. **Database migration** (all-in-one transaction)
+   - Add encrypted columns to quotes, users tables
+   - Encrypt all existing PII data immediately
+   - Add cost_categories, cost_breakdown columns
 
-3. **API endpoint** (`/api/dashboard` with all metric queries)
+3. **API updates** (quotes, users, auth endpoints)
+   - Update reads to decrypt encrypted columns
+   - Update writes to encrypt PII + dual-write to plaintext
+   - Test all endpoints return correct data
 
-4. **Dashboard page** (layout, date range state)
+4. **Dashboard API endpoint** (`/api/dashboard` with all metric queries)
 
-5. **Metric cards** (4 top metrics)
+5. **Dashboard page** (layout, date range state)
 
-6. **Chart component** (revenue trends)
+6. **Metric cards** (4 top metrics)
 
-7. **Table components** (top customers, popular collections)
+7. **Chart component** (revenue trends)
 
-8. **Navigation updates** (AppLayout, login redirect)
+8. **Table components** (top customers, popular collections)
 
-9. **Styling polish** (responsive, colors, hover states)
+9. **Navigation updates** (AppLayout, login redirect)
 
-10. **Testing** (manual smoke test + PII verification)
+10. **Styling polish** (responsive, colors, hover states)
+
+11. **Testing** (manual smoke test + PII encryption verification)
+   - Verify all customer data decrypts correctly
+   - Check performance impact (<100ms overhead)
+   - Test create/read/update flows
+
+12. **Monitoring** (1-2 weeks)
+   - Watch for decryption errors
+   - Verify data integrity
+   - (Optional) Remove plaintext columns after verification
 
 ---
 
@@ -693,13 +802,17 @@ When reaching 10K+ quotes per company, consider:
 - [ ] Page loads in <1 second
 - [ ] Works on mobile, tablet, desktop
 
-**PII Foundation:**
-- [ ] Encrypted columns added to database (customer_name_encrypted, etc.)
+**PII Encryption (Active):**
+- [ ] ENCRYPTION_KEY generated and secured (never committed to git)
 - [ ] `crypto.ts` helper functions created and tested
-- [ ] ENCRYPTION_KEY generated and stored in environment
-- [ ] Documentation complete (key management, cutover procedures)
-- [ ] App still works normally (plaintext columns active)
-- [ ] No data loss or corruption risks identified
+- [ ] Encrypted columns added to database
+- [ ] All existing PII data encrypted during migration
+- [ ] API reads decrypt PII correctly (customer names, addresses, emails visible)
+- [ ] API writes encrypt PII correctly (new data encrypted)
+- [ ] Dual-write to plaintext columns working (backup during verification)
+- [ ] No data loss or corruption
+- [ ] Decryption performance <100ms overhead
+- [ ] Documentation complete (key management, backup procedures)
 
 ---
 
