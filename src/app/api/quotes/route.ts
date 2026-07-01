@@ -70,6 +70,23 @@ export async function POST(req: Request) {
     const customerNameEncrypted = encryptPII(customer_name);
     const customerAddressEncrypted = encryptPII(customer_address ?? '');
 
+    // IMMEDIATE VERIFICATION: Decrypt and compare to ensure encryption worked
+    const nameDecrypted = decryptPII(customerNameEncrypted);
+    const addressDecrypted = decryptPII(customerAddressEncrypted);
+
+    if (nameDecrypted !== customer_name || addressDecrypted !== (customer_address ?? '')) {
+      console.error('Encryption verification failed', {
+        original: customer_name,
+        decrypted: nameDecrypted,
+        originalAddress: customer_address,
+        decryptedAddress: addressDecrypted,
+      });
+      return NextResponse.json(
+        { error: 'Encryption verification failed. Please try again.' },
+        { status: 500 }
+      );
+    }
+
     const [quote] = await sql`
       INSERT INTO quotes (
         company_id, quote_number, customer_name, customer_address,
@@ -113,6 +130,13 @@ export async function POST(req: Request) {
         )
       `;
     }
+
+    // After successful insert, delete plaintext columns immediately
+    await sql`
+      UPDATE quotes
+      SET customer_name = NULL, customer_address = NULL
+      WHERE id = ${quote.id}
+    `;
 
     return NextResponse.json({
       ...quote,
