@@ -1,31 +1,37 @@
 import crypto from 'crypto';
 
+/**
+ * Generate a secure key with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ * Set ENCRYPTION_KEY environment variable to the output
+ */
 const ALGORITHM = 'aes-256-gcm';
-const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
-const SALT_LENGTH = 64;
 const TAG_LENGTH = 16;
-const TAG_POSITION = SALT_LENGTH + IV_LENGTH;
+const TAG_POSITION = IV_LENGTH;
 const ENCRYPTED_POSITION = TAG_POSITION + TAG_LENGTH;
+
+/**
+ * Validates and returns the encryption key from environment
+ * @throws {Error} If ENCRYPTION_KEY is not configured or is invalid
+ * @returns Buffer containing the 32-byte encryption key
+ */
+function getEncryptionKey(): Buffer {
+  const key = process.env.ENCRYPTION_KEY;
+  if (!key || key.length !== 64 || !/^[0-9a-f]{64}$/.test(key)) {
+    throw new Error('ENCRYPTION_KEY must be 64-character hex string');
+  }
+  return Buffer.from(key, 'hex');
+}
 
 /**
  * Encrypt sensitive PII data
  * @param plaintext - Data to encrypt
- * @returns Encrypted data as Buffer (salt + iv + tag + ciphertext)
+ * @returns Encrypted data as Buffer (iv + tag + ciphertext)
+ * @throws {Error} If encryption fails
  */
 export function encryptPII(plaintext: string): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) {
-    throw new Error('ENCRYPTION_KEY not configured in environment');
-  }
-
-  if (key.length !== 64 || !/^[0-9a-f]{64}$/.test(key)) {
-    throw new Error('ENCRYPTION_KEY must be 64-character hex string');
-  }
-
+  const keyBuffer = getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
-  const salt = crypto.randomBytes(SALT_LENGTH);
-  const keyBuffer = Buffer.from(key, 'hex');
 
   const cipher = crypto.createCipheriv(ALGORITHM, keyBuffer, iv);
   const ciphertext = Buffer.concat([
@@ -34,33 +40,33 @@ export function encryptPII(plaintext: string): Buffer {
   ]);
   const tag = cipher.getAuthTag();
 
-  return Buffer.concat([salt, iv, tag, ciphertext]);
+  return Buffer.concat([iv, tag, ciphertext]);
 }
 
 /**
  * Decrypt sensitive PII data
- * @param encrypted - Buffer containing salt + iv + tag + ciphertext
+ * @param encrypted - Buffer containing iv + tag + ciphertext
  * @returns Decrypted plaintext
+ * @throws {Error} If encrypted data is too short, decryption fails, or auth tag verification fails
  */
 export function decryptPII(encrypted: Buffer): string {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) {
-    throw new Error('ENCRYPTION_KEY not configured in environment');
+  const keyBuffer = getEncryptionKey();
+
+  if (encrypted.length < ENCRYPTED_POSITION) {
+    throw new Error('Encrypted data too short');
   }
 
-  if (key.length !== 64 || !/^[0-9a-f]{64}$/.test(key)) {
-    throw new Error('ENCRYPTION_KEY must be 64-character hex string');
-  }
-
-  const keyBuffer = Buffer.from(key, 'hex');
-
-  const salt = encrypted.subarray(0, SALT_LENGTH);
-  const iv = encrypted.subarray(SALT_LENGTH, TAG_POSITION);
+  const iv = encrypted.subarray(0, TAG_POSITION);
   const tag = encrypted.subarray(TAG_POSITION, ENCRYPTED_POSITION);
   const ciphertext = encrypted.subarray(ENCRYPTED_POSITION);
 
   const decipher = crypto.createDecipheriv(ALGORITHM, keyBuffer, iv);
   decipher.setAuthTag(tag);
 
-  return decipher.update(ciphertext) as string + decipher.final('utf8');
+  try {
+    const decrypted = decipher.update(ciphertext, 'binary', 'utf8') + decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    throw new Error('Failed to decrypt: authentication tag verification failed or data corrupted');
+  }
 }
