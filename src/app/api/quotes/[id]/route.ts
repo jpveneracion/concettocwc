@@ -79,12 +79,28 @@ export async function PUT(
     const total_area = items.reduce((s, i) => s + i.area_sqft, 0);
     const panel_count = items.length;
 
+    // Encrypt PII
+    const customerNameEncrypted = encryptPII(customer_name);
+    const customerAddressEncrypted = encryptPII(customer_address ?? '');
+
+    // IMMEDIATE VERIFICATION
+    const nameDecrypted = decryptPII(customerNameEncrypted);
+    const addressDecrypted = decryptPII(customerAddressEncrypted);
+
+    if (nameDecrypted !== customer_name || addressDecrypted !== (customer_address ?? '')) {
+      console.error('Encryption verification failed - mismatch detected');
+      return NextResponse.json(
+        { error: 'Encryption verification failed. Please try again.' },
+        { status: 500 }
+      );
+    }
+
     await sql`
       UPDATE quotes SET
         customer_name             = ${customer_name},
-        customer_name_encrypted   = ${encryptPII(customer_name)},
+        customer_name_encrypted   = ${customerNameEncrypted},
         customer_address           = ${customer_address ?? ''},
-        customer_address_encrypted = ${encryptPII(customer_address ?? '')},
+        customer_address_encrypted = ${customerAddressEncrypted},
         quote_date       = ${quote_date},
         our_ref          = ${our_ref ?? ''},
         installation_fee = ${installation_fee},
@@ -94,6 +110,14 @@ export async function PUT(
         total_area       = ${total_area},
         panel_count      = ${panel_count},
         updated_at       = now()
+      WHERE id = ${id}::uuid AND company_id = ${companyId}
+    `;
+
+    // After successful update, delete plaintext columns immediately
+    await sql`
+      UPDATE quotes SET
+        customer_name = NULL,
+        customer_address = NULL
       WHERE id = ${id}::uuid AND company_id = ${companyId}
     `;
 
