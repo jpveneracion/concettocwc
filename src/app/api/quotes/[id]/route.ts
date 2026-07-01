@@ -127,7 +127,28 @@ export async function PUT(
       `;
     }
 
-    return NextResponse.json({ success: true });
+    // Fetch updated quote to return with decrypted values
+    const [quote] = await sql`
+      SELECT id, quote_number, customer_name, customer_address,
+             customer_name_encrypted, customer_address_encrypted,
+             quote_date, our_ref, status,
+             installation_fee::float, delivery_fee::float,
+             subtotal::float, total::float,
+             total_area::float, panel_count,
+             created_at, updated_at
+      FROM quotes
+      WHERE id = ${id}::uuid AND company_id = ${companyId}
+    `;
+
+    return NextResponse.json({
+      ...quote,
+      customer_name: quote.customer_name_encrypted
+        ? decryptPII(quote.customer_name_encrypted)
+        : quote.customer_name,
+      customer_address: quote.customer_address_encrypted
+        ? decryptPII(quote.customer_address_encrypted)
+        : quote.customer_address,
+    });
   } catch (err) {
     console.error('PUT /api/quotes/[id]', err);
     return NextResponse.json({ error: 'Failed to update quote' }, { status: 500 });
