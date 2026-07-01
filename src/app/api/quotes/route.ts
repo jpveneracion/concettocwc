@@ -1,20 +1,44 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { sql } from '@/lib/db';
+import { encryptPII, decryptPII } from '@/lib/crypto';
 import type { QuotePayload } from '@/types';
+
+async function getCompanyId() {
+  const headerList = await headers();
+  const companyId = headerList.get('x-company-id');
+  if (!companyId) throw new Error('Unauthorized');
+  return companyId;
+}
 
 export async function GET() {
   try {
+    const companyId = await getCompanyId();
     const quotes = await sql`
       SELECT id, quote_number, customer_name, customer_address,
+             customer_name_encrypted, customer_address_encrypted,
              quote_date, our_ref, status,
              installation_fee::float, delivery_fee::float,
              subtotal::float, total::float,
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
+      WHERE company_id = ${companyId}
       ORDER BY created_at DESC
     `;
-    return NextResponse.json(quotes);
+
+    // Decrypt PII for response
+    const decryptedQuotes = quotes.map((q: any) => ({
+      ...q,
+      customer_name: q.customer_name_encrypted
+        ? decryptPII(q.customer_name_encrypted)
+        : q.customer_name,
+      customer_address: q.customer_address_encrypted
+        ? decryptPII(q.customer_address_encrypted)
+        : q.customer_address,
+    }));
+
+    return NextResponse.json(decryptedQuotes);
   } catch (err) {
     console.error('GET /api/quotes', err);
     return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 });
@@ -23,6 +47,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const companyId = await getCompanyId();
     const body: QuotePayload = await req.json();
     const {
       quote_number, customer_name, customer_address, quote_date,
@@ -41,18 +66,24 @@ export async function POST(req: Request) {
     const total_area = items.reduce((s, i) => s + i.area_sqft, 0);
     const panel_count = items.length;
 
+    // Encrypt PII
+    const customerNameEncrypted = encryptPII(customer_name);
+    const customerAddressEncrypted = encryptPII(customer_address ?? '');
+
     const [quote] = await sql`
       INSERT INTO quotes (
-        quote_number, customer_name, customer_address, quote_date,
-        our_ref, installation_fee, delivery_fee,
+        company_id, quote_number, customer_name, customer_address,
+        customer_name_encrypted, customer_address_encrypted,
+        quote_date, our_ref, installation_fee, delivery_fee,
         subtotal, total, total_area, panel_count
       ) VALUES (
-        ${quote_number}, ${customer_name}, ${customer_address ?? ''},
+        ${companyId}, ${quote_number}, ${customer_name}, ${customer_address ?? ''},
+        ${customerNameEncrypted}, ${customerAddressEncrypted},
         ${quote_date}, ${our_ref ?? ''},
         ${installation_fee}, ${delivery_fee},
         ${subtotal}, ${total}, ${total_area}, ${panel_count}
       )
-      RETURNING id, quote_number, created_at
+      RETURNING id, quote_number, customer_name, customer_address, created_at
     `;
 
     // Insert items
