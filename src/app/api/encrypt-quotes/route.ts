@@ -10,13 +10,19 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all quotes with plaintext but no encryption
+    // Get all quotes that need encryption or have plaintext that needs deletion
     const quotes = await sql`
-      SELECT id, customer_name, customer_address
+      SELECT id, customer_name, customer_address, customer_name_encrypted, customer_address_encrypted
       FROM quotes
       WHERE company_id = ${session.companyId}
-        AND (customer_name_encrypted IS NULL OR customer_address_encrypted IS NULL)
-        AND (customer_name IS NOT NULL OR customer_address IS NOT NULL)
+        AND (
+          -- Need encryption: encrypted columns are NULL
+          (customer_name_encrypted IS NULL OR customer_address_encrypted IS NULL)
+          OR
+          -- Need plaintext deletion: encrypted exists but plaintext still exists
+          ((customer_name_encrypted IS NOT NULL OR customer_address_encrypted IS NOT NULL)
+           AND (customer_name IS NOT NULL OR customer_address IS NOT NULL))
+        )
     `;
 
     let encrypted = 0;
@@ -26,17 +32,26 @@ export async function POST() {
 
     for (const quote of quotes) {
       try {
-        const nameEncrypted = quote.customer_name ? encryptPII(quote.customer_name) : null;
-        const addressEncrypted = quote.customer_address ? encryptPII(quote.customer_address) : null;
+        const needsEncryption = !quote.customer_name_encrypted || !quote.customer_address_encrypted;
 
-        await sql`
-          UPDATE quotes
-          SET customer_name_encrypted = ${nameEncrypted},
-              customer_address_encrypted = ${addressEncrypted}
-          WHERE id = ${quote.id}
-        `;
+        let nameEncrypted = quote.customer_name_encrypted;
+        let addressEncrypted = quote.customer_address_encrypted;
 
-        encrypted++;
+        if (needsEncryption) {
+          nameEncrypted = quote.customer_name ? encryptPII(quote.customer_name) : null;
+          addressEncrypted = quote.customer_address ? encryptPII(quote.customer_address) : null;
+
+          await sql`
+            UPDATE quotes
+            SET customer_name_encrypted = ${nameEncrypted},
+                customer_address_encrypted = ${addressEncrypted}
+            WHERE id = ${quote.id}
+          `;
+
+          encrypted++;
+        } else {
+          // Already encrypted, just counting as verified (failed deletion retry)
+        }
 
         // Verify encryption by decrypting and comparing
         let nameVerified = false;

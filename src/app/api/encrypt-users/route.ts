@@ -10,13 +10,18 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all users with plaintext but no encryption (company-wide for admin)
+    // Get all users that need encryption or have plaintext that needs deletion
     const users = await sql`
-      SELECT id, email
+      SELECT id, email, email_encrypted
       FROM users
       WHERE company_id = ${session.companyId}
-        AND email_encrypted IS NULL
-        AND email IS NOT NULL
+        AND (
+          -- Need encryption: encrypted column is NULL
+          email_encrypted IS NULL
+          OR
+          -- Need plaintext deletion: encrypted exists but plaintext still exists
+          (email_encrypted IS NOT NULL AND email IS NOT NULL)
+        )
     `;
 
     let encrypted = 0;
@@ -26,15 +31,23 @@ export async function POST() {
 
     for (const user of users) {
       try {
-        const emailEncrypted = user.email ? encryptPII(user.email) : null;
+        const needsEncryption = !user.email_encrypted;
 
-        await sql`
-          UPDATE users
-          SET email_encrypted = ${emailEncrypted}
-          WHERE id = ${user.id}
-        `;
+        let emailEncrypted = user.email_encrypted;
 
-        encrypted++;
+        if (needsEncryption) {
+          emailEncrypted = user.email ? encryptPII(user.email) : null;
+
+          await sql`
+            UPDATE users
+            SET email_encrypted = ${emailEncrypted}
+            WHERE id = ${user.id}
+          `;
+
+          encrypted++;
+        } else {
+          // Already encrypted, just counting as verified (failed deletion retry)
+        }
 
         // Verify encryption by decrypting and comparing
         let emailVerified = false;
