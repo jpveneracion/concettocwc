@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { decryptPII } from '@/lib/crypto';
 
 export async function GET(req: NextRequest) {
   try {
@@ -228,7 +229,7 @@ async function getPopularCollections(
 async function getTopCustomers(companyId: string, startDate: string, endDate: string) {
   const result = await sql`
     SELECT
-      customer_name,
+      customer_name_encrypted,
       SUM(total) as total_revenue,
       COUNT(*) as quote_count
     FROM quotes
@@ -236,13 +237,15 @@ async function getTopCustomers(companyId: string, startDate: string, endDate: st
       AND status IN ('approved', 'sent')
       AND quote_date >= ${startDate}
       AND quote_date <= ${endDate}
-    GROUP BY customer_name
+    GROUP BY customer_name_encrypted
     ORDER BY total_revenue DESC
     LIMIT 10
   `;
 
   return result.map((row: any) => ({
-    customerName: row.customer_name,
+    customerName: row.customer_name_encrypted
+      ? decryptPII(row.customer_name_encrypted)
+      : 'Unknown',
     totalRevenue: Number(row.total_revenue),
     quoteCount: Number(row.quote_count),
   }));

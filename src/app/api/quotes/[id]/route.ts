@@ -45,10 +45,10 @@ export async function GET(
       ...quote,
       customer_name: quote.customer_name_encrypted
         ? decryptPII(quote.customer_name_encrypted)
-        : quote.customer_name,
+        : quote.customer_name || '',
       customer_address: quote.customer_address_encrypted
         ? decryptPII(quote.customer_address_encrypted)
-        : quote.customer_address,
+        : quote.customer_address || '',
       items,
     });
   } catch (err) {
@@ -168,10 +168,10 @@ export async function PUT(
       ...quote,
       customer_name: quote.customer_name_encrypted
         ? decryptPII(quote.customer_name_encrypted)
-        : quote.customer_name,
+        : quote.customer_name || '',
       customer_address: quote.customer_address_encrypted
         ? decryptPII(quote.customer_address_encrypted)
-        : quote.customer_address,
+        : quote.customer_address || '',
     });
   } catch (err) {
     console.error('PUT /api/quotes/[id]', err);

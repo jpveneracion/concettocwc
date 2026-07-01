@@ -14,11 +14,13 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [encrypting, setEncrypting] = useState(false);
+  const [encryptPhase, setEncryptPhase] = useState<'encrypting' | 'verifying' | 'deleting' | 'complete'>('encrypting');
   const [currency, setCurrency] = useState<string>('USD');
 
   useEffect(() => {
     fetchMetrics();
     fetchCurrency();
+    encryptExistingData();
   }, [period]);
 
   async function fetchCurrency() {
@@ -30,6 +32,59 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Failed to fetch currency:', err);
+    }
+  }
+
+  async function encryptExistingData() {
+    try {
+      setEncrypting(true);
+      setEncryptPhase('encrypting');
+
+      // Encrypt quotes
+      const quotesRes = await fetch('/api/encrypt-quotes', { method: 'POST' });
+      const quotesData = await quotesRes.json();
+
+      if (!quotesRes.ok) {
+        console.error('Encrypt quotes failed:', quotesData);
+        setEncrypting(false);
+        return;
+      }
+
+      setEncryptPhase('verifying');
+
+      // Encrypt users
+      const usersRes = await fetch('/api/encrypt-users', { method: 'POST' });
+      const usersData = await usersRes.json();
+
+      if (!usersRes.ok) {
+        console.error('Encrypt users failed:', usersData);
+        setEncrypting(false);
+        return;
+      }
+
+      setEncryptPhase('deleting');
+
+      // Give UI a moment to show the deleting phase
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setEncryptPhase('complete');
+
+      if (quotesData.encrypted > 0) {
+        console.log(`Encrypted ${quotesData.encrypted} quotes, verified ${quotesData.verified}, deleted ${quotesData.deleted}`);
+      }
+
+      if (usersData.encrypted > 0) {
+        console.log(`Encrypted ${usersData.encrypted} users, verified ${usersData.verified}, deleted ${usersData.deleted}`);
+      }
+
+      // Hide modal after showing complete
+      setTimeout(() => {
+        setEncrypting(false);
+        setEncryptPhase('encrypting');
+      }, 2000);
+    } catch (err) {
+      console.error('Encrypt error:', err);
+      setEncrypting(false);
     }
   }
 
@@ -87,7 +142,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <AppLayout>
-        <EncryptionModal show={encrypting} />
+        <EncryptionModal show={encrypting} phase={encryptPhase} />
         <div className="p-12 text-center text-gray-400">Loading dashboard...</div>
       </AppLayout>
     );
@@ -104,7 +159,7 @@ export default function DashboardPage() {
   if (!metrics) {
     return (
       <AppLayout>
-        <EncryptionModal show={encrypting} />
+        <EncryptionModal show={encrypting} phase={encryptPhase} />
         <div className="p-12 text-center text-gray-400">No data available</div>
       </AppLayout>
     );
