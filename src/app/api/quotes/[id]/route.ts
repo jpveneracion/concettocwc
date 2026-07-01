@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { sql } from '@/lib/db';
+import { encryptPII, decryptPII } from '@/lib/crypto';
 import type { QuotePayload } from '@/types';
+
+async function getCompanyId() {
+  const headerList = await headers();
+  const companyId = headerList.get('x-company-id');
+  if (!companyId) throw new Error('Unauthorized');
+  return companyId;
+}
 
 export async function GET(
   _req: Request,
@@ -8,15 +17,17 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
+    const companyId = await getCompanyId();
     const [quote] = await sql`
       SELECT id, quote_number, customer_name, customer_address,
+             customer_name_encrypted, customer_address_encrypted,
              quote_date, our_ref, status,
              installation_fee::float, delivery_fee::float,
              subtotal::float, total::float,
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}::uuid AND company_id = ${companyId}
     `;
     if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
@@ -34,7 +45,16 @@ export async function GET(
       ORDER BY sort_order ASC
     `;
 
-    return NextResponse.json({ ...quote, items });
+    return NextResponse.json({
+      ...quote,
+      customer_name: quote.customer_name_encrypted
+        ? decryptPII(quote.customer_name_encrypted)
+        : quote.customer_name,
+      customer_address: quote.customer_address_encrypted
+        ? decryptPII(quote.customer_address_encrypted)
+        : quote.customer_address,
+      items,
+    });
   } catch (err) {
     console.error('GET /api/quotes/[id]', err);
     return NextResponse.json({ error: 'Failed to fetch quote' }, { status: 500 });
@@ -47,6 +67,7 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
+    const companyId = await getCompanyId();
     const body: QuotePayload = await req.json();
     const {
       customer_name, customer_address, quote_date,
@@ -60,8 +81,10 @@ export async function PUT(
 
     await sql`
       UPDATE quotes SET
-        customer_name    = ${customer_name},
-        customer_address = ${customer_address ?? ''},
+        customer_name             = ${customer_name},
+        customer_name_encrypted   = ${encryptPII(customer_name)},
+        customer_address           = ${customer_address ?? ''},
+        customer_address_encrypted = ${encryptPII(customer_address ?? '')},
         quote_date       = ${quote_date},
         our_ref          = ${our_ref ?? ''},
         installation_fee = ${installation_fee},
@@ -71,7 +94,7 @@ export async function PUT(
         total_area       = ${total_area},
         panel_count      = ${panel_count},
         updated_at       = now()
-      WHERE id = ${id}::uuid
+      WHERE id = ${id}::uuid AND company_id = ${companyId}
     `;
 
     // Replace items
@@ -117,7 +140,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    await sql`DELETE FROM quotes WHERE id = ${id}::uuid`;
+    const companyId = await getCompanyId();
+    await sql`DELETE FROM quotes WHERE id = ${id}::uuid AND company_id = ${companyId}`;
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('DELETE /api/quotes/[id]', err);
