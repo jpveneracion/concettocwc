@@ -90,7 +90,7 @@ export async function POST() {
         console.log('Attempting to delete plaintext for users:', userIds);
         const result = await sql`
           UPDATE users
-          SET email = NULL
+          SET email = CASE WHEN email IS NOT NULL THEN NULL ELSE email END
           WHERE id = ANY(${userIds}::uuid[])
             AND email_encrypted IS NOT NULL
           RETURNING id

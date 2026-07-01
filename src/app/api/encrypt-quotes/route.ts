@@ -102,8 +102,8 @@ export async function POST() {
         console.log('Attempting to delete plaintext for quotes:', quoteIds);
         const result = await sql`
           UPDATE quotes
-          SET customer_name = NULL,
-              customer_address = NULL
+          SET customer_name = CASE WHEN customer_name IS NOT NULL THEN NULL ELSE customer_name END,
+              customer_address = CASE WHEN customer_address IS NOT NULL THEN NULL ELSE customer_address END
           WHERE id = ANY(${quoteIds}::uuid[])
             AND customer_name_encrypted IS NOT NULL
             AND customer_address_encrypted IS NOT NULL
