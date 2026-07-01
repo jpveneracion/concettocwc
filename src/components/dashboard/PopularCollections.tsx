@@ -27,9 +27,9 @@ export default function PopularCollections({ collections }: PopularCollectionsPr
     <div className="bg-white border border-gray-200 rounded-xl p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular Collections</h3>
       <div className="space-y-3">
-        {collections.map((item, index) => (
+        {collections.slice(0, 10).map((item, index) => (
           <div
-            key={index}
+            key={item.collection}
             className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
           >
             <div className="flex items-center gap-3">
