@@ -74,14 +74,13 @@ export async function POST() {
     let deleted = 0;
     if (errors.length === 0 && userIds.length > 0) {
       try {
-        for (const userId of userIds) {
-          await sql`
-            UPDATE users
-            SET email = NULL
-            WHERE id = ${userId}
-          `;
-          deleted++;
-        }
+        const result = await sql`
+          UPDATE users
+          SET email = NULL
+          WHERE id = ANY(${userIds}::uuid[])
+          RETURNING id
+        `;
+        deleted = result.length;
       } catch (err) {
         console.error('Failed to delete plaintext:', err);
         return NextResponse.json({
@@ -93,7 +92,7 @@ export async function POST() {
             {
               recordId: 'batch',
               field: 'deletion',
-              message: 'Encryption verified but failed to delete plaintext columns',
+              message: (err as Error).message,
             },
           ],
         });
