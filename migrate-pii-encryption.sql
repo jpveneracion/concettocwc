@@ -6,10 +6,9 @@ ALTER TABLE quotes
 ADD COLUMN customer_name_encrypted bytea,
 ADD COLUMN customer_address_encrypted bytea;
 
--- Add encrypted columns to users table
+-- Add encrypted column to users table (only email, no name column exists)
 ALTER TABLE users
-ADD COLUMN email_encrypted bytea,
-ADD COLUMN name_encrypted bytea;
+ADD COLUMN email_encrypted bytea;
 
 -- Note: Data encryption happens via Node.js app (crypto.ts helpers)
 -- Run the app after migration to populate these columns

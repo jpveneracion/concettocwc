@@ -12,11 +12,11 @@ export async function POST() {
 
     // Get all users with plaintext but no encryption (company-wide for admin)
     const users = await sql`
-      SELECT id, email, name
+      SELECT id, email
       FROM users
       WHERE company_id = ${session.companyId}
-        AND (email_encrypted IS NULL OR name_encrypted IS NULL)
-        AND (email IS NOT NULL OR name IS NOT NULL)
+        AND email_encrypted IS NULL
+        AND email IS NOT NULL
     `;
 
     let encrypted = 0;
@@ -27,12 +27,10 @@ export async function POST() {
     for (const user of users) {
       try {
         const emailEncrypted = user.email ? encryptPII(user.email) : null;
-        const nameEncrypted = user.name ? encryptPII(user.name) : null;
 
         await sql`
           UPDATE users
-          SET email_encrypted = ${emailEncrypted},
-              name_encrypted = ${nameEncrypted}
+          SET email_encrypted = ${emailEncrypted}
           WHERE id = ${user.id}
         `;
 
@@ -40,7 +38,6 @@ export async function POST() {
 
         // Verify encryption by decrypting and comparing
         let emailVerified = false;
-        let nameVerified = false;
 
         try {
           if (user.email && emailEncrypted) {
@@ -49,21 +46,14 @@ export async function POST() {
           } else if (!user.email) {
             emailVerified = true;
           }
-
-          if (user.name && nameEncrypted) {
-            const nameDecrypted = decryptPII(nameEncrypted);
-            nameVerified = nameDecrypted === user.name;
-          } else if (!user.name) {
-            nameVerified = true;
-          }
         } catch (decryptErr) {
           console.error(`Decryption verification failed for user ${user.id}:`, decryptErr);
         }
 
-        if (!emailVerified || !nameVerified) {
+        if (!emailVerified) {
           errors.push({
             recordId: user.id,
-            field: !emailVerified ? 'email' : 'name',
+            field: 'email',
             message: 'Verification failed: decrypted data does not match original',
           });
         } else {
@@ -86,8 +76,7 @@ export async function POST() {
       try {
         await sql`
           UPDATE users
-          SET email = NULL,
-              name = NULL
+          SET email = NULL
           WHERE id = ANY(${userIds}::uuid[])
         `;
         deleted = userIds.length;
