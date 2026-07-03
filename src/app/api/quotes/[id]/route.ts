@@ -41,14 +41,30 @@ export async function GET(
       ORDER BY sort_order ASC
     `;
 
+    // Decrypt PII with error handling
+    let customerName = quote.customer_name || '';
+    let customerAddress = quote.customer_address || '';
+
+    try {
+      if (quote.customer_name_encrypted) {
+        customerName = decryptPII(quote.customer_name_encrypted);
+      }
+    } catch (err) {
+      console.error(`Failed to decrypt customer_name for quote ${quote.id}:`, err);
+    }
+
+    try {
+      if (quote.customer_address_encrypted) {
+        customerAddress = decryptPII(quote.customer_address_encrypted);
+      }
+    } catch (err) {
+      console.error(`Failed to decrypt customer_address for quote ${quote.id}:`, err);
+    }
+
     return NextResponse.json({
       ...quote,
-      customer_name: quote.customer_name_encrypted
-        ? decryptPII(Buffer.from(quote.customer_name_encrypted))
-        : quote.customer_name || '',
-      customer_address: quote.customer_address_encrypted
-        ? decryptPII(Buffer.from(quote.customer_address_encrypted))
-        : quote.customer_address || '',
+      customer_name: customerName,
+      customer_address: customerAddress,
       items,
     });
   } catch (err) {
@@ -72,12 +88,21 @@ export async function PUT(
     const {
       customer_name, customer_address, quote_date,
       our_ref, installation_fee, delivery_fee, items,
+      status,
     } = body;
 
     const subtotal = items.reduce((s, i) => s + i.retail_amount, 0);
     const total = subtotal + installation_fee + delivery_fee;
     const total_area = items.reduce((s, i) => s + i.area_sqft, 0);
     const panel_count = items.length;
+
+    // Validate status if provided
+    if (status && !['draft', 'sent', 'approved', 'cancelled'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status. Must be one of: draft, sent, approved, cancelled' },
+        { status: 400 }
+      );
+    }
 
     // Encrypt PII
     const customerNameEncrypted = encryptPII(customer_name);
@@ -98,9 +123,9 @@ export async function PUT(
     await sql`
       UPDATE quotes SET
         customer_name             = ${customer_name},
-        customer_name_encrypted   = ${customerNameEncrypted},
+        customer_name_encrypted   = decode(${customerNameEncrypted}, 'hex')::bytea,
         customer_address           = ${customer_address ?? ''},
-        customer_address_encrypted = ${customerAddressEncrypted},
+        customer_address_encrypted = decode(${customerAddressEncrypted}, 'hex')::bytea,
         quote_date       = ${quote_date},
         our_ref          = ${our_ref ?? ''},
         installation_fee = ${installation_fee},
@@ -109,6 +134,7 @@ export async function PUT(
         total            = ${total},
         total_area       = ${total_area},
         panel_count      = ${panel_count},
+        status           = ${status || 'draft'},
         updated_at       = now()
       WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;

@@ -31,9 +31,7 @@ export async function GET() {
 
       try {
         if (q.customer_name_encrypted) {
-          const encrypted = q.customer_name_encrypted;
-          const buffer = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted);
-          customerName = decryptPII(buffer);
+          customerName = decryptPII(q.customer_name_encrypted);
         }
       } catch (err) {
         console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
@@ -41,9 +39,7 @@ export async function GET() {
 
       try {
         if (q.customer_address_encrypted) {
-          const encrypted = q.customer_address_encrypted;
-          const buffer = Buffer.isBuffer(encrypted) ? encrypted : Buffer.from(encrypted);
-          customerAddress = decryptPII(buffer);
+          customerAddress = decryptPII(q.customer_address_encrypted);
         }
       } catch (err) {
         console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);
@@ -115,7 +111,7 @@ export async function POST(req: Request) {
         subtotal, total, total_area, panel_count
       ) VALUES (
         ${session.companyId}, ${quote_number}, ${customer_name}, ${customer_address ?? ''},
-        ${customerNameEncrypted}, ${customerAddressEncrypted},
+        decode(${customerNameEncrypted}, 'hex')::bytea, decode(${customerAddressEncrypted}, 'hex')::bytea,
         ${quote_date}, ${our_ref ?? ''},
         ${installation_fee}, ${delivery_fee},
         ${subtotal}, ${total}, ${total_area}, ${panel_count}

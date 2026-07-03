@@ -26,10 +26,10 @@ function getEncryptionKey(): Buffer {
 /**
  * Encrypt sensitive PII data
  * @param plaintext - Data to encrypt
- * @returns Encrypted data as Buffer (iv + tag + ciphertext)
+ * @returns Encrypted data as hex string (for proper bytea storage with Neon)
  * @throws {Error} If encryption fails
  */
-export function encryptPII(plaintext: string): Buffer {
+export function encryptPII(plaintext: string): string {
   const keyBuffer = getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
 
@@ -40,25 +40,36 @@ export function encryptPII(plaintext: string): Buffer {
   ]);
   const tag = cipher.getAuthTag();
 
-  return Buffer.concat([iv, tag, ciphertext]);
+  const encryptedBuffer = Buffer.concat([iv, tag, ciphertext]);
+  return encryptedBuffer.toString('hex');
 }
 
 /**
  * Decrypt sensitive PII data
- * @param encrypted - Buffer containing iv + tag + ciphertext
+ * @param encrypted - Hex string or Buffer containing iv + tag + ciphertext
  * @returns Decrypted plaintext
  * @throws {Error} If encrypted data is too short, decryption fails, or auth tag verification fails
  */
-export function decryptPII(encrypted: Buffer): string {
+export function decryptPII(encrypted: string | Buffer): string {
   const keyBuffer = getEncryptionKey();
 
-  if (encrypted.length < ENCRYPTED_POSITION) {
+  // Convert hex string to Buffer if needed
+  let encryptedBuffer: Buffer;
+  if (typeof encrypted === 'string') {
+    encryptedBuffer = Buffer.from(encrypted, 'hex');
+  } else if (Buffer.isBuffer(encrypted)) {
+    encryptedBuffer = encrypted;
+  } else {
+    throw new Error('Encrypted data must be a hex string or Buffer');
+  }
+
+  if (encryptedBuffer.length < ENCRYPTED_POSITION) {
     throw new Error('Encrypted data too short');
   }
 
-  const iv = encrypted.subarray(0, TAG_POSITION);
-  const tag = encrypted.subarray(TAG_POSITION, ENCRYPTED_POSITION);
-  const ciphertext = encrypted.subarray(ENCRYPTED_POSITION);
+  const iv = encryptedBuffer.subarray(0, TAG_POSITION);
+  const tag = encryptedBuffer.subarray(TAG_POSITION, ENCRYPTED_POSITION);
+  const ciphertext = encryptedBuffer.subarray(ENCRYPTED_POSITION);
 
   const decipher = crypto.createDecipheriv(ALGORITHM, keyBuffer, iv);
   decipher.setAuthTag(tag);
