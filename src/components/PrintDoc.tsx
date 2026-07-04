@@ -51,8 +51,6 @@ export default function PrintDoc({ quote, settings, type }: Props) {
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>S/#</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Description</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Loc</th>
-            <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Fixed<br />Measure</th>
-            {isPO && <th colSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Measured Size</th>}
             <th colSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Final Size</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Area<br />(sq.ft.)</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Qty</th>
@@ -69,14 +67,8 @@ export default function PrintDoc({ quote, settings, type }: Props) {
             )}
           </tr>
           <tr>
-            {isPO && (
-              <>
-                <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Width(IN)</th>
-                <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Drop(IN)</th>
-              </>
-            )}
-            <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Width(IN)</th>
-            <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Drop(IN)</th>
+            <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Width({items[0]?.unit?.toUpperCase() || 'IN'})</th>
+            <th style={{ border: '1px solid #000', padding: '2px 4px', background: '#f0f0f0' }}>Drop({items[0]?.unit?.toUpperCase() || 'IN'})</th>
           </tr>
         </thead>
         <tbody>
@@ -88,19 +80,6 @@ export default function PrintDoc({ quote, settings, type }: Props) {
                 <small>{item.product_description}</small>
               </td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}>{item.location}</td>
-              <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center' }}>
-                {item.is_fixed ? 'Yes' : 'RC'}
-              </td>
-              {isPO && (
-                <>
-                  <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#008000', fontWeight: 700 }}>
-                    {item.unit === 'cm' ? item.measured_width.toFixed(1) : item.measured_width.toFixed(1)}
-                  </td>
-                  <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#008000', fontWeight: 700 }}>
-                    {item.measured_drop.toFixed(1)}
-                  </td>
-                </>
-              )}
               <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#0000ff', fontWeight: 700 }}>
                 {item.unit === 'cm'
                   ? (item.final_width / 2.54).toFixed(1)
@@ -143,8 +122,6 @@ export default function PrintDoc({ quote, settings, type }: Props) {
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
-              {isPO && <><td style={{ border: '1px solid #000', padding: '3px 4px' }}></td><td style={{ border: '1px solid #000', padding: '3px 4px' }}></td></>}
-              <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
@@ -184,7 +161,6 @@ export default function PrintDoc({ quote, settings, type }: Props) {
       {/* Totals */}
       <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '9pt' }}>
         <div>Total Area: {quote.total_area.toFixed(2)} sq.ft. &nbsp; No of panels: {quote.panel_count}</div>
-        <div>Sub Total: <strong>{phpFormat(quote.subtotal)}</strong></div>
         {isPO && <div>Total Cost: <strong>{phpFormat(totalCost)}</strong></div>}
         <div style={{ fontSize: '11pt', fontWeight: 700, borderTop: '1px solid #000', paddingTop: '4px', marginTop: '4px' }}>
           Total: {phpFormat(quote.total)}

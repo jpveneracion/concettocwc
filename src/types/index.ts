@@ -91,6 +91,7 @@ export interface QuotePayload {
   installation_fee: number;
   delivery_fee: number;
   items: Omit<QuoteItem, 'id' | 'quote_id'>[];
+  status?: QuoteStatus;
 }
 
 // Dashboard metrics

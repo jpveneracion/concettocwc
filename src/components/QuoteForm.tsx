@@ -53,6 +53,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
   const [address, setAddress] = useState(existing?.customer_address ?? '');
   const [date, setDate] = useState(existing?.quote_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [ref, setRef] = useState(existing?.our_ref ?? '');
+  const [status, setStatus] = useState(existing?.status ?? 'draft');
   const [installation, setInstallation] = useState(existing?.installation_fee ?? 0);
   const [delivery, setDelivery] = useState(existing?.delivery_fee ?? 0);
   const [rows, setRows] = useState<ItemRow[]>(
@@ -105,6 +106,14 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
   async function handleSubmit() {
     if (!customer.trim()) { alert('Customer name is required.'); return; }
     if (!rows.some((r) => r.area_sqft > 0)) { alert('Add at least one window with measurements.'); return; }
+
+    // Confirmation for status changes to approved or cancelled
+    if (existing && existing.status !== status) {
+      if ((status === 'approved' || status === 'cancelled') && !confirm(`Change status from "${existing.status}" to "${status}"?`)) {
+        return;
+      }
+    }
+
     setSaving(true);
     const payload = {
       quote_number: quoteNumber,
@@ -112,6 +121,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
       customer_address: address,
       quote_date: date,
       our_ref: ref,
+      status,
       installation_fee: installation,
       delivery_fee: delivery,
       items: rows.map(({ _key, ...rest }) => rest),
@@ -143,7 +153,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
             <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Quote number</label>
             <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 bg-gray-50" value={quoteNumber} readOnly />
@@ -151,6 +161,15 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Our ref</label>
             <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Optional" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Status</label>
+            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'approved' | 'cancelled')}>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="approved">Approved</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
           </div>
         </div>
       </div>

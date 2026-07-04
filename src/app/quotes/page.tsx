@@ -42,6 +42,29 @@ export default function QuotesPage() {
     fetchQuotes();
   }
 
+  async function changeStatus(id: string, currentStatus: string, newStatus: string, quoteNum: string) {
+    if (!confirm(`Change status for quote ${quoteNum} from "${currentStatus}" to "${newStatus}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/quotes/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error?.error || 'Failed to update status');
+        return;
+      }
+
+      fetchQuotes();
+    } catch (err) {
+      console.error('Failed to change status:', err);
+      alert('Failed to update status');
+    }
+  }
+
   const statusColor: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
     sent: 'bg-blue-100 text-blue-700',
@@ -96,7 +119,17 @@ export default function QuotesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={q.status}
+                        onChange={(e) => changeStatus(q.id, q.status, e.target.value, q.quote_number)}
+                        className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 bg-white"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="approved">Approved</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
                       <Link
                         href={`/quotes/${q.id}`}
                         className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"

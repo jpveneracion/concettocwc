@@ -103,6 +103,9 @@ async function migrate() {
 
   await sql`CREATE INDEX IF NOT EXISTS quote_items_quote_id_idx ON quote_items (quote_id)`;
 
+  // Drop NOT NULL constraint from customer_name (for encryption workflow)
+  await sql`ALTER TABLE quotes ALTER COLUMN customer_name DROP NOT NULL`;
+
   console.log('✅ Migrations complete.');
   process.exit(0);
 }
