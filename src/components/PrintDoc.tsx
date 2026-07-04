@@ -81,14 +81,10 @@ export default function PrintDoc({ quote, settings, type }: Props) {
               </td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}>{item.location}</td>
               <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#0000ff', fontWeight: 700 }}>
-                {item.unit === 'cm'
-                  ? (item.final_width / 2.54).toFixed(1)
-                  : item.final_width.toFixed(1)}
+                {item.final_width.toFixed(1)}
               </td>
               <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#0000ff', fontWeight: 700 }}>
-                {item.unit === 'cm'
-                  ? (item.final_drop / 2.54).toFixed(1)
-                  : item.final_drop.toFixed(1)}
+                {item.final_drop.toFixed(1)}
               </td>
               <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right' }}>
                 {item.area_sqft.toFixed(2)}
