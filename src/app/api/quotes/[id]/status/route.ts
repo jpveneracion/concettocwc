@@ -17,9 +17,9 @@ export async function PATCH(
     const { status } = body;
 
     // Validate status
-    if (!status || !['draft', 'sent', 'approved', 'cancelled'].includes(status)) {
+    if (!status || !['draft', 'sent', 'delivered', 'cancelled'].includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: draft, sent, approved, cancelled' },
+        { error: 'Invalid status. Must be one of: draft, sent, delivered, cancelled' },
         { status: 400 }
       );
     }

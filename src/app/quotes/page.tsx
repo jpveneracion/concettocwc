@@ -68,14 +68,14 @@ export default function QuotesPage() {
   const statusColor: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
     sent: 'bg-blue-100 text-blue-700',
-    approved: 'bg-green-100 text-green-700',
+    delivered: 'bg-green-100 text-green-700',
     cancelled: 'bg-red-100 text-red-600',
   };
 
   return (
     <AppLayout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Quotes</h1>
+        <h1 className="text-xl font-semibold">Orders</h1>
         <Link
           href="/quotes/new"
           className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
@@ -127,7 +127,7 @@ export default function QuotesPage() {
                       >
                         <option value="draft">Draft</option>
                         <option value="sent">Sent</option>
-                        <option value="approved">Approved</option>
+                        <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
                       </select>
                       <Link

@@ -97,9 +97,9 @@ export async function PUT(
     const panel_count = items.length;
 
     // Validate status if provided
-    if (status && !['draft', 'sent', 'approved', 'cancelled'].includes(status)) {
+    if (status && !['draft', 'sent', 'delivered', 'cancelled'].includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: draft, sent, approved, cancelled' },
+        { error: 'Invalid status. Must be one of: draft, sent, delivered, cancelled' },
         { status: 400 }
       );
     }

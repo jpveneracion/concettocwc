@@ -1,6 +1,6 @@
 export type Unit = 'sqft' | 'sqm';
 export type MeasureUnit = 'in' | 'cm';
-export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'cancelled';
+export type QuoteStatus = 'draft' | 'sent' | 'delivered' | 'cancelled';
 
 export interface Company {
   id: string;

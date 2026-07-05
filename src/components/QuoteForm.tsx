@@ -107,9 +107,15 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
     if (!customer.trim()) { alert('Customer name is required.'); return; }
     if (!rows.some((r) => r.area_sqft > 0)) { alert('Add at least one window with measurements.'); return; }
 
-    // Confirmation for status changes to approved or cancelled
+    // Prevent changes from delivered status
+    if (existing && existing.status === 'delivered') {
+      alert('Cannot change status from delivered.');
+      return;
+    }
+
+    // Confirmation for status changes to delivered or cancelled
     if (existing && existing.status !== status) {
-      if ((status === 'approved' || status === 'cancelled') && !confirm(`Change status from "${existing.status}" to "${status}"?`)) {
+      if ((status === 'delivered' || status === 'cancelled') && !confirm(`Change status from "${existing.status}" to "${status}"?`)) {
         return;
       }
     }
@@ -164,10 +170,10 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Status</label>
-            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'approved' | 'cancelled')}>
+            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}>
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
-              <option value="approved">Approved</option>
+              <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
