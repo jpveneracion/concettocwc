@@ -157,9 +157,8 @@ export default function PrintDoc({ quote, settings, type }: Props) {
       {/* Totals */}
       <div style={{ textAlign: 'right', marginTop: '8px', fontSize: '9pt' }}>
         <div>Total Area: {quote.total_area.toFixed(2)} sq.ft. &nbsp; No of panels: {quote.panel_count}</div>
-        {isPO && <div>Total Cost: <strong>{phpFormat(totalCost)}</strong></div>}
         <div style={{ fontSize: '11pt', fontWeight: 700, borderTop: '1px solid #000', paddingTop: '4px', marginTop: '4px' }}>
-          Total: {phpFormat(quote.total)}
+          Total: {phpFormat(isPO ? totalCost : quote.total)}
         </div>
       </div>
 
