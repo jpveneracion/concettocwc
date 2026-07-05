@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
       getPopularCollections(session.companyId, dateStart, dateEnd),
       // Top customers
       getTopCustomers(session.companyId, dateStart, dateEnd),
-      // Quote stats (total, approved, pending)
+      // Quote stats (total, delivered, pending)
       getQuoteStats(session.companyId, dateStart, dateEnd),
     ]);
 
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       profitMargin: profitAndCost.profitMargin,
       conversionRate,
       totalQuotes: quoteStats.total,
-      approvedQuotes: quoteStats.approved,
+      deliveredQuotes: quoteStats.delivered,
       pendingQuotes: quoteStats.pending,
       averageOrderValue,
       revenueTrends,
@@ -105,7 +105,7 @@ async function getMonthlySales(companyId: string, startDate: string, endDate: st
     SELECT COALESCE(SUM(total), 0) as sales
     FROM quotes
     WHERE company_id = ${companyId}
-      AND status IN ('approved', 'sent')
+      AND status IN ('delivered', 'sent')
       AND quote_date >= ${startDate}
       AND quote_date <= ${endDate}
   `;
@@ -122,7 +122,7 @@ async function getYearlySales(companyId: string): Promise<number> {
     SELECT COALESCE(SUM(total), 0) as sales
     FROM quotes
     WHERE company_id = ${companyId}
-      AND status IN ('approved', 'sent')
+      AND status IN ('delivered', 'sent')
       AND quote_date >= ${dateStart}
       AND quote_date <= ${dateEnd}
   `;
@@ -141,7 +141,7 @@ async function getProfitAndCost(
     FROM quote_items qi
     JOIN quotes q ON qi.quote_id = q.id
     WHERE q.company_id = ${companyId}
-      AND q.status IN ('approved', 'sent')
+      AND q.status IN ('delivered', 'sent')
       AND q.quote_date >= ${startDate}
       AND q.quote_date <= ${endDate}
   `;
@@ -157,7 +157,7 @@ async function getProfitAndCost(
 async function getConversionRate(companyId: string, startDate: string, endDate: string): Promise<number> {
   const result = await sql`
     SELECT
-      COUNT(*) FILTER (WHERE status = 'approved')::FLOAT / NULLIF(COUNT(*), 0) as rate
+      COUNT(*) FILTER (WHERE status = 'delivered')::FLOAT / NULLIF(COUNT(*), 0) as rate
     FROM quotes
     WHERE company_id = ${companyId}
       AND quote_date >= ${startDate}
@@ -171,7 +171,7 @@ async function getAverageOrderValue(companyId: string, startDate: string, endDat
     SELECT AVG(total) as avg_order
     FROM quotes
     WHERE company_id = ${companyId}
-      AND status IN ('approved', 'sent')
+      AND status IN ('delivered', 'sent')
       AND quote_date >= ${startDate}
       AND quote_date <= ${endDate}
   `;
@@ -186,7 +186,7 @@ async function getRevenueTrends(companyId: string) {
       SUM(total) as revenue
     FROM quotes
     WHERE company_id = ${companyId}
-      AND status IN ('approved', 'sent')
+      AND status IN ('delivered', 'sent')
       AND quote_date >= date_trunc('month', CURRENT_DATE - INTERVAL '5 months')
     GROUP BY month, month_num
     ORDER BY month_num
@@ -211,7 +211,7 @@ async function getPopularCollections(
     FROM quote_items qi
     JOIN quotes q ON qi.quote_id = q.id
     WHERE q.company_id = ${companyId}
-      AND q.status IN ('approved', 'sent')
+      AND q.status IN ('delivered', 'sent')
       AND q.quote_date >= ${startDate}
       AND q.quote_date <= ${endDate}
     GROUP BY product_collection
@@ -234,7 +234,7 @@ async function getTopCustomers(companyId: string, startDate: string, endDate: st
       COUNT(*) as quote_count
     FROM quotes
     WHERE company_id = ${companyId}
-      AND status IN ('approved', 'sent')
+      AND status IN ('delivered', 'sent')
       AND quote_date >= ${startDate}
       AND quote_date <= ${endDate}
     GROUP BY customer_name_encrypted
@@ -255,8 +255,8 @@ async function getQuoteStats(companyId: string, startDate: string, endDate: stri
   const result = await sql`
     SELECT
       COUNT(*) as total,
-      COUNT(*) FILTER (WHERE status = 'approved') as approved,
-      COUNT(*) FILTER (WHERE status NOT IN ('approved', 'cancelled')) as pending
+      COUNT(*) FILTER (WHERE status = 'delivered') as delivered,
+      COUNT(*) FILTER (WHERE status NOT IN ('delivered', 'cancelled')) as pending
     FROM quotes
     WHERE company_id = ${companyId}
       AND quote_date >= ${startDate}
@@ -265,7 +265,7 @@ async function getQuoteStats(companyId: string, startDate: string, endDate: stri
 
   return {
     total: Number(result[0]?.total || 0),
-    approved: Number(result[0]?.approved || 0),
+    delivered: Number(result[0]?.delivered || 0),
     pending: Number(result[0]?.pending || 0),
   };
 }
