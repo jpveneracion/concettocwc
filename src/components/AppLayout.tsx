@@ -18,8 +18,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!res.ok) {
+        console.error('Logout failed');
+        return;
+      }
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   }
 
   return (
@@ -32,33 +40,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          aria-label="Open navigation menu"
+          aria-expanded={mobileMenuOpen}
         >
           ☰
         </button>
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-52 md:flex-shrink-0 lg:w-52 lg:flex-shrink-0 bg-white border-r border-gray-200 flex-col p-4 gap-1">
+      <aside className="hidden md:flex md:w-52 md:flex-shrink-0 lg:w-52 lg:flex-shrink-0 bg-white border-r border-gray-200 flex-col p-4 gap-1" aria-label="Main navigation">
         <div className="text-lg font-semibold text-blue-600 mb-4 pb-4 border-b border-gray-200">
           🏪 Concetto
         </div>
-        {navItems.map((item) => {
-          const active = pathname === item.href || (item.href !== '/quotes' && pathname.startsWith(item.href));
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                active
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+        <nav role="navigation" aria-label="Main navigation">
+          {navItems.map((item) => {
+            const active = pathname === item.href || (item.href !== '/quotes' && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  active
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <span>{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
         <div className="mt-auto pt-4 border-t border-gray-200">
           <Link
             href="/change-password"
@@ -68,6 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Change Password
           </Link>
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 w-full"
           >
