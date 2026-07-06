@@ -49,6 +49,7 @@ export default function PrintDoc({ quote, settings, type }: Props) {
         <thead>
           <tr>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>S/#</th>
+            <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Product Code</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Description</th>
             <th rowSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Loc</th>
             <th colSpan={2} style={{ border: '1px solid #000', padding: '3px 4px', background: '#f0f0f0' }}>Final Size</th>
@@ -75,6 +76,9 @@ export default function PrintDoc({ quote, settings, type }: Props) {
           {items.map((item, i) => (
             <tr key={item.id}>
               <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center' }}>{i + 1}</td>
+              <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'center', fontWeight: 700, fontSize: '9pt' }}>
+                {item.product_code || '-'}
+              </td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}>
                 {item.product_collection}<br />
                 <small>{item.product_description}</small>
@@ -115,6 +119,7 @@ export default function PrintDoc({ quote, settings, type }: Props) {
           {Array.from({ length: Math.max(0, 8 - items.length) }).map((_, i) => (
             <tr key={`blank-${i}`}>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}>&nbsp;</td>
+              <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
               <td style={{ border: '1px solid #000', padding: '3px 4px' }}></td>
