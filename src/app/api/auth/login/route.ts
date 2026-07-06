@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const emailHash = hashEmailForSearch(email);
 
     // Find user with company using email_hash for authentication
-    const users = await sql`
+    let users = await sql`
       SELECT
         users.id as user_id,
         users.email,
@@ -32,6 +32,22 @@ export async function POST(req: Request) {
       JOIN companies ON companies.id = users.company_id
       WHERE users.email_hash = ${emailHash}
     `;
+
+    // Fallback to email search if email_hash not found (for users without email_hash populated)
+    if (users.length === 0) {
+      users = await sql`
+        SELECT
+          users.id as user_id,
+          users.email,
+          users.email_encrypted,
+          users.password_hash,
+          companies.id as company_id,
+          companies.code as company_code
+        FROM users
+        JOIN companies ON companies.id = users.company_id
+        WHERE users.email = ${email.toLowerCase().trim()}
+      `;
+    }
 
     if (users.length === 0) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
