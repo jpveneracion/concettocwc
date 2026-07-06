@@ -1,0 +1,101 @@
+'use client';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+interface MobileNavProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+  { href: '/quotes', label: 'Orders', icon: '📄' },
+  { href: '/quotes/new', label: 'New quote', icon: '➕' },
+  { href: '/products', label: 'Products', icon: '🏷️' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
+];
+
+export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  }
+
+  function handleItemClick(href: string) {
+    onClose();
+    if (href !== pathname) {
+      router.push(href);
+    }
+  }
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        onClick={onClose}
+      />
+
+      {/* Slide-in drawer */}
+      <div className="fixed inset-y-0 left-0 w-72 bg-white z-50 shadow-xl md:hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="text-lg font-semibold text-blue-600">
+            🏪 Concetto
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Navigation items */}
+        <nav className="flex-1 overflow-y-auto p-4">
+          {navItems.map((item) => {
+            const active = pathname === item.href ||
+              (item.href !== '/quotes' && pathname.startsWith(item.href));
+            return (
+              <button
+                key={item.href}
+                onClick={() => handleItemClick(item.href)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors mb-1 ${
+                  active
+                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Footer actions */}
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={() => handleItemClick('/change-password')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-gray-600 hover:bg-gray-100 mb-1"
+          >
+            <span className="text-xl">🔒</span>
+            Change Password
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-gray-600 hover:bg-gray-100"
+          >
+            <span className="text-xl">🚪</span>
+            Logout
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
