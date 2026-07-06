@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+
+// Hash email for searchable authentication
+function hashEmailForSearch(email: string): string {
+  return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
+}
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +26,7 @@ export async function POST(req: Request) {
 
     const companyCode = company.code.toUpperCase().trim();
     const userEmail = user.email.toLowerCase().trim();
+    const emailHash = hashEmailForSearch(userEmail);
 
     // Check if company code already exists
     const existingCompany = await sql`
@@ -29,9 +36,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Company code already exists' }, { status: 409 });
     }
 
-    // Check if user email already exists
+    // Check if user email already exists using email_hash
     const existingUser = await sql`
-      SELECT id FROM users WHERE UPPER(email) = ${userEmail}
+      SELECT id FROM users WHERE email_hash = ${emailHash}
     `;
     if (existingUser.length > 0) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
@@ -54,10 +61,10 @@ export async function POST(req: Request) {
       RETURNING id, code, name
     `;
 
-    // Create user linked to company
+    // Create user linked to company with email_hash for authentication
     const [newUser] = await sql`
-      INSERT INTO users (company_id, email, password_hash)
-      VALUES (${newCompany.id}, ${userEmail}, ${passwordHash})
+      INSERT INTO users (company_id, email, email_hash, password_hash)
+      VALUES (${newCompany.id}, ${userEmail}, ${emailHash}, ${passwordHash})
       RETURNING id, email
     `;
 
