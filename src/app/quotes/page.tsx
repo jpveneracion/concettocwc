@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import ResponsiveTable from '@/components/ResponsiveTable';
@@ -11,9 +11,7 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { fetchQuotes(); }, []);
-
-  async function fetchQuotes() {
+  const fetchQuotes = useCallback(async () => {
     try {
       const res = await fetch('/api/quotes');
       const data = await res.json();
@@ -35,16 +33,26 @@ export default function QuotesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function deleteQuote(id: string, num: string) {
-    if (!confirm(`Delete quote ${num}?`)) return;
-    await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
-    fetchQuotes();
-  }
+  const deleteQuote = useCallback(async (id: string, num: string) => {
+    if (!window.confirm(`Delete quote ${num}?`)) return;
 
-  async function changeStatus(id: string, currentStatus: string, newStatus: string, quoteNum: string) {
-    if (!confirm(`Change status for quote ${quoteNum} from "${currentStatus}" to "${newStatus}"?`)) return;
+    try {
+      const res = await fetch(`/api/quotes/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Delete failed:', error?.error || 'Unknown error');
+        return;
+      }
+      fetchQuotes();
+    } catch (err) {
+      console.error('Delete error:', err);
+    }
+  }, [fetchQuotes]);
+
+  const changeStatus = useCallback(async (id: string, currentStatus: string, newStatus: string, quoteNum: string) => {
+    if (!window.confirm(`Change status for quote ${quoteNum} from "${currentStatus}" to "${newStatus}"?`)) return;
 
     try {
       const res = await fetch(`/api/quotes/${id}/status`, {
@@ -55,16 +63,17 @@ export default function QuotesPage() {
 
       if (!res.ok) {
         const error = await res.json();
-        alert(error?.error || 'Failed to update status');
+        console.error('Status change failed:', error?.error || 'Unknown error');
         return;
       }
 
       fetchQuotes();
     } catch (err) {
-      console.error('Failed to change status:', err);
-      alert('Failed to update status');
+      console.error('Status change error:', err);
     }
-  }
+  }, [fetchQuotes]);
+
+  useEffect(() => { fetchQuotes(); }, [fetchQuotes]);
 
   const statusColor: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
@@ -122,24 +131,28 @@ export default function QuotesPage() {
             <Link
               href={`/quotes/${quote.id}`}
               className="px-3 py-2 text-sm border border-gray-300 rounded text-center hover:bg-gray-50"
+              aria-label="Edit quote"
             >
               ✏️ Edit
             </Link>
             <Link
               href={`/quotes/${quote.id}?print=quotation`}
               className="px-3 py-2 text-sm border border-gray-300 rounded text-center hover:bg-gray-50"
+              aria-label="Print quotation"
             >
               🖨️ Quote
             </Link>
             <Link
               href={`/quotes/${quote.id}?print=po`}
               className="px-3 py-2 text-sm border border-gray-300 rounded text-center hover:bg-gray-50"
+              aria-label="Print purchase order"
             >
               🚚 PO
             </Link>
             <button
               onClick={() => deleteQuote(quote.id, quote.quote_number)}
               className="px-3 py-2 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
+              aria-label="Delete quote"
             >
               🗑️ Delete
             </button>
@@ -188,24 +201,28 @@ export default function QuotesPage() {
                   <Link
                     href={`/quotes/${q.id}`}
                     className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                    aria-label="Edit quote"
                   >
                     ✏️ Edit
                   </Link>
                   <Link
                     href={`/quotes/${q.id}?print=quotation`}
                     className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                    aria-label="Print quotation"
                   >
                     🖨️ Quote
                   </Link>
                   <Link
                     href={`/quotes/${q.id}?print=po`}
                     className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                    aria-label="Print purchase order"
                   >
                     🚚 PO
                   </Link>
                   <button
                     onClick={() => deleteQuote(q.id, q.quote_number)}
                     className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
+                    aria-label="Delete quote"
                   >
                     🗑️
                   </button>
@@ -225,6 +242,7 @@ export default function QuotesPage() {
         <Link
           href="/quotes/new"
           className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          aria-label="Create new quote"
         >
           ➕ New quote
         </Link>
