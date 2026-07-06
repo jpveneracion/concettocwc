@@ -1,6 +1,8 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useState } from 'react';
+import MobileNav from './MobileNav';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -13,6 +15,7 @@ const navItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -20,8 +23,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <aside className="w-52 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-4 gap-1">
+    <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row md:h-screen md:overflow-hidden">
+      {/* Mobile header */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
+        <div className="text-lg font-semibold text-blue-600">
+          🏪 Concetto
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+        >
+          ☰
+        </button>
+      </div>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:w-52 md:flex-shrink-0 lg:w-52 lg:flex-shrink-0 bg-white border-r border-gray-200 flex-col p-4 gap-1">
         <div className="text-lg font-semibold text-blue-600 mb-4 pb-4 border-b border-gray-200">
           🏪 Concetto
         </div>
@@ -59,7 +76,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+      {/* Mobile navigation */}
+      <MobileNav
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto p-3 md:p-6">{children}</main>
     </div>
   );
 }
