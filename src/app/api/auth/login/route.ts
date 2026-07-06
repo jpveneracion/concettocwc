@@ -25,6 +25,7 @@ export async function POST(req: Request) {
         users.id as user_id,
         users.email,
         users.email_encrypted,
+        users.email_hash,
         users.password_hash,
         companies.id as company_id,
         companies.code as company_code
@@ -34,12 +35,14 @@ export async function POST(req: Request) {
     `;
 
     // Fallback to email search if email_hash not found (for users without email_hash populated)
+    let foundViaEmailFallback = false;
     if (users.length === 0) {
       users = await sql`
         SELECT
           users.id as user_id,
           users.email,
           users.email_encrypted,
+          users.email_hash,
           users.password_hash,
           companies.id as company_id,
           companies.code as company_code
@@ -47,6 +50,7 @@ export async function POST(req: Request) {
         JOIN companies ON companies.id = users.company_id
         WHERE users.email = ${email.toLowerCase().trim()}
       `;
+      foundViaEmailFallback = users.length > 0;
     }
 
     if (users.length === 0) {
@@ -59,6 +63,17 @@ export async function POST(req: Request) {
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    // Auto-populate email_hash if user was found via email fallback and password is correct
+    if (foundViaEmailFallback && user.email && !user.email_hash) {
+      const autoEmailHash = hashEmailForSearch(user.email);
+      await sql`
+        UPDATE users
+        SET email_hash = ${autoEmailHash}
+        WHERE id = ${user.user_id}
+      `;
+      console.log(`Auto-populated email_hash for user ${user.user_id} (${user.email})`);
     }
 
     // Check if using default password
