@@ -1,6 +1,6 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -15,21 +15,29 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
-export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
+function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  }
+  const handleLogout = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!res.ok) {
+        console.error('Logout failed');
+        return;
+      }
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  }, [router]);
 
-  function handleItemClick(href: string) {
+  const handleItemClick = useCallback((href: string) => {
     onClose();
     if (href !== pathname) {
       router.push(href);
     }
-  }
+  }, [pathname, onClose]);
 
   if (!isOpen) return null;
 
@@ -39,6 +47,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
       <div
         className="fixed inset-0 bg-black/50 z-40 md:hidden"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Slide-in drawer */}
@@ -51,13 +60,18 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
           <button
             onClick={onClose}
             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            aria-label="Close navigation"
           >
             ✕
           </button>
         </div>
 
         {/* Navigation items */}
-        <nav className="flex-1 overflow-y-auto p-4">
+        <nav
+          className="flex-1 overflow-y-auto p-4"
+          role="navigation"
+          aria-label="Main navigation"
+        >
           {navItems.map((item) => {
             const active = pathname === item.href ||
               (item.href !== '/quotes' && pathname.startsWith(item.href));
@@ -70,6 +84,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
                     ? 'bg-blue-50 text-blue-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
+                aria-current={active ? 'page' : undefined}
               >
                 <span className="text-xl">{item.icon}</span>
                 {item.label}
@@ -99,3 +114,5 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
     </>
   );
 }
+
+export default memo(MobileNav);
