@@ -13,7 +13,7 @@ function newRow(): ProductRow {
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[] | null>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [shared, setShared] = useState(emptySharedState);
@@ -28,7 +28,7 @@ export default function ProductsPage() {
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) {
         setError(data?.error || 'Failed to load products.');
-        setProducts(null);
+        setProducts([]);
       } else {
         setProducts(data);
         setError(null);
@@ -36,7 +36,7 @@ export default function ProductsPage() {
     } catch (err) {
       console.error('Fetch products failed', err);
       setError('Unable to load products.');
-      setProducts(null);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -47,10 +47,13 @@ export default function ProductsPage() {
   }, []);
 
   const removeProductRow = useCallback((key: string) => {
-    if (productRows.length > 1) {
-      setProductRows((prev) => prev.filter((r) => r._key !== key));
-    }
-  }, [productRows.length]);
+    setProductRows((prev) => {
+      if (prev.length > 1) {
+        return prev.filter((r) => r._key !== key);
+      }
+      return prev;
+    });
+  }, []);
 
   const updateProductRow = useCallback((key: string, field: 'code' | 'description', value: string) => {
     setProductRows((prev) =>
@@ -292,7 +295,7 @@ export default function ProductsPage() {
           <div className="p-12 text-center text-gray-400">Loading...</div>
         ) : error ? (
           <div className="p-12 text-center text-red-600">{error}</div>
-        ) : !products || products.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="p-12 text-center text-gray-400">No products found.</div>
         ) : (
           <ResponsiveTable
