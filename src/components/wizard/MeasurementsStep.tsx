@@ -1,0 +1,264 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useWizard } from '@/components/QuoteWizard';
+import type { QuoteItem, MeasureUnit } from '@/types';
+import { calcFinalSize, calcAreaSqft } from '@/lib/calc';
+
+interface MeasurementData {
+  items: QuoteItem[];
+}
+
+interface MeasurementsStepProps {
+  existingData?: MeasurementData;
+}
+
+type ItemRow = Omit<QuoteItem, 'id' | 'quote_id'> & { _key: string };
+
+function newRow(order: number): ItemRow {
+  return {
+    _key: crypto.randomUUID(),
+    sort_order: order,
+    location: '',
+    product_id: null,
+    product_code: '',
+    product_collection: '',
+    product_description: '',
+    unit: 'in' as MeasureUnit,
+    is_fixed: true,
+    measured_width: 0,
+    measured_drop: 0,
+    final_width: 0,
+    final_drop: 0,
+    area_sqft: 0,
+    retail_price_sqft: 0,
+    supplier_cost_sqft: 0,
+    retail_amount: 0,
+    supplier_amount: 0,
+  };
+}
+
+function recomputeRow(row: ItemRow): ItemRow {
+  const { final_width, final_drop } = calcFinalSize(
+    row.measured_width,
+    row.measured_drop,
+    row.is_fixed,
+    row.unit as MeasureUnit
+  );
+  const area_sqft = calcAreaSqft(final_width, final_drop, row.unit as MeasureUnit);
+
+  return {
+    ...row,
+    final_width,
+    final_drop,
+    area_sqft,
+    // Calculate amounts if prices are available
+    retail_amount: area_sqft * row.retail_price_sqft,
+    supplier_amount: area_sqft * row.supplier_cost_sqft,
+  };
+}
+
+export default function MeasurementsStep({ existingData }: MeasurementsStepProps) {
+  const { setStepData, getStepData } = useWizard();
+
+  const [rows, setRows] = useState<ItemRow[]>(
+    existingData?.items?.length
+      ? existingData.items.map((item, index) => ({
+          ...item,
+          _key: crypto.randomUUID(),
+          sort_order: index,
+        }))
+      : [newRow(0)]
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const data: MeasurementData = {
+      items: rows.map(({ _key, ...rest }) => ({
+        ...rest,
+        id: '',
+        quote_id: '',
+      })),
+    };
+    setStepData('measurements', data);
+  }, [rows, setStepData]);
+
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!rows.some((r) => r.area_sqft > 0)) {
+      newErrors.items = 'Add at least one window with measurements';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  // Expose validation function to parent wizard
+  useEffect(() => {
+    (window as any).__measurementsStepValidation = validate;
+    return () => {
+      delete (window as any).__measurementsStepValidation;
+    };
+  }, [rows]);
+
+  const updateRow = (key: string, patch: Partial<ItemRow>) => {
+    setRows((prev) =>
+      prev.map((r) => (r._key === key ? recomputeRow({ ...r, ...patch }) : r))
+    );
+  };
+
+  const addRow = () => {
+    setRows((prev) => [...prev, newRow(prev.length)]);
+  };
+
+  const removeRow = (key: string) => {
+    setRows((prev) => {
+      const filtered = prev.filter((r) => r._key !== key);
+      // Renumber remaining rows
+      return filtered.map((r, index) => ({ ...r, sort_order: index }));
+    });
+  };
+
+  const totalArea = rows.reduce((sum, row) => sum + row.area_sqft, 0);
+  const panelCount = rows.filter((r) => r.area_sqft > 0).length;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-700 mb-4">Window Measurements</h3>
+
+      <div className="space-y-4">
+        {rows.map((row, idx) => (
+          <div key={row._key} className="border border-gray-200 rounded-xl p-4 bg-white">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm font-medium text-gray-700">Window #{idx + 1}</span>
+              {rows.length > 1 && (
+                <button
+                  onClick={() => removeRow(row._key)}
+                  className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50"
+                >
+                  🗑️ Remove
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Location */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Location</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={row.location}
+                  onChange={(e) => updateRow(row._key, { location: e.target.value })}
+                  placeholder="e.g. Living Room"
+                />
+              </div>
+
+              {/* Measurement Unit */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Measurement Unit</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={row.unit}
+                  onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}
+                >
+                  <option value="in">Inches</option>
+                  <option value="cm">Centimeters</option>
+                </select>
+              </div>
+
+              {/* Fixed/Non-fixed */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Measurement Type</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={row.is_fixed ? 'yes' : 'no'}
+                  onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}
+                >
+                  <option value="yes">Fixed (as-is)</option>
+                  <option value="no">Non-fixed (+{row.unit === 'cm' ? '15cm' : '6in'} overlap)</option>
+                </select>
+              </div>
+
+              {/* Width */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Width ({row.unit})</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={row.measured_width || ''}
+                  onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.0"
+                />
+              </div>
+
+              {/* Drop */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Drop ({row.unit})</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  value={row.measured_drop || ''}
+                  onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.0"
+                />
+              </div>
+
+              {/* Results display */}
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-gray-500">Final Width ({row.unit})</p>
+                    <p className="text-sm font-medium text-blue-700">{row.final_width.toFixed(1)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Final Drop ({row.unit})</p>
+                    <p className="text-sm font-medium text-blue-700">{row.final_drop.toFixed(1)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Area (sq.ft.)</p>
+                    <p className="text-sm font-medium">{row.area_sqft.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {errors.items && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-600">{errors.items}</p>
+          </div>
+        )}
+
+        <button
+          onClick={addRow}
+          className="w-full text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center"
+        >
+          ➕ Add Another Window
+        </button>
+      </div>
+
+      {/* Summary */}
+      {panelCount > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-600">Total Windows</p>
+              <p className="text-lg font-semibold text-blue-700">{panelCount}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Total Area</p>
+              <p className="text-lg font-semibold text-blue-700">{totalArea.toFixed(2)} sq.ft.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500">Add at least one window with measurements to continue</p>
+    </div>
+  );
+}

@@ -8,21 +8,21 @@ interface TrendChartProps {
 
 export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trends</h3>
-      <ResponsiveContainer width="100%" height={200}>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
+      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Revenue Trends</h3>
+      <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="month"
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={10}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             stroke="#6b7280"
-            fontSize={12}
+            fontSize={10}
             tickLine={false}
             axisLine={false}
             tickFormatter={(value) => {
@@ -47,6 +47,7 @@ export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) 
               backgroundColor: 'white',
               border: '1px solid #e5e7eb',
               borderRadius: '8px',
+              fontSize: '12px',
             }}
             formatter={(value: any) => {
               const localeMap: Record<string, string> = {

@@ -1,28 +1,21 @@
 'use client';
-import { useState, createContext, useContext, ReactNode } from 'react';
+import { useState, createContext, useContext } from 'react';
 
 interface QuoteWizardProps {
-  children: ReactNode;
-  onComplete: (data: Record<string, any>) => void;
+  quoteNumber: string;
+  existingData?: any;
+  onComplete: (data: Record<string, unknown>) => void;
 }
 
 type WizardStep = 'customer' | 'measurements' | 'products' | 'review';
-
-interface StepConfig {
-  key: WizardStep;
-  label: string;
-  number: number;
-  content: ReactNode;
-  validation?: () => boolean;
-}
 
 interface WizardContextType {
   currentStep: WizardStep;
   goToStep: (step: WizardStep) => void;
   nextStep: () => void;
   previousStep: () => void;
-  setStepData: (step: WizardStep, data: any) => void;
-  getStepData: (step: WizardStep) => any;
+  setStepData: (step: WizardStep, data: unknown) => void;
+  getStepData: (step: WizardStep) => unknown;
 }
 
 const WizardContext = createContext<WizardContextType | null>(null);
@@ -35,71 +28,110 @@ export function useWizard() {
   return context;
 }
 
-export default function QuoteWizard({ children, onComplete }: QuoteWizardProps) {
+// Import step components
+import CustomerStep from './wizard/CustomerStep';
+import MeasurementsStep from './wizard/MeasurementsStep';
+import ProductsStep from './wizard/ProductsStep';
+import ReviewStep from './wizard/ReviewStep';
+
+const STEP_COMPONENTS: Record<WizardStep, React.ComponentType<any>> = {
+  customer: CustomerStep,
+  measurements: MeasurementsStep,
+  products: ProductsStep,
+  review: ReviewStep,
+};
+
+const STEP_LABELS: Record<WizardStep, string> = {
+  customer: 'Customer',
+  measurements: 'Measurements',
+  products: 'Products',
+  review: 'Review',
+};
+
+const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'products', 'review'];
+
+export default function QuoteWizard({ quoteNumber, existingData, onComplete }: QuoteWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('customer');
-  const [stepData, setStepDataState] = useState<Record<WizardStep, any>>({
+  const [stepData, setStepDataState] = useState<Record<WizardStep, unknown>>({
     customer: null,
     measurements: null,
     products: null,
     review: null,
   });
 
-  const [stepConfigs, setStepConfigs] = useState<StepConfig[]>([]);
+  const currentStepIndex = STEP_ORDER.indexOf(currentStep);
+  const CurrentStepComponent = STEP_COMPONENTS[currentStep];
 
-  const registerStep = (step: WizardStep, content: ReactNode, validation?: () => boolean) => {
-    setStepConfigs(prev => {
-      const existing = prev.findIndex(s => s.key === step);
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = { key: step, label: getStepLabel(step), number: existing + 1, content, validation };
-        return updated;
-      }
-      return [...prev, { key: step, label: getStepLabel(step), number: prev.length + 1, content, validation }];
-    });
-  };
-
-  const getStepLabel = (step: WizardStep): string => {
-    const labels: Record<WizardStep, string> = {
-      customer: 'Customer',
-      measurements: 'Measurements',
-      products: 'Products',
-      review: 'Review'
-    };
-    return labels[step];
-  };
-
-  const currentStepIndex = stepConfigs.findIndex(s => s.key === currentStep);
-  const currentConfig = stepConfigs[currentStepIndex];
-
-  const setStepData = (step: WizardStep, data: any) => {
-    setStepDataState(prev => ({ ...prev, [step]: data }));
+  const setStepData = (step: WizardStep, data: unknown) => {
+    setStepDataState((prev) => ({ ...prev, [step]: data }));
   };
 
   const getStepData = (step: WizardStep) => stepData[step];
 
+  const validateCurrentStep = (): boolean => {
+    // Try to call the step's validation function if it exists
+    const validationFn = (window as any)[`__${currentStep}StepValidation`];
+    if (typeof validationFn === 'function') {
+      return validationFn();
+    }
+    return true; // Default to valid if no validation function
+  };
+
   const goToStep = (step: WizardStep) => {
-    const stepIndex = stepConfigs.findIndex(s => s.key === step);
+    const stepIndex = STEP_ORDER.indexOf(step);
     // Allow going back or to next valid step
-    if (stepIndex <= currentStepIndex || (stepIndex >= 0 && stepConfigs[stepIndex]?.validation?.())) {
+    if (stepIndex <= currentStepIndex) {
+      setCurrentStep(step);
+    } else if (validateCurrentStep()) {
       setCurrentStep(step);
     }
   };
 
   const nextStep = () => {
-    if (currentConfig?.validation && !currentConfig.validation()) {
+    if (!validateCurrentStep()) {
       return; // Don't proceed if current step is invalid
     }
 
-    if (currentStepIndex < stepConfigs.length - 1 && currentStepIndex >= 0) {
-      setCurrentStep(stepConfigs[currentStepIndex + 1].key);
+    if (currentStepIndex < STEP_ORDER.length - 1) {
+      setCurrentStep(STEP_ORDER[currentStepIndex + 1]);
     } else {
+      // Submit the quote
       onComplete(stepData);
     }
   };
 
   const previousStep = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(stepConfigs[currentStepIndex - 1].key);
+      setCurrentStep(STEP_ORDER[currentStepIndex - 1]);
+    }
+  };
+
+  // Get step-specific props
+  const getStepProps = (): any => {
+    switch (currentStep) {
+      case 'customer':
+        return {
+          quoteNumber,
+          existingData: existingData ? {
+            customer_name: existingData.customer_name,
+            customer_address: existingData.customer_address,
+            quote_date: existingData.quote_date,
+            our_ref: existingData.our_ref,
+            status: existingData.status,
+          } : undefined,
+        };
+      case 'measurements':
+        return {
+          existingData: stepData.measurements as any,
+        };
+      case 'products':
+        return {
+          existingData: stepData.products as any,
+        };
+      case 'review':
+        return {};
+      default:
+        return {};
     }
   };
 
@@ -109,17 +141,17 @@ export default function QuoteWizard({ children, onComplete }: QuoteWizardProps) 
         {/* Progress indicator */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4" role="navigation" aria-label="Wizard progress">
-            {stepConfigs.length > 0 ? stepConfigs.map((step, index) => {
+            {STEP_ORDER.map((step, index) => {
               const isCompleted = index < currentStepIndex;
-              const isCurrent = step.key === currentStep;
+              const isCurrent = step === currentStep;
               const isDisabled = index > currentStepIndex;
 
               return (
-                <div key={step.key} className="flex items-center flex-1">
+                <div key={step} className="flex items-center flex-1">
                   <button
-                    onClick={() => goToStep(step.key)}
+                    onClick={() => goToStep(step)}
                     disabled={isDisabled}
-                    aria-label={`Go to ${step.label} step`}
+                    aria-label={`Go to ${STEP_LABELS[step]} step`}
                     aria-current={isCurrent ? 'step' : undefined}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
                       isCurrent
@@ -127,11 +159,11 @@ export default function QuoteWizard({ children, onComplete }: QuoteWizardProps) 
                         : isCompleted
                         ? 'bg-blue-100 text-blue-600'
                         : 'bg-gray-100 text-gray-400'
-                    } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                    } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-blue-200'}`}
                   >
                     {index + 1}
                   </button>
-                  {index < stepConfigs.length - 1 && (
+                  {index < STEP_ORDER.length - 1 && (
                     <div
                       className={`flex-1 h-1 mx-2 ${
                         index < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'
@@ -141,33 +173,33 @@ export default function QuoteWizard({ children, onComplete }: QuoteWizardProps) 
                   )}
                 </div>
               );
-            }) : (
-              <div className="text-gray-400 text-sm">Loading wizard...</div>
-            )}
+            })}
           </div>
-          {stepConfigs.length > 0 && (
-            <div className="hidden md:flex justify-between text-sm text-gray-600">
-              {stepConfigs.map((step) => (
-                <div key={step.key} className={`flex-1 text-center ${
-                  step.key === currentStep ? 'font-medium text-blue-600' : ''
-                }`}>
-                  {step.label}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="hidden md:flex justify-between text-sm text-gray-600">
+            {STEP_ORDER.map((step) => (
+              <div key={step} className={`flex-1 text-center ${
+                step === currentStep ? 'font-medium text-blue-600' : ''
+              }`}>
+                {STEP_LABELS[step]}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Wizard content - render current step */}
         <div className="mb-6">
-          {currentConfig?.content || <div className="text-gray-400">Step content not loaded</div>}
+          {CurrentStepComponent ? (
+            <CurrentStepComponent {...getStepProps()} />
+          ) : (
+            <div className="text-gray-400">Step component not loaded</div>
+          )}
         </div>
 
         {/* Navigation buttons */}
         <div className="flex justify-between pt-4 border-t border-gray-200">
           <button
             onClick={previousStep}
-            disabled={currentStepIndex <= 0}
+            disabled={currentStepIndex === 0}
             aria-label="Go to previous step"
             className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -175,10 +207,10 @@ export default function QuoteWizard({ children, onComplete }: QuoteWizardProps) 
           </button>
           <button
             onClick={nextStep}
-            aria-label={currentStepIndex >= stepConfigs.length - 1 ? 'Submit quote' : 'Go to next step'}
+            aria-label={currentStepIndex >= STEP_ORDER.length - 1 ? 'Submit quote' : 'Go to next step'}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
-            {currentStepIndex >= stepConfigs.length - 1 ? 'Submit' : 'Next'}
+            {currentStepIndex >= STEP_ORDER.length - 1 ? 'Submit' : 'Next'}
           </button>
         </div>
       </div>
