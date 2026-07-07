@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import QuoteForm from '@/components/QuoteForm';
 import PrintDoc from '@/components/PrintDoc';
+import DemoWatermark from '@/components/DemoWatermark';
 import type { Quote, Settings } from '@/types';
 
 function QuoteDetailPage() {
@@ -46,12 +47,14 @@ function QuoteDetailPage() {
             <a href={`/quotes/${id}`} className="px-3 py-1 border border-gray-300 rounded text-xs">Back to edit</a>
           </div>
         </div>
-        <div className="print-only" ref={printRef}>
-          <PrintDoc quote={quote} settings={settings} type={printType} />
-        </div>
-        <div className="no-print p-8 max-w-4xl mx-auto">
-          <PrintDoc quote={quote} settings={settings} type={printType} />
-        </div>
+        <DemoWatermark subscriptionStatus={settings.subscription_status}>
+          <div className="print-only" ref={printRef}>
+            <PrintDoc quote={quote} settings={settings} type={printType} />
+          </div>
+          <div className="no-print p-8 max-w-4xl mx-auto">
+            <PrintDoc quote={quote} settings={settings} type={printType} />
+          </div>
+        </DemoWatermark>
       </>
     );
   }
