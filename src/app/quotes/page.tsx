@@ -187,7 +187,7 @@ export default function QuotesPage() {
                 </span>
               </td>
               <td className="px-4 py-3">
-                <div className="flex gap-2 items-center">
+                <div className="flex flex-wrap gap-1 lg:gap-2 items-center">
                   <select
                     value={q.status}
                     onChange={(e) => changeStatus(q.id, q.status, e.target.value, q.quote_number)}
