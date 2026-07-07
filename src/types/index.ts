@@ -27,6 +27,7 @@ export interface Settings {
   del_note: string;
   closing_note: string;
   updated_at: string;
+  subscription_status: 'demo' | 'trial' | 'active' | 'past_due';
 }
 
 export interface Product {
