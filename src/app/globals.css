@@ -36,3 +36,17 @@
 .print-doc td { border: 1px solid #000; padding: 3px 5px; }
 .print-doc .highlight { color: #0000ff; font-weight: 700; }
 .print-doc .measured { color: #008000; font-weight: 700; }
+
+/* ── Demo Watermark Styles ──────────────────────────────────── */
+@media print {
+  .demo-watermark {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
