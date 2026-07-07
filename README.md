@@ -14,6 +14,7 @@ Stack: **Next.js 14 (App Router) · TypeScript · Tailwind CSS · Neon (PostgreS
   - **Customer Quotation** — final size + retail pricing
   - **Supplier Purchase Order** — measured size + final size + supplier cost
 - **Settings** — editable company info, terms, DEL note, closing note
+- **Demo watermark protection** — subscription-based watermarking for trial/demo accounts
 - **UUID primary keys** throughout — safe for distributed use and future API expansion
 
 ---
@@ -190,6 +191,29 @@ All measurements entered in cm are converted to inches before the area calculati
 ## Printing
 
 Navigate to `/quotes/[id]?print=quotation` or `/quotes/[id]?print=po` to open the print preview page, then use the browser's print dialog (Ctrl+P / Cmd+P). The layout is set to **letter (8.5 × 11 in)** via `@page` CSS.
+
+---
+
+## Subscription Status
+
+Companies can have the following subscription statuses:
+- `demo` - Demo account with watermarked documents
+- `trial` - Trial account with watermarked documents
+- `active` - Active paying account with clean documents
+- `past_due` - Past due account with watermarked documents
+
+**Watermark behavior:**
+- Demo/trial/past_due accounts: "DEMO" watermark appears diagonally on all printed documents (quotations and purchase orders)
+- Active accounts: Clean documents without watermarks
+- Watermark appears in both print preview and actual print/PDF output
+- Watermark persists across scrolling and window resizing
+- Multi-page documents show watermark on each page
+
+**Managing subscription status:**
+The subscription status is stored in the `companies` table and can be updated via SQL:
+```sql
+UPDATE companies SET subscription_status = 'active' WHERE code = 'YOUR_COMPANY_CODE';
+```
 
 ---
 
