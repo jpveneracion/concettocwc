@@ -24,7 +24,7 @@ export default function ResponsiveTable<T>({
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {/* Mobile card layout */}
-      <div className="md:hidden space-y-3 p-3">
+      <div className="lg:hidden space-y-3 p-3">
         {data.map((item, index) => (
           <div key={index}>
             {renderCard(item, index)}
@@ -33,7 +33,7 @@ export default function ResponsiveTable<T>({
       </div>
 
       {/* Desktop table layout */}
-      <div className="hidden md:block">{renderTable()}</div>
+      <div className="hidden lg:block">{renderTable()}</div>
     </div>
   );
 }
