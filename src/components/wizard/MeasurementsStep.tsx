@@ -497,14 +497,10 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                       </div>
 
                       {/* Pricing Information */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
+                      <div className="pt-2 border-t border-gray-200">
                         <div className="bg-white rounded p-2">
                           <p className="text-xs text-gray-500">Retail Price</p>
                           <p className="text-sm font-semibold text-green-700">${row.retail_price_sqft.toFixed(2)}/sq.ft</p>
-                        </div>
-                        <div className="bg-white rounded p-2">
-                          <p className="text-xs text-gray-500">Supplier Cost</p>
-                          <p className="text-sm font-semibold text-blue-700">${row.supplier_cost_sqft.toFixed(2)}/sq.ft</p>
                         </div>
                       </div>
                     </div>
