@@ -9,6 +9,41 @@ interface QuoteWizardProps {
 
 type WizardStep = 'customer' | 'measurements' | 'review';
 
+// Step data interfaces
+interface CustomerStepData {
+  customer_name: string;
+  customer_address: string;
+  quote_date: string;
+  our_ref: string;
+  status: string;
+}
+
+interface MeasurementsStepData {
+  items: Array<{
+    location: string;
+    product_id: string | null;
+    product_code: string;
+    product_collection: string;
+    product_description: string;
+    unit: string;
+    is_fixed: boolean;
+    measured_width: number;
+    measured_drop: number;
+    final_width: number;
+    final_drop: number;
+    area_sqft: number;
+    retail_price_sqft: number;
+    supplier_cost_sqft: number;
+    retail_amount: number;
+    supplier_amount: number;
+  }>;
+}
+
+interface ReviewStepData {
+  installation_fee: number;
+  delivery_fee: number;
+}
+
 interface WizardContextType {
   currentStep: WizardStep;
   goToStep: (step: WizardStep) => void;
@@ -49,7 +84,11 @@ const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'review'];
 
 export default function QuoteWizard({ quoteNumber, existingData, onComplete }: QuoteWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('customer');
-  const [stepData, setStepDataState] = useState<Record<WizardStep, unknown>>({
+  const [stepData, setStepDataState] = useState<{
+    customer: CustomerStepData | null;
+    measurements: MeasurementsStepData | null;
+    review: ReviewStepData | null;
+  }>({
     customer: null,
     measurements: null,
     review: null,
