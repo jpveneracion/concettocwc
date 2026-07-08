@@ -37,6 +37,7 @@ interface AutocompleteState {
     suggestions: AutocompleteSuggestion[];
     loading: boolean;
     show: boolean;
+    autocompleteUsed: boolean;
   };
 }
 
@@ -218,11 +219,11 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
   const fetchAutocompleteSuggestions = async (key: string, query: string) => {
     if (query.length < 2) {
-      setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false } }));
+      setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false, autocompleteUsed: false } }));
       return;
     }
 
-    setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: true, show: true } }));
+    setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: true, show: true, autocompleteUsed: false } }));
 
     try {
       const res = await fetch(`/api/products/autocomplete?q=${encodeURIComponent(query)}`);
@@ -230,19 +231,19 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
         const suggestions = await res.json();
         setAutocompleteState((prev) => ({
           ...prev,
-          [key]: { suggestions, loading: false, show: true }
+          [key]: { suggestions, loading: false, show: true, autocompleteUsed: false }
         }));
       } else {
         setAutocompleteState((prev) => ({
           ...prev,
-          [key]: { suggestions: [], loading: false, show: false }
+          [key]: { suggestions: [], loading: false, show: false, autocompleteUsed: false }
         }));
       }
     } catch (error) {
       console.error('Autocomplete failed:', error);
       setAutocompleteState((prev) => ({
         ...prev,
-        [key]: { suggestions: [], loading: false, show: false }
+        [key]: { suggestions: [], loading: false, show: false, autocompleteUsed: false }
       }));
     }
   };
@@ -260,25 +261,30 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
     if (upperValue.length >= 2) {
       debouncedFetchAutocomplete(key, upperValue);
     } else {
-      setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false } }));
+      setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false, autocompleteUsed: false } }));
     }
   };
 
   const selectAutocompleteSuggestion = (key: string, suggestion: AutocompleteSuggestion) => {
     updateRow(key, { product_code: suggestion.code });
-    setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false } }));
+    setAutocompleteState((prev) => ({ ...prev, [key]: { suggestions: [], loading: false, show: false, autocompleteUsed: true } }));
     setLookupStatus((prev) => ({ ...prev, [key]: '' }));
     // Trigger the lookup immediately
     lookupCode(key, suggestion.code);
   };
 
-  const handleProductCodeBlur = (key: string) => {
+  const handleProductCodeBlur = (key: string, currentCode: string) => {
     // Delay hiding autocomplete to allow clicking on suggestions
     setTimeout(() => {
+      const wasAutocompleteUsed = autocompleteState[key]?.autocompleteUsed;
       setAutocompleteState((prev) => ({
         ...prev,
-        [key]: { ...prev[key], show: false }
+        [key]: { ...prev[key], show: false, autocompleteUsed: false }
       }));
+      // Only trigger lookup if autocomplete wasn't used
+      if (!wasAutocompleteUsed && currentCode.trim()) {
+        lookupCode(key, currentCode);
+      }
     }, 200);
   };
 
@@ -298,6 +304,11 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   }) => {
     if (suggestions.length === 0) return null;
 
+    const handleMouseDown = (e: React.MouseEvent, suggestion: AutocompleteSuggestion) => {
+      e.preventDefault(); // Prevent blur from firing
+      onSelect(suggestion);
+    };
+
     return (
       <div
         ref={(el) => { autocompleteRefs.current[rowKey] = el; }}
@@ -307,7 +318,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
           <div
             key={`${suggestion.code}-${index}`}
             className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-            onClick={() => onSelect(suggestion)}
+            onMouseDown={(e) => handleMouseDown(e, suggestion)}
           >
             <div className="flex justify-between items-center">
               <span className="font-medium text-sm text-gray-800">{suggestion.code}</span>
@@ -422,13 +433,13 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                     }`}
                     value={row.product_code}
                     onChange={(e) => handleProductCodeChange(row._key, e.target.value)}
-                    onBlur={() => handleProductCodeBlur(row._key)}
+                    onBlur={(e) => handleProductCodeBlur(row._key, e.target.value)}
                     onFocus={() => handleProductCodeFocus(row._key, row.product_code)}
                     onKeyDown={(e) => {
                       if (e.key === 'Escape') {
                         setAutocompleteState((prev) => ({
                           ...prev,
-                          [row._key]: { ...prev[row._key], show: false }
+                          [row._key]: { ...prev[row._key], show: false, autocompleteUsed: false }
                         }));
                       }
                     }}
