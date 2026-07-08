@@ -91,8 +91,14 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
     if (currentStepIndex < STEP_ORDER.length - 1) {
       setCurrentStep(STEP_ORDER[currentStepIndex + 1]);
     } else {
-      // Submit the quote
-      onComplete(stepData);
+      // Prepare final submission data from all steps
+      const finalData = {
+        customer: stepData.customer,
+        items: stepData.measurements?.items || [],
+        installation_fee: stepData.review?.installation_fee || 0,
+        delivery_fee: stepData.review?.delivery_fee || 0,
+      };
+      onComplete(finalData);
     }
   };
 

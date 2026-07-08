@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem } from '@/types';
 import { phpFormat } from '@/lib/calc';
@@ -12,7 +12,8 @@ interface CustomerData {
   status: string;
 }
 
-interface ProductData {
+interface ReviewData {
+  customer: CustomerData;
   items: QuoteItem[];
   installation_fee: number;
   delivery_fee: number;
@@ -23,16 +24,26 @@ interface MeasurementData {
 }
 
 export default function ReviewStep() {
-  const { getStepData } = useWizard();
+  const { getStepData, setStepData } = useWizard();
+
+  const [installation, setInstallation] = useState(0);
+  const [delivery, setDelivery] = useState(0);
 
   const customerData = getStepData('customer') as CustomerData | undefined;
   const measurementsData = getStepData('measurements') as MeasurementData | undefined;
 
-  const validItems = measurementsData?.items?.filter((item) => item.area_sqft > 0) || [];
+  const [items, setItems] = useState<QuoteItem[]>(
+    measurementsData?.items?.map((item, index) => ({
+      ...item,
+      id: '',
+      quote_id: '',
+      sort_order: index,
+    })) || []
+  );
+
+  const validItems = items.filter((item) => item.area_sqft > 0);
   const totalArea = validItems.reduce((sum, item) => sum + item.area_sqft, 0);
   const subtotal = validItems.reduce((sum, item) => sum + item.retail_amount, 0);
-  const installation = 0; // Default installation fee
-  const delivery = 0; // Default delivery fee
   const total = subtotal + installation + delivery;
 
   function validate(): boolean {
@@ -46,6 +57,21 @@ export default function ReviewStep() {
       delete (window as any).__reviewStepValidation;
     };
   }, []);
+
+  // Prepare final data for submission
+  useEffect(() => {
+    const reviewData: ReviewData = {
+      customer: customerData!,
+      items: items.map((item) => ({
+        ...item,
+        id: '',
+        quote_id: '',
+      })),
+      installation_fee: installation,
+      delivery_fee: delivery,
+    };
+    setStepData('review', reviewData);
+  }, [items, installation, delivery, customerData, setStepData]);
 
   if (!customerData || !measurementsData) {
     return (
@@ -131,34 +157,67 @@ export default function ReviewStep() {
         )}
       </div>
 
-      {/* Financial Summary */}
-      <div className="border border-gray-200 rounded-xl p-4 bg-white">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Financial Summary</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Total Area:</span>
-            <span className="text-sm font-medium">{totalArea.toFixed(2)} sq.ft.</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Subtotal:</span>
-            <span className="text-sm font-medium">{phpFormat(subtotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Installation Fee:</span>
-            <span className="text-sm font-medium">{phpFormat(installation)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Delivery Fee:</span>
-            <span className="text-sm font-medium">{phpFormat(delivery)}</span>
-          </div>
-          <div className="border-t border-gray-200 pt-2 mt-2">
-            <div className="flex justify-between">
-              <span className="text-base font-semibold text-gray-800">Total:</span>
-              <span className="text-lg font-bold text-blue-700">{phpFormat(total)}</span>
+      {/* Service Charges */}
+      {validItems.length > 0 && (
+        <div className="border border-gray-200 rounded-xl p-4 bg-white">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Service Charges</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Installation Fee (₱)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={installation || ''}
+                onChange={(e) => setInstallation(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Delivery Fee (₱)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={delivery || ''}
+                onChange={(e) => setDelivery(parseFloat(e.target.value) || 0)}
+              />
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Financial Summary */}
+      {validItems.length > 0 && (
+        <div className="border border-gray-200 rounded-xl p-4 bg-white">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Financial Summary</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Total Area:</span>
+              <span className="text-sm font-medium">{totalArea.toFixed(2)} sq.ft.</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Subtotal:</span>
+              <span className="text-sm font-medium">₱{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Installation Fee:</span>
+              <span className="text-sm font-medium">₱{installation.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Delivery Fee:</span>
+              <span className="text-sm font-medium">₱{delivery.toFixed(2)}</span>
+            </div>
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              <div className="flex justify-between">
+                <span className="text-base font-semibold text-gray-800">Total:</span>
+                <span className="text-lg font-bold text-blue-700">₱{total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ready to Submit */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
