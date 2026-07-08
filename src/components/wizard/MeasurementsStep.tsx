@@ -192,111 +192,132 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Location */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Location</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={row.location}
-                  onChange={(e) => updateRow(row._key, { location: e.target.value })}
-                  placeholder="e.g. Living Room"
-                />
-              </div>
+            {/* Mobile: Single column, Desktop: Side-by-side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: Measurements */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Location</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    value={row.location}
+                    onChange={(e) => updateRow(row._key, { location: e.target.value })}
+                    placeholder="e.g. Living Room"
+                  />
+                </div>
 
-              {/* Measurement Unit */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Measurement Unit</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={row.unit}
-                  onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}
-                >
-                  <option value="in">Inches</option>
-                  <option value="cm">Centimeters</option>
-                </select>
-              </div>
-
-              {/* Fixed/Non-fixed */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Measurement Type</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={row.is_fixed ? 'yes' : 'no'}
-                  onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}
-                >
-                  <option value="yes">Fixed (as-is)</option>
-                  <option value="no">Non-fixed (+{row.unit === 'cm' ? '15cm' : '6in'} overlap)</option>
-                </select>
-              </div>
-
-              {/* Width */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Width ({row.unit})</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={row.measured_width || ''}
-                  onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.0"
-                />
-              </div>
-
-              {/* Drop */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Drop ({row.unit})</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={row.measured_drop || ''}
-                  onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.0"
-                />
-              </div>
-
-              {/* Product Code */}
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Product Code</label>
-                <input
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase"
-                  value={row.product_code}
-                  onChange={(e) => {
-                    updateRow(row._key, { product_code: e.target.value.toUpperCase() });
-                    setLookupStatus((prev) => ({ ...prev, [row._key]: '' }));
-                  }}
-                  onBlur={(e) => lookupCode(row._key, e.target.value)}
-                  placeholder="e.g. P5012"
-                />
-                {lookupStatus[row._key] === 'found' && (
-                  <p className="text-xs text-green-600 mt-1">✓ {row.product_description}</p>
-                )}
-                {lookupStatus[row._key] === 'notfound' && (
-                  <p className="text-xs text-red-500 mt-1">Product code not found</p>
-                )}
-                {lookupStatus[row._key] === 'loading' && (
-                  <p className="text-xs text-gray-400 mt-1">Looking up product...</p>
-                )}
-              </div>
-
-              {/* Results display */}
-              <div className="bg-gray-50 rounded-lg p-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-gray-500">Final Width ({row.unit})</p>
-                    <p className="text-sm font-medium text-blue-700">{row.final_width.toFixed(1)}</p>
+                    <label className="block text-sm text-gray-600 mb-1">Unit</label>
+                    <select
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={row.unit}
+                      onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}
+                    >
+                      <option value="in">Inches</option>
+                      <option value="cm">Centimeters</option>
+                    </select>
                   </div>
+
                   <div>
-                    <p className="text-xs text-gray-500">Final Drop ({row.unit})</p>
-                    <p className="text-sm font-medium text-blue-700">{row.final_drop.toFixed(1)}</p>
+                    <label className="block text-sm text-gray-600 mb-1">Type</label>
+                    <select
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={row.is_fixed ? 'yes' : 'no'}
+                      onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}
+                    >
+                      <option value="yes">Fixed (as-is)</option>
+                      <option value="no">Non-fixed (+{row.unit === 'cm' ? '15cm' : '6in'} overlap)</option>
+                    </select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-gray-500">Area (sq.ft.)</p>
-                    <p className="text-sm font-medium">{row.area_sqft.toFixed(2)}</p>
+                    <label className="block text-sm text-gray-600 mb-1">Width ({row.unit})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={row.measured_width || ''}
+                      onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.0"
+                    />
                   </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Drop ({row.unit})</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={row.measured_drop || ''}
+                      onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })}
+                      placeholder="0.0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Product Selection */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Product Code</label>
+                  <input
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase"
+                    value={row.product_code}
+                    onChange={(e) => {
+                      updateRow(row._key, { product_code: e.target.value.toUpperCase() });
+                      setLookupStatus((prev) => ({ ...prev, [row._key]: '' }));
+                    }}
+                    onBlur={(e) => lookupCode(row._key, e.target.value)}
+                    placeholder="e.g. P5012"
+                  />
+                  {lookupStatus[row._key] === 'found' && (
+                    <p className="text-xs text-green-600 mt-1">✓ {row.product_description}</p>
+                  )}
+                  {lookupStatus[row._key] === 'notfound' && (
+                    <p className="text-xs text-red-500 mt-1">Product code not found</p>
+                  )}
+                  {lookupStatus[row._key] === 'loading' && (
+                    <p className="text-xs text-gray-400 mt-1">Looking up product...</p>
+                  )}
+                </div>
+
+                {/* Product Details (minimal display) */}
+                {row.product_id && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">Collection</p>
+                        <p className="text-sm text-gray-700">{row.product_collection || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Description</p>
+                        <p className="text-sm text-gray-700">{row.product_description || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Results display */}
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-xs text-gray-500">Final Width ({row.unit})</p>
+                  <p className="text-sm font-medium text-blue-700">{row.final_width.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Final Drop ({row.unit})</p>
+                  <p className="text-sm font-medium text-blue-700">{row.final_drop.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Area (sq.ft.)</p>
+                  <p className="text-sm font-medium">{row.area_sqft.toFixed(2)}</p>
                 </div>
               </div>
             </div>
