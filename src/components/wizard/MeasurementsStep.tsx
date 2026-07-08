@@ -21,6 +21,10 @@ interface ProductLookupResult {
   supplier_cost: number;
 }
 
+interface CompanySettings {
+  currency?: string;
+}
+
 interface LookupStatus {
   [key: string]: 'loading' | 'found' | 'notfound' | '';
 }
@@ -111,6 +115,33 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   const [lookupStatus, setLookupStatus] = useState<LookupStatus>({});
   const [autocompleteState, setAutocompleteState] = useState<AutocompleteState>({});
   const autocompleteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({});
+
+  // Currency symbol mapping
+  const currencySymbols: Record<string, string> = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'AUD': 'A$',
+    'CAD': 'C$',
+    'PHP': '₱',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'CNY': '¥',
+  };
+
+  // Fetch company settings on component mount
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((settings: CompanySettings) => {
+        setCompanySettings(settings);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch company settings:', error);
+      });
+  }, []);
 
   useEffect(() => {
     const data: MeasurementData = {
@@ -500,7 +531,9 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                       <div className="pt-2 border-t border-gray-200">
                         <div className="bg-white rounded p-2">
                           <p className="text-xs text-gray-500">Retail Price</p>
-                          <p className="text-sm font-semibold text-green-700">${row.retail_price_sqft.toFixed(2)}/sq.ft</p>
+                          <p className="text-sm font-semibold text-green-700">
+                            {currencySymbols[companySettings.currency || 'USD'] || '$'}{row.retail_price_sqft.toFixed(2)}/sq.ft
+                          </p>
                         </div>
                       </div>
                     </div>
