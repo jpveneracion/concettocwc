@@ -12,6 +12,19 @@ interface MeasurementsStepProps {
   existingData?: MeasurementData;
 }
 
+interface ProductLookupResult {
+  id: string;
+  code: string;
+  collection: string;
+  description: string;
+  retail_price: number;
+  supplier_cost: number;
+}
+
+interface LookupStatus {
+  [key: string]: 'loading' | 'found' | 'notfound' | '';
+}
+
 type ItemRow = Omit<QuoteItem, 'id' | 'quote_id'> & { _key: string };
 
 function newRow(order: number): ItemRow {
@@ -70,6 +83,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
       : [newRow(0)]
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [lookupStatus, setLookupStatus] = useState<LookupStatus>({});
 
   useEffect(() => {
     const data: MeasurementData = {
@@ -85,8 +99,10 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (!rows.some((r) => r.area_sqft > 0)) {
-      newErrors.items = 'Add at least one window with measurements';
+    // Check for at least one window with measurements AND product
+    const validWindows = rows.filter((r) => r.area_sqft > 0 && r.product_id);
+    if (validWindows.length === 0) {
+      newErrors.items = 'Add at least one window with measurements and a valid product code';
     }
 
     setErrors(newErrors);
@@ -117,6 +133,41 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
       // Renumber remaining rows
       return filtered.map((r, index) => ({ ...r, sort_order: index }));
     });
+  };
+
+  const lookupCode = async (key: string, code: string) => {
+    if (!code.trim()) return;
+
+    setLookupStatus((prev) => ({ ...prev, [key]: 'loading' }));
+
+    try {
+      const res = await fetch(`/api/products/lookup?code=${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const product = await res.json();
+
+        // Find the row index
+        const rowIndex = rows.findIndex((r) => r._key === key);
+        if (rowIndex !== -1) {
+          updateRow(key, {
+            product_id: product.id,
+            product_code: product.code,
+            product_collection: product.collection,
+            product_description: product.description,
+            retail_price_sqft: product.retail_price,
+            supplier_cost_sqft: product.supplier_cost,
+            retail_amount: rows[rowIndex].area_sqft * product.retail_price,
+            supplier_amount: rows[rowIndex].area_sqft * product.supplier_cost,
+          });
+        }
+
+        setLookupStatus((prev) => ({ ...prev, [key]: 'found' }));
+      } else {
+        setLookupStatus((prev) => ({ ...prev, [key]: 'notfound' }));
+      }
+    } catch (error) {
+      console.error('Product lookup failed:', error);
+      setLookupStatus((prev) => ({ ...prev, [key]: 'notfound' }));
+    }
   };
 
   const totalArea = rows.reduce((sum, row) => sum + row.area_sqft, 0);
@@ -205,6 +256,30 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })}
                   placeholder="0.0"
                 />
+              </div>
+
+              {/* Product Code */}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Product Code</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase"
+                  value={row.product_code}
+                  onChange={(e) => {
+                    updateRow(row._key, { product_code: e.target.value.toUpperCase() });
+                    setLookupStatus((prev) => ({ ...prev, [row._key]: '' }));
+                  }}
+                  onBlur={(e) => lookupCode(row._key, e.target.value)}
+                  placeholder="e.g. P5012"
+                />
+                {lookupStatus[row._key] === 'found' && (
+                  <p className="text-xs text-green-600 mt-1">✓ {row.product_description}</p>
+                )}
+                {lookupStatus[row._key] === 'notfound' && (
+                  <p className="text-xs text-red-500 mt-1">Product code not found</p>
+                )}
+                {lookupStatus[row._key] === 'loading' && (
+                  <p className="text-xs text-gray-400 mt-1">Looking up product...</p>
+                )}
               </div>
 
               {/* Results display */}
