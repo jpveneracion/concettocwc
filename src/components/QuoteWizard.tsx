@@ -7,7 +7,7 @@ interface QuoteWizardProps {
   onComplete: (data: Record<string, unknown>) => void;
 }
 
-type WizardStep = 'customer' | 'measurements' | 'products' | 'review';
+type WizardStep = 'customer' | 'measurements' | 'review';
 
 interface WizardContextType {
   currentStep: WizardStep;
@@ -31,31 +31,27 @@ export function useWizard() {
 // Import step components
 import CustomerStep from './wizard/CustomerStep';
 import MeasurementsStep from './wizard/MeasurementsStep';
-import ProductsStep from './wizard/ProductsStep';
 import ReviewStep from './wizard/ReviewStep';
 
 const STEP_COMPONENTS: Record<WizardStep, React.ComponentType<any>> = {
   customer: CustomerStep,
   measurements: MeasurementsStep,
-  products: ProductsStep,
   review: ReviewStep,
 };
 
 const STEP_LABELS: Record<WizardStep, string> = {
   customer: 'Customer',
-  measurements: 'Measurements',
-  products: 'Products',
-  review: 'Review',
+  measurements: 'Measurements & Products',
+  review: 'Review & Pricing',
 };
 
-const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'products', 'review'];
+const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'review'];
 
 export default function QuoteWizard({ quoteNumber, existingData, onComplete }: QuoteWizardProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>('customer');
   const [stepData, setStepDataState] = useState<Record<WizardStep, unknown>>({
     customer: null,
     measurements: null,
-    products: null,
     review: null,
   });
 
@@ -124,12 +120,10 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
         return {
           existingData: stepData.measurements as any,
         };
-      case 'products':
-        return {
-          existingData: stepData.products as any,
-        };
       case 'review':
-        return {};
+        return {
+          existingData: stepData.review as any,
+        };
       default:
         return {};
     }

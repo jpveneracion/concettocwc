@@ -18,17 +18,21 @@ interface ProductData {
   delivery_fee: number;
 }
 
+interface MeasurementData {
+  items: QuoteItem[];
+}
+
 export default function ReviewStep() {
   const { getStepData } = useWizard();
 
   const customerData = getStepData('customer') as CustomerData | undefined;
-  const productsData = getStepData('products') as ProductData | undefined;
+  const measurementsData = getStepData('measurements') as MeasurementData | undefined;
 
-  const validItems = productsData?.items?.filter((item) => item.area_sqft > 0) || [];
+  const validItems = measurementsData?.items?.filter((item) => item.area_sqft > 0) || [];
   const totalArea = validItems.reduce((sum, item) => sum + item.area_sqft, 0);
   const subtotal = validItems.reduce((sum, item) => sum + item.retail_amount, 0);
-  const installation = productsData?.installation_fee || 0;
-  const delivery = productsData?.delivery_fee || 0;
+  const installation = 0; // Default installation fee
+  const delivery = 0; // Default delivery fee
   const total = subtotal + installation + delivery;
 
   function validate(): boolean {
@@ -43,7 +47,7 @@ export default function ReviewStep() {
     };
   }, []);
 
-  if (!customerData || !productsData) {
+  if (!customerData || !measurementsData) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <p className="text-sm text-yellow-700">

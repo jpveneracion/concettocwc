@@ -60,7 +60,7 @@ export default function ProductsStep({ existingData }: ProductsStepProps) {
       installation_fee: installation,
       delivery_fee: delivery,
     };
-    setStepData('products', data);
+    // setStepData('products', data); // DISABLED: ProductsStep removed from wizard
   }, [items, installation, delivery, setStepData]);
 
   function validate(): boolean {
