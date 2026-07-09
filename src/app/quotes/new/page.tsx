@@ -13,15 +13,9 @@ type WizardStepData = {
     our_ref: string;
     status: string;
   };
-  measurements: {
-    items: any[];
-  };
-  products: {
-    items: any[];
-    installation_fee: number;
-    delivery_fee: number;
-  };
-  review: any;
+  items: any[];
+  installation_fee: number;
+  delivery_fee: number;
 };
 
 export default function NewQuotePage() {
@@ -62,7 +56,7 @@ export default function NewQuotePage() {
       return;
     }
 
-    if (!wizardData.products?.items?.some((r: any) => r.area_sqft > 0)) {
+    if (!wizardData.items?.some((r: any) => r.area_sqft > 0)) {
       alert('Add at least one window with measurements.');
       return;
     }
@@ -77,9 +71,9 @@ export default function NewQuotePage() {
         quote_date: wizardData.customer.quote_date,
         our_ref: wizardData.customer.our_ref || '',
         status: wizardData.customer.status || 'draft',
-        installation_fee: wizardData.products?.installation_fee || 0,
-        delivery_fee: wizardData.products?.delivery_fee || 0,
-        items: wizardData.products?.items?.map((item: any) => {
+        installation_fee: wizardData.installation_fee || 0,
+        delivery_fee: wizardData.delivery_fee || 0,
+        items: wizardData.items?.map((item: any) => {
           const { id, quote_id, ...rest } = item;
           return rest;
         }) || [],
