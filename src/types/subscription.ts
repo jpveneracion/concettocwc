@@ -55,7 +55,7 @@ export interface PaymentMethod {
   paymongo_payment_method_id: string;
   type: 'gcash' | 'maya' | 'card';
   card_last4: string | null;
-  expiry_date: string | null;
+  expiry_date: Date | null;
   is_default: boolean;
   created_at: Date;
   updated_at: Date;
