@@ -1,5 +1,8 @@
 'use client';
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext, useContext, useEffect } from 'react';
+import useLocalStorage, { useClearLocalStorage } from '../hooks/useLocalStorage';
+import { WizardState, WIZARD_DRAFT_KEY } from '../types/wizard';
+import { clearDraft } from '../lib/wizardStorage';
 
 interface QuoteWizardProps {
   quoteNumber: string;
@@ -83,22 +86,54 @@ const STEP_LABELS: Record<WizardStep, string> = {
 const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'review'];
 
 export default function QuoteWizard({ quoteNumber, existingData, onComplete }: QuoteWizardProps) {
-  const [currentStep, setCurrentStep] = useState<WizardStep>('customer');
+  // Initialize localStorage with existing data or empty state
+  const initialWizardState: WizardState = {
+    customer: existingData?.customer || null,
+    measurements: existingData?.measurements || null,
+    review: existingData?.review || null,
+    currentStep: 'customer',
+    lastUpdated: new Date().toISOString(),
+  };
+
+  const [wizardState, setWizardState] = useLocalStorage<WizardState>(
+    `${WIZARD_DRAFT_KEY}_${quoteNumber}`,
+    initialWizardState
+  );
+
+  const [currentStep, setCurrentStep] = useState<WizardStep>(
+    wizardState.currentStep || 'customer'
+  );
+
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    if (wizardState.currentStep) {
+      setCurrentStep(wizardState.currentStep);
+    }
+  }, [wizardState.currentStep]);
+
   const [stepData, setStepDataState] = useState<{
     customer: CustomerStepData | null;
     measurements: MeasurementsStepData | null;
     review: ReviewStepData | null;
   }>({
-    customer: null,
-    measurements: null,
-    review: null,
+    customer: wizardState.customer,
+    measurements: wizardState.measurements,
+    review: wizardState.review,
   });
 
   const currentStepIndex = STEP_ORDER.indexOf(currentStep);
   const CurrentStepComponent = STEP_COMPONENTS[currentStep];
 
   const setStepData = (step: WizardStep, data: unknown) => {
+    // Update local state
     setStepDataState((prev) => ({ ...prev, [step]: data }));
+
+    // Update localStorage with progressive save
+    setWizardState((prevState) => ({
+      ...prevState,
+      [step]: data,
+      lastUpdated: new Date().toISOString(),
+    }));
   };
 
   const getStepData = (step: WizardStep) => stepData[step];
@@ -117,9 +152,19 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
     // Allow going back or to next valid step
     if (stepIndex <= currentStepIndex) {
       setCurrentStep(step);
+      updateWizardStep(step);
     } else if (validateCurrentStep()) {
       setCurrentStep(step);
+      updateWizardStep(step);
     }
+  };
+
+  const updateWizardStep = (step: WizardStep) => {
+    setWizardState((prevState) => ({
+      ...prevState,
+      currentStep: step,
+      lastUpdated: new Date().toISOString(),
+    }));
   };
 
   const nextStep = () => {
@@ -128,7 +173,9 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
     }
 
     if (currentStepIndex < STEP_ORDER.length - 1) {
-      setCurrentStep(STEP_ORDER[currentStepIndex + 1]);
+      const nextStepValue = STEP_ORDER[currentStepIndex + 1];
+      setCurrentStep(nextStepValue);
+      updateWizardStep(nextStepValue);
     } else {
       // Prepare final submission data from all steps
       const finalData = {
@@ -137,13 +184,19 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
         installation_fee: stepData.review?.installation_fee || 0,
         delivery_fee: stepData.review?.delivery_fee || 0,
       };
+
+      // Clear the draft after successful submission preparation
+      clearDraft(quoteNumber);
+
       onComplete(finalData);
     }
   };
 
   const previousStep = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(STEP_ORDER[currentStepIndex - 1]);
+      const prevStepValue = STEP_ORDER[currentStepIndex - 1];
+      setCurrentStep(prevStepValue);
+      updateWizardStep(prevStepValue);
     }
   };
 
@@ -256,3 +309,6 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
     </WizardContext.Provider>
   );
 }
+
+// Export storage utilities for use in parent components
+export { clearDraft };
