@@ -24,7 +24,7 @@ interface MeasurementData {
 }
 
 export default function ReviewStep() {
-  const { getStepData } = useWizard();
+  const { getStepData, setStepData } = useWizard();
 
   const [installation, setInstallation] = useState(0);
   const [delivery, setDelivery] = useState(0);
@@ -72,7 +72,9 @@ export default function ReviewStep() {
     };
     // This data will be available for the onComplete callback
     (window as any).__reviewStepData = reviewData;
-  }, [items, installation, delivery, customerData]);
+    // Store data in wizard step data for proper submission
+    setStepData('review', { installation_fee: installation, delivery_fee: delivery });
+  }, [items, installation, delivery, customerData, setStepData]);
 
   if (!customerData || !measurementsData) {
     return (
