@@ -6,8 +6,8 @@ export interface SubscriptionPlan {
   interval: string;
   paymongo_plan_id: string;
   features: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Subscription {
@@ -15,12 +15,12 @@ export interface Subscription {
   company_id: string;
   status: 'trialing' | 'active' | 'past_due' | 'cancelled' | 'suspended';
   plan_id: string;
-  trial_end: string | null;
-  current_period_end: string | null;
+  trial_end: Date | null;
+  current_period_end: Date | null;
   cancel_at_period_end: boolean;
   paymongo_subscription_id: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface SubscriptionItem {
@@ -29,8 +29,8 @@ export interface SubscriptionItem {
   plan_id: string;
   quantity: number;
   price: number;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Invoice {
@@ -42,11 +42,11 @@ export interface Invoice {
   amount_paid: number;
   currency: string;
   status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
-  paid_at: string | null;
+  paid_at: Date | null;
   attempt_count: number;
   paymongo_invoice_id: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface PaymentMethod {
@@ -57,8 +57,8 @@ export interface PaymentMethod {
   card_last4: string | null;
   expiry_date: string | null;
   is_default: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface WebhookEvent {
@@ -68,8 +68,8 @@ export interface WebhookEvent {
   payload: Record<string, any>;
   processed: boolean;
   processing_error: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface SubscriptionAccess {
@@ -82,8 +82,8 @@ export interface SubscriptionAccess {
 export interface SubscriptionDetails {
   plan: SubscriptionPlan;
   status: string;
-  trial_end: string | null;
-  current_period_end: string | null;
+  trial_end: Date | null;
+  current_period_end: Date | null;
   cancel_at_period_end: boolean;
   usage_stats: {
     quotes_created_this_period: number;
