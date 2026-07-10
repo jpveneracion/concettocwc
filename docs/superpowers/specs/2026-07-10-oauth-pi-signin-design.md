@@ -51,7 +51,7 @@ CREATE TABLE oauth_accounts (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   provider TEXT NOT NULL, -- 'google', 'microsoft', 'pi'
   provider_user_id TEXT NOT NULL, -- Pi uid, Google sub, etc.
-  email TEXT NOT NULL,
+  email TEXT, -- Nullable (Pi Network doesn't provide email)
   username TEXT, -- Pi username
   wallet_address TEXT, -- Pi wallet (if requested)
   access_token TEXT, -- All providers (short-lived for Pi)
@@ -64,6 +64,10 @@ CREATE TABLE oauth_accounts (
 
 CREATE INDEX idx_oauth_accounts_user_id ON oauth_accounts(user_id);
 CREATE INDEX idx_oauth_accounts_provider ON oauth_accounts(provider, provider_user_id);
+
+-- Add company_id NULL constraint to users table for abandonment state detection
+ALTER TABLE users ADD CONSTRAINT users_company_id_required 
+  CHECK (company_id IS NOT NULL); -- Enable after initial migration
 ```
 
 ## Authentication Flows
@@ -77,9 +81,14 @@ CREATE INDEX idx_oauth_accounts_provider ON oauth_accounts(provider, provider_us
 5. NextAuth.js exchanges code for tokens
 6. Gets user info (email, name, etc.)
 7. Checks for existing account:
-   - If email exists → Link OAuth account, login
-   - If new → Redirect to account creation choice
+   - If email exists AND provider email is verified:
+     - Require password confirmation for account linking
+     - Link OAuth account, login
+   - If email exists BUT provider email is unverified:
+     - Require additional verification or manual approval
+   - If new user → Redirect to account creation choice
 8. Create session, redirect appropriately
+9. **Middleware check:** If user.company_id === null, redirect to account choice
 
 ### Pi Sign-in Flow (Implicit Flow)
 
@@ -89,26 +98,43 @@ CREATE INDEX idx_oauth_accounts_provider ON oauth_accounts(provider, provider_us
 4. Redirect back with `#access_token`
 5. Frontend: Read token from URL fragment
 6. Frontend: Call `POST /api/auth/pi/callback` with token
-7. Backend: Call `api.minepi.com/v2/me` with token
-8. Backend: Get `{uid, username, wallet_address}`
-9. Backend: Check for existing uid/email:
+7. Backend: Validate token immediately by calling `api.minepi.com/v2/me`
+8. Backend: Get `{uid, username, wallet_address}` (NO email provided)
+9. Backend: Check for existing uid:
    - If uid exists → Login (existing Pi user)
-   - If email exists → Link Pi account, login
-   - If new → Redirect to account creation choice
+   - If new → Redirect to account creation choice (requires email input)
 10. Create session, redirect appropriately
+11. **Middleware check:** If user.company_id === null, redirect to account choice
+
+**Pi Network Specific Considerations:**
+- No email returned from `/v2/me` endpoint
+- Account lookup strictly by `uid` (app-specific per user)
+- New users must provide email during account creation
+- Auto-linking not available for Pi users (no email to match)
 
 ### Account Creation Choice Flow
 
 ```
 New user detected → Redirect to /auth/account-choice
+├─ **If Pi Network user:**
+│  ├─ Request email address (not provided by Pi)
+│  └─ Validate email is not already in use
 ├─ Option 1: "Join Existing Company"
 │  ├─ Enter company code
 │  ├─ Validate company exists
-│  └─ Create user account, link to company, login
+│  ├─ Create user account with email, link to company, login
+│  └─ Ensure company_id is set (no abandonment state)
 └─ Option 2: "Create New Company"
    ├─ Enter company details
    ├─ Create company
-   └─ Create user account, link to company, login
+   ├─ Create user account with email, link to company, login
+   └─ Ensure company_id is set (no abandonment state)
+
+**Abandonment State Prevention:**
+- Database constraint: company_id must NOT be NULL
+- Middleware redirects users without company_id back to account choice
+- Session temporarily allows account-choice page access only
+- OAuth tokens stored temporarily until completion
 ```
 
 ## UI Components
@@ -142,6 +168,48 @@ New user detected → Redirect to /auth/account-choice
 - Existing `/api/auth/login` - Account linking logic
 - Existing `/api/auth/signup` - OAuth user company creation
 
+## Implementation Considerations
+
+### Pi Network Token Redirect Handling
+**Critical:** Pi Network returns tokens in URL fragments (`#access_token`) which are never sent to the server.
+
+**Frontend Implementation:**
+```typescript
+// Safe fragment extraction
+const params = new URLSearchParams(window.location.hash.slice(1));
+const accessToken = params.get('access_token');
+
+// Clear fragment from URL history
+history.replaceState(null, '', window.location.pathname);
+
+// Send to backend for validation
+await fetch('/api/auth/pi/callback', {
+  method: 'POST',
+  body: JSON.stringify({ access_token: accessToken })
+});
+```
+
+**SSR Considerations:**
+- Handle token extraction on client-side only
+- Avoid SSR crashes from missing fragment data
+- Use loading state during token processing
+
+### Abandonment State Middleware
+```typescript
+// middleware.ts or layout check
+export async function checkCompanyCompletion(session: Session) {
+  if (session.companyId === null) {
+    // User authenticated but no company selected
+    redirect('/auth/account-choice');
+  }
+}
+```
+
+**Temporary Session State:**
+- Allow access only to `/auth/account-choice` during completion
+- Store OAuth tokens temporarily
+- Expire temporary state after 30 minutes
+
 ## Error Handling
 
 ### OAuth Failures
@@ -167,19 +235,59 @@ New user detected → Redirect to /auth/account-choice
 
 ## Security Considerations
 
+### Multi-Tenant Account Linking Security
+**CRITICAL:** Auto-linking OAuth accounts by email in multi-tenant systems creates security vulnerabilities.
+
+**Protected Account Linking Flow:**
+1. **Email Verification Required:** Only link OAuth accounts if provider guarantees verified email
+2. **Password Confirmation:** For existing accounts, require password confirmation before linking OAuth
+3. **Multi-Factor Verification:** Require additional verification for admin/owner accounts
+4. **Audit Logging:** Log all account linking events with IP, timestamp, provider
+
+**Safe Auto-Linking Logic:**
+```
+If OAuth email exists in system:
+  If provider email is verified AND user confirms password:
+    Link accounts safely
+  Else if user has admin/owner role:
+    Require MFA or manual verification
+  Else:
+    Require manual approval or create separate account
+```
+
+### Abandonment State Prevention
+**Problem:** Users who authenticate via OAuth but don't complete company selection are left in limbo.
+
+**Solution:** Authentication middleware check:
+```typescript
+// Check on every authenticated request
+if (user.company_id === null) {
+  redirect('/auth/account-choice');
+}
+```
+
+**Database Constraint:**
+- Add `CHECK (company_id IS NOT NULL)` constraint after migration
+- Temporary allowance during OAuth flow
+- Enforce completion before granting system access
+
 ### CSRF Protection
 - State parameter validation (Pi Sign-in)
 - NextAuth.js built-in CSRF protection (Google/Microsoft)
+- Double-submit cookie pattern for sensitive operations
 
 ### Token Security
 - HTTPS-only cookies in production
 - Secure token storage (no localStorage for sensitive tokens)
 - Short-lived access tokens (Pi Sign-in)
+- Immediate token validation on backend
 
-### Account Linking
+### Account Linking (Updated)
 - Verify email ownership before linking
+- Password confirmation for existing accounts
 - Prevent unauthorized account linking
 - Audit log for account linking events
+- Rate limiting on linking attempts
 
 ### Rate Limiting
 - OAuth initiation rate limits
@@ -261,12 +369,23 @@ PI_REDIRECT_URI=http://localhost:3000/auth/pi/callback
 ## Success Criteria
 
 - ✅ Users can sign in with Google, Microsoft, and Pi Network
-- ✅ OAuth accounts auto-link to existing password accounts
+- ✅ Protected account linking with email verification and password confirmation
+- ✅ OAuth accounts safely link to existing password accounts
 - ✅ New users can join or create companies
+- ✅ No abandonment state - all users have company_id after OAuth
+- ✅ Pi Network users provide email during account creation
 - ✅ Mobile-responsive authentication flow
 - ✅ All TypeScript compilation passes
 - ✅ Backward compatibility with existing email/password authentication
+- ✅ Multi-tenant security enforced (no cross-tenant access)
 - ✅ Production build successful
+
+**Security Requirements:**
+- ✅ Email verification required for account linking
+- ✅ Password confirmation for existing account links
+- ✅ Abandonment state prevented by middleware
+- ✅ Audit logging for all account linking events
+- ✅ Rate limiting on OAuth and account creation
 
 ---
 
