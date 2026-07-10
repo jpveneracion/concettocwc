@@ -88,7 +88,7 @@ ALTER TABLE users ADD CONSTRAINT users_company_id_required
      - Require additional verification or manual approval
    - If new user → Redirect to account creation choice
 8. Create session, redirect appropriately
-9. **Middleware check:** If user.company_id === null, redirect to account choice
+9. **Layout-based check:** If user.company_id === null, redirect to account choice
 
 ### Pi Sign-in Flow (Implicit Flow)
 
@@ -131,8 +131,8 @@ New user detected → Redirect to /auth/account-choice
    └─ Ensure company_id is set (no abandonment state)
 
 **Abandonment State Prevention:**
-- Database constraint: company_id must NOT be NULL
-- Middleware redirects users without company_id back to account choice
+- Database constraint: company_id must NOT be NULL  
+- Layout-based auth checks redirect users without company_id back to account choice
 - Session temporarily allows account-choice page access only
 - OAuth tokens stored temporarily until completion
 ```
@@ -194,14 +194,58 @@ await fetch('/api/auth/pi/callback', {
 - Avoid SSR crashes from missing fragment data
 - Use loading state during token processing
 
-### Abandonment State Middleware
+### Abandonment State Prevention (Implementation Options)
+**Option 1: Layout-Based Check (Recommended)**
 ```typescript
-// middleware.ts or layout check
-export async function checkCompanyCompletion(session: Session) {
-  if (session.companyId === null) {
-    // User authenticated but no company selected
-    redirect('/auth/account-choice');
+// app/layout.tsx - Server-side check
+export default async function RootLayout({ children }) {
+  const session = await getSession();
+  
+  if (session && !session.companyId) {
+    const pathname = headers().get('x-path') || '';
+    if (!pathname.startsWith('/auth/account-choice')) {
+      redirect('/auth/account-choice');
+    }
   }
+  
+  return <html>{children}</html>;
+}
+```
+
+**Option 2: AuthGuard Component**
+```typescript
+// components/AuthGuard.tsx - Client-side check
+'use client';
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { session, isLoading } = useSession();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (session && !session.companyId) {
+      router.replace('/auth/account-choice');
+    }
+  }, [session, router]);
+  
+  if (isLoading) return <LoadingSpinner />;
+  return <>{children}</>;
+}
+```
+
+**Option 3: API Route Check**
+```typescript
+// API route middleware pattern
+export async function requireCompleteSession(req: Request) {
+  const session = await getSession();
+  
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+  
+  if (!session.companyId) {
+    throw new Error('ACCOUNT_INCOMPLETE');
+  }
+  
+  return session;
 }
 ```
 
@@ -258,11 +302,41 @@ If OAuth email exists in system:
 ### Abandonment State Prevention
 **Problem:** Users who authenticate via OAuth but don't complete company selection are left in limbo.
 
-**Solution:** Authentication middleware check:
+**Solution:** Layout-based authentication check (replaces deprecated middleware):
 ```typescript
-// Check on every authenticated request
-if (user.company_id === null) {
-  redirect('/auth/account-choice');
+// app/layout.tsx or auth-provider-wrapper.tsx
+export default async function RootLayout({ children }) {
+  const session = await getSession();
+  
+  // Check if user is authenticated but missing company affiliation
+  if (session && !session.companyId) {
+    // Only allow access to account choice page during completion
+    const currentPath = headers().get('x-path') || '';
+    if (!currentPath.startsWith('/auth/account-choice')) {
+      redirect('/auth/account-choice');
+    }
+  }
+  
+  return <html>{children}</html>;
+}
+```
+
+**Alternative: AuthProvider Component**
+```typescript
+// components/AuthGuard.tsx
+'use client';
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { session, isLoading } = useSession();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (session && !session.companyId) {
+      router.replace('/auth/account-choice');
+    }
+  }, [session, router]);
+  
+  if (isLoading) return <LoadingSpinner />;
+  return <>{children}</>;
 }
 ```
 
