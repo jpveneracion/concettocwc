@@ -1,3 +1,6 @@
+-- Enable pgcrypto extension for encryption functions
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- OAuth accounts table
 CREATE TABLE oauth_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,6 +56,12 @@ BEGIN
   IF plaintext IS NULL OR key IS NULL THEN
     RETURN NULL;
   END IF;
+
+  -- Validate key strength (minimum 32 characters for AES-256)
+  IF length(key) < 32 THEN
+    RAISE EXCEPTION 'Encryption key must be at least 32 characters for AES-256 security';
+  END IF;
+
   RETURN encode(pgp_sym_encrypt(plaintext, key), 'base64');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -64,7 +73,14 @@ BEGIN
   IF ciphertext IS NULL OR key IS NULL THEN
     RETURN NULL;
   END IF;
-  RETURN pgp_sym_decrypt(decode(ciphertext, 'base64'), key);
+
+  BEGIN
+    RETURN pgp_sym_decrypt(decode(ciphertext, 'base64'), key);
+  EXCEPTION WHEN OTHERS THEN
+    -- Log decryption failure but don't expose details
+    RAISE WARNING 'Token decryption failed for account at %', NOW();
+    RETURN NULL;
+  END;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -127,3 +143,46 @@ $$ LANGUAGE plpgsql;
 --
 -- -- Test encryption is working
 -- SELECT * FROM test_encryption();
+
+-- ================================================================
+-- TOKEN MIGRATION STRATEGY
+-- ================================================================
+--
+-- For existing OAuth accounts with plain text tokens:
+--
+-- 1. Application layer re-encryption:
+--    - Query accounts with plain text tokens
+--    - Re-encrypt with new encryption functions
+--    - Update records with encrypted tokens
+--
+-- 2. Gradual migration approach:
+--    - Phase 1: Deploy encryption functions (non-breaking)
+--    - Phase 2: Re-authenticate users to get fresh tokens
+--    - Phase 3: New tokens automatically encrypted
+--    - Phase 4: Plain text tokens naturally expire
+--
+-- 3. Migration query example:
+--    SELECT
+--      id, provider,
+--      encrypt_token(access_token, $ENCRYPTION_KEY) as new_token,
+--      encrypt_token(refresh_token, $ENCRYPTION_KEY) as new_refresh
+--    FROM oauth_accounts
+--    WHERE access_token IS NOT NULL;
+--
+-- ================================================================
+
+-- ================================================================
+-- DATABASE ACCESS CONTROL RECOMMENDATIONS
+-- ================================================================
+--
+-- REVOKE EXECUTE ON ENCRYPTION FUNCTIONS FROM PUBLIC;
+-- GRANT EXECUTE ON FUNCTION encrypt_token TO application_user;
+-- GRANT EXECUTE ON FUNCTION decrypt_token TO application_user;
+--
+-- Consider Row-Level Security (RLS) for multi-tenant isolation:
+-- ALTER TABLE oauth_accounts ENABLE ROW LEVEL SECURITY;
+--
+-- CREATE POLICY oauth_accounts_user_isolation ON oauth_accounts
+--   FOR ALL USING (user_id = current_user_id());
+--
+-- ================================================================
