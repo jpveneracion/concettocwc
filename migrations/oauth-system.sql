@@ -1,6 +1,8 @@
 -- Enable pgcrypto extension for encryption functions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+DROP TABLE IF EXISTS oauth_accounts CASCADE;
+
 -- OAuth accounts table
 CREATE TABLE oauth_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

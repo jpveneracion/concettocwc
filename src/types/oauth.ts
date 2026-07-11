@@ -38,6 +38,7 @@ export interface AccountLinkRequest {
   wallet_address?: string;
   access_token?: string;
   refresh_token?: string;
+  expires_at?: Date | null;
 }
 
 export interface AccountChoiceData {

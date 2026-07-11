@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ProviderButtons } from '@/components/auth/ProviderButtons';
 
 function LoginForm() {
   const router = useRouter();
@@ -13,14 +14,15 @@ function LoginForm() {
 
   useEffect(() => {
     const signupSuccess = searchParams.get('signup') === 'success';
+    const oauthSuccess = searchParams.get('oauth') === 'success';
     const newCompany = searchParams.get('newCompany') === 'true';
     const resetSuccess = searchParams.get('reset') === 'success';
 
     if (resetSuccess) {
       setSuccess('Password reset successfully! Please sign in with your new password.');
-    } else if (signupSuccess) {
+    } else if (signupSuccess || oauthSuccess) {
       if (newCompany) {
-        setSuccess('Company account created! Sign in to set up your pricing and get started.');
+        setSuccess('Account created! Sign in to set up your pricing and get started.');
       } else {
         setSuccess('Account created! Please sign in with your credentials.');
       }
@@ -130,6 +132,11 @@ function LoginForm() {
             <a href="/reset-password" className="text-blue-600 hover:underline">
               Forgot password?
             </a>
+          </div>
+
+          {/* OAuth Provider Buttons */}
+          <div className="mt-6">
+            <ProviderButtons />
           </div>
         </div>
       </div>
