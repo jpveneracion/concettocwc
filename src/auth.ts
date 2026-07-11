@@ -2,6 +2,36 @@ import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
 import { findUserByEmail, createUserWithOAuth, findOAuthAccount, linkOAuthAccount } from '@/lib/oauth';
 import type { AccountLinkRequest, OAuthProvider } from '@/types/oauth';
+import { cookies } from 'next/headers';
+import { sql } from '@/lib/db';
+
+// Helper function to set custom session cookie for compatibility with proxy middleware
+async function setCustomSessionCookie(userId: string, companyId: string, email: string) {
+  try {
+    // Get company code for the session
+    const [company] = await sql`
+      SELECT code FROM companies WHERE id = ${companyId}
+    `;
+
+    const cookieStore = await cookies();
+    cookieStore.set('session', JSON.stringify({
+      userId,
+      companyId,
+      companyCode: company?.code || 'UNKNOWN',
+      email,
+    }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    console.log('✅ Custom session cookie set for user:', userId);
+  } catch (error) {
+    console.error('❌ Failed to set custom session cookie:', error);
+  }
+}
 
 const providers: any[] = [];
 
@@ -63,6 +93,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.log('✅ Existing OAuth account found, user ID:', existingAccount.user_id);
           // Add user ID to the user object for later use
           user.id = existingAccount.user_id;
+
+          // Get user's company ID and set custom session cookie
+          const [userData] = await sql`
+            SELECT company_id FROM users WHERE id = ${existingAccount.user_id}
+          `;
+          if (userData) {
+            await setCustomSessionCookie(existingAccount.user_id, userData.company_id, user.email);
+          }
+
           return true;
         }
 
@@ -86,6 +125,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           await linkOAuthAccount(existingUser.id, accountData);
           console.log('✅ OAuth account linked successfully');
           user.id = existingUser.id;
+
+          // Set custom session cookie for existing user
+          await setCustomSessionCookie(existingUser.id, existingUser.company_id, user.email);
+
           return true;
         }
 
@@ -133,6 +176,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         console.log('✅ Created new OAuth user:', newUser.id, 'with company:', company.id);
         user.id = newUser.id;
+
+        // Set custom session cookie for new user
+        await setCustomSessionCookie(newUser.id, company.id, user.email);
+
         return true;
 
       } catch (error) {
