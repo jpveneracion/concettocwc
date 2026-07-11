@@ -1,14 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { auth } from '@/auth';
 import { sql } from '@/lib/db';
 import { decryptPII } from '@/lib/crypto';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session) {
+    const session = await auth();
+
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Get user ID from session or find user by email
+    let userId = session.user.id;
+    if (!userId) {
+      const userResult = await sql`
+        SELECT id, company_id FROM users WHERE email = ${session.user.email}
+      `;
+      if (!userResult[0]) {
+        return NextResponse.json({ error: 'User not found', needsSetup: true }, { status: 404 });
+      }
+      userId = userResult[0].id;
+    }
+
+    // Get company ID
+    const companyResult = await sql`
+      SELECT company_id FROM users WHERE id = ${userId}
+    `;
+    if (!companyResult[0]) {
+      return NextResponse.json({ error: 'Company not found', needsSetup: true }, { status: 404 });
+    }
+
+    const companyId = companyResult[0].company_id;
 
     const searchParams = req.nextUrl.searchParams;
     const period = (searchParams.get('period') as 'month' | 'year' | 'custom') || 'month';
@@ -54,23 +77,23 @@ export async function GET(req: NextRequest) {
       quoteStats,
     ] = await Promise.all([
       // Monthly sales
-      getMonthlySales(session.companyId, dateStart, dateEnd),
+      getMonthlySales(companyId, dateStart, dateEnd),
       // Yearly sales
-      getYearlySales(session.companyId),
+      getYearlySales(companyId),
       // Profit vs capital
-      getProfitAndCost(session.companyId, dateStart, dateEnd),
+      getProfitAndCost(companyId, dateStart, dateEnd),
       // Conversion rate
-      getConversionRate(session.companyId, dateStart, dateEnd),
+      getConversionRate(companyId, dateStart, dateEnd),
       // Average order value
-      getAverageOrderValue(session.companyId, dateStart, dateEnd),
+      getAverageOrderValue(companyId, dateStart, dateEnd),
       // Revenue trends (last 6 months)
-      getRevenueTrends(session.companyId),
+      getRevenueTrends(companyId),
       // Popular collections
-      getPopularCollections(session.companyId, dateStart, dateEnd),
+      getPopularCollections(companyId, dateStart, dateEnd),
       // Top customers
-      getTopCustomers(session.companyId, dateStart, dateEnd),
+      getTopCustomers(companyId, dateStart, dateEnd),
       // Quote stats (total, delivered, pending)
-      getQuoteStats(session.companyId, dateStart, dateEnd),
+      getQuoteStats(companyId, dateStart, dateEnd),
     ]);
 
     const metrics = {

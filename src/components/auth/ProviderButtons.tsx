@@ -43,7 +43,10 @@ export function ProviderButtons({ className = '' }: ProviderButtonsProps) {
       return;
     }
 
-    await signIn(providerId, { callbackUrl: '/dashboard' });
+    // Sign in with OAuth provider
+    await signIn(providerId, {
+      callbackUrl: '/dashboard' // Default redirect, will be overridden if new user
+    });
   };
 
   return (

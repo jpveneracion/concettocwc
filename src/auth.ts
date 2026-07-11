@@ -1,10 +1,19 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import { findUserByEmail, createUserWithOAuth, findOAuthAccount, linkOAuthAccount } from '@/lib/oauth';
+import type { AccountLinkRequest, OAuthProvider } from '@/types/oauth';
 
 const providers: any[] = [];
 
+// Debug environment variables
+console.log('=== OAuth Configuration Debug ===');
+console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '✅ Set' : '❌ Missing');
+console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET ? '✅ Set' : '❌ Missing');
+console.log('NEXT_PUBLIC_PI_CLIENT_ID:', process.env.NEXT_PUBLIC_PI_CLIENT_ID ? '✅ Set' : '❌ Missing');
+
 // Google Provider (if configured)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  console.log('✅ Google Provider configured');
   providers.push(Google({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -16,44 +25,13 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       }
     }
   }));
+} else {
+  console.warn('⚠️ Google Provider not configured - missing environment variables');
 }
 
-// Microsoft Provider (if configured) - Not available in NextAuth v5 beta yet
-// TODO: Add Microsoft provider when available in NextAuth v5 stable release
-// if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
-//   const Microsoft = await import('next-auth/providers/microsoft');
-//   providers.push(Microsoft({
-//     clientId: process.env.MICROSOFT_CLIENT_ID,
-//     clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-//     authorization: {
-//       params: {
-//         prompt: "consent",
-//         response_type: "code"
-//       }
-//     }
-//   }));
-// }
-
-// Microsoft Provider (if configured)
-// Note: Microsoft provider not available in NextAuth v5 beta yet
-// Uncomment when provider becomes available
-// if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
-//   try {
-//     const microsoftProvider = await import('next-auth/providers/microsoft');
-//     providers.push(microsoftProvider.Microsoft({
-//       clientId: process.env.MICROSOFT_CLIENT_ID,
-//       clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-//       authorization: {
-//         params: {
-//           prompt: "consent",
-//           response_type: "code"
-//         }
-//       }
-//     }));
-//   } catch (error) {
-//     console.warn('Microsoft provider not available in this NextAuth version');
-//   }
-// }
+if (providers.length === 0) {
+  console.warn('⚠️ No OAuth providers configured - OAuth authentication will not work');
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
@@ -66,21 +44,127 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: '/login',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (!user?.email || !account) {
+        console.error('OAuth sign-in failed: Missing user data');
+        return false;
+      }
+
+      try {
+        console.log('Processing OAuth sign-in for:', user.email);
+
+        // Check if OAuth account already exists
+        const existingAccount = await findOAuthAccount(
+          account.provider as OAuthProvider,
+          account.providerAccountId
+        );
+
+        if (existingAccount) {
+          console.log('✅ Existing OAuth account found, user ID:', existingAccount.user_id);
+          // Add user ID to the user object for later use
+          user.id = existingAccount.user_id;
+          return true;
+        }
+
+        // Check if user exists by email
+        const existingUser = await findUserByEmail(user.email);
+
+        if (existingUser) {
+          // Link OAuth account to existing user
+          console.log('✅ Linking OAuth account to existing user:', existingUser.id);
+
+          const accountData: AccountLinkRequest = {
+            provider: account.provider as OAuthProvider,
+            provider_user_id: account.providerAccountId,
+            email: user.email,
+            username: user.name || undefined,
+            access_token: account.access_token || undefined,
+            refresh_token: account.refresh_token || undefined,
+            expires_at: account.expires_at ? new Date(account.expires_at * 1000) : undefined
+          };
+
+          await linkOAuthAccount(existingUser.id, accountData);
+          console.log('✅ OAuth account linked successfully');
+          user.id = existingUser.id;
+          return true;
+        }
+
+        // New user with OAuth - create them with a temporary company
+        console.log('⚠️ New OAuth user, creating account with default company');
+
+        // Create a default company for the new user
+        const defaultCompanyData = {
+          code: user.email.split('@')[0].toUpperCase().slice(0, 10),
+          name: `${user.name || user.email}'s Company`,
+          address: '',
+          mobile: '',
+          email: user.email
+        };
+
+        // First create the company to get its UUID
+        const { createCompany } = await import('@/lib/oauth');
+        const newCompany = await createCompany(defaultCompanyData);
+
+        const accountData: AccountLinkRequest = {
+          provider: account.provider as OAuthProvider,
+          provider_user_id: account.providerAccountId,
+          email: user.email,
+          username: user.name || undefined,
+          access_token: account.access_token || undefined,
+          refresh_token: account.refresh_token || undefined,
+          expires_at: account.expires_at ? new Date(account.expires_at * 1000) : undefined
+        };
+
+        const { user: newUser } = await createUserWithOAuth(
+          user.email,
+          newCompany.id, // Use the company UUID, not the code
+          accountData
+        );
+
+        console.log('✅ Created new OAuth user:', newUser.id, 'with company:', newCompany.id);
+        user.id = newUser.id;
+        return true;
+
+      } catch (error) {
+        console.error('❌ Error processing OAuth sign-in:', error);
+        return false;
+      }
+    },
+
     async jwt({ token, account, user, profile }) {
       if (account && user) {
         token.provider = account.provider;
         token.providerAccountId = account.providerAccountId;
         token.email = profile?.email || user.email;
         token.emailVerified = profile?.email_verified || false;
+        // Store the user ID from signIn callback
+        token.userId = user.id;
       }
       return token;
     },
+
     async session({ session, token }) {
       if (token) {
         session.provider = token.provider as string;
         session.providerAccountId = token.providerAccountId as string;
+        session.user = {
+          ...session.user,
+          id: token.userId || token.sub || session.user.id,
+          email: token.email as string,
+          name: token.name as string,
+        } as any;
       }
       return session;
     }
-  }
+  },
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log('✅ OAuth sign-in successful:', {
+        user: user.email,
+        userId: user.id,
+        provider: account?.provider
+      });
+    },
+  },
+  debug: process.env.NODE_ENV === 'development'
 });
