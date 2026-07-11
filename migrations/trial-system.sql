@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS activation_codes (
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_activation_codes_code ON activation_codes(code);
 CREATE INDEX IF NOT EXISTS idx_activation_codes_status ON activation_codes(is_active, used_by);
+CREATE INDEX IF NOT EXISTS idx_activation_codes_created_at ON activation_codes(created_at);
+CREATE INDEX IF NOT EXISTS idx_activation_codes_used_by ON activation_codes(used_by);
 CREATE INDEX IF NOT EXISTS idx_users_trial_expires ON users(trial_expires_at);
 CREATE INDEX IF NOT EXISTS idx_users_subscription_status ON users(subscription_activated, trial_expires_at);
 
@@ -54,8 +56,19 @@ UPDATE users SET subscription_activated = true WHERE created_at < NOW();
 -- Add comments for documentation
 COMMENT ON COLUMN users.trial_expires_at IS 'Timestamp when 3-day trial expires';
 COMMENT ON COLUMN users.subscription_activated IS 'Whether user has activated subscription with code';
+COMMENT ON COLUMN users.activation_code IS 'Activation code used to activate subscription';
 COMMENT ON COLUMN users.discount_percent IS 'Discount percentage for subscription (15, 25, 35, etc.)';
 COMMENT ON COLUMN users.subscription_plan IS 'Plan type: monthly, quarterly, or annual';
 COMMENT ON COLUMN activation_codes.code IS 'Unique activation code for subscription';
+COMMENT ON COLUMN activation_codes.discount_percent IS 'Discount percentage applied to subscription (15, 25, 35, etc.)';
+COMMENT ON COLUMN activation_codes.applicable_plans IS 'JSON array of subscription plans this code can be applied to';
+COMMENT ON COLUMN activation_codes.payment_amount IS 'Payment amount in original currency';
+COMMENT ON COLUMN activation_codes.payment_currency IS 'Currency code for payment amount (e.g., PHP, USD)';
+COMMENT ON COLUMN activation_codes.payment_amount_usd IS 'Payment amount converted to USD';
 COMMENT ON COLUMN activation_codes.payment_method IS 'Payment method: gcash, crypto, usd_bank, other';
+COMMENT ON COLUMN activation_codes.exchange_rate IS 'Exchange rate used to convert to USD';
+COMMENT ON COLUMN activation_codes.payment_reference IS 'Reference number from payment provider';
+COMMENT ON COLUMN activation_codes.payment_date IS 'Timestamp when payment was completed';
+COMMENT ON COLUMN activation_codes.wallet_address IS 'Crypto wallet address for crypto payments';
+COMMENT ON COLUMN activation_codes.bank_reference IS 'Bank transaction reference for bank payments';
 COMMENT ON COLUMN activation_codes.status_history IS 'Audit trail of status changes';
