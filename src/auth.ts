@@ -93,8 +93,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         console.log('⚠️ New OAuth user, creating account with default company');
 
         // Create a default company for the new user
+        const companyCode = user.email.split('@')[0].toUpperCase().slice(0, 10);
         const defaultCompanyData = {
-          code: user.email.split('@')[0].toUpperCase().slice(0, 10),
+          code: companyCode,
           name: `${user.name || user.email}'s Company`,
           address: '',
           mobile: '',
@@ -102,8 +103,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
 
         // First create the company to get its UUID
-        const { createCompany } = await import('@/lib/oauth');
-        const newCompany = await createCompany(defaultCompanyData);
+        const { createCompany, validateCompanyCode } = await import('@/lib/oauth');
+
+        // Check if company already exists
+        let company = await validateCompanyCode(companyCode);
+        if (!company) {
+          // Create new company if it doesn't exist
+          company = await createCompany(defaultCompanyData);
+          console.log('✅ Created new company:', company.id);
+        } else {
+          console.log('✅ Using existing company:', company.id);
+        }
 
         const accountData: AccountLinkRequest = {
           provider: account.provider as OAuthProvider,
@@ -117,11 +127,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const { user: newUser } = await createUserWithOAuth(
           user.email,
-          newCompany.id, // Use the company UUID, not the code
+          company.id, // Use the company UUID, not the code
           accountData
         );
 
-        console.log('✅ Created new OAuth user:', newUser.id, 'with company:', newCompany.id);
+        console.log('✅ Created new OAuth user:', newUser.id, 'with company:', company.id);
         user.id = newUser.id;
         return true;
 
