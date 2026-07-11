@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS activation_codes (
   bank_reference VARCHAR(255),
 
   -- Lifecycle tracking
-  created_by INTEGER REFERENCES users(id),
+  created_by UUID REFERENCES users(id),
   created_at TIMESTAMP DEFAULT NOW(),
   expires_at TIMESTAMP,
-  used_by INTEGER REFERENCES users(id),
+  used_by UUID REFERENCES users(id),
   used_at TIMESTAMP,
   used_ip_address VARCHAR(45),
   is_active BOOLEAN DEFAULT true,
