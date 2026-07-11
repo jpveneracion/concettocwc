@@ -45,7 +45,7 @@ export async function linkOAuthAccount(userId: string, accountData: AccountLinkR
 export async function createUserWithOAuth(email: string, companyId: string, accountData: AccountLinkRequest): Promise<{ user: any; oauthAccount: OAuthAccount }> {
   const emailHash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
 
-  // Create user
+  // Create user without password_hash (OAuth users authenticate via OAuth providers)
   const [user] = await sql`
     INSERT INTO users (company_id, email, email_hash)
     VALUES (${companyId}, ${email}, ${emailHash})
