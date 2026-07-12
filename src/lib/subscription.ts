@@ -81,9 +81,19 @@ export async function setTrialExpiration(userId: number | string, days: number =
   const trial_expires_at = new Date();
   trial_expires_at.setDate(trial_expires_at.getDate() + days);
 
-  // Handle both number IDs (legacy) and UUID strings (OAuth)
-  const numericUserId = typeof userId === 'number' ? userId : parseInt(userId as string);
+  // For OAuth users with UUID strings, use direct SQL query to avoid type conversion issues
+  if (typeof userId === 'string' && userId.includes('-')) {
+    // This is a UUID - use direct SQL to handle string IDs
+    await sql(
+      'UPDATE users SET trial_expires_at = $1 WHERE id = $2',
+      [trial_expires_at.toISOString(), userId]
+    );
+    console.log('✅ Set trial expiration for UUID user:', userId);
+    return trial_expires_at;
+  }
 
+  // For number IDs (legacy system), use the existing updateUser function
+  const numericUserId = typeof userId === 'number' ? userId : parseInt(userId as string);
   await updateUser(numericUserId, {
     trial_expires_at: trial_expires_at.toISOString()
   });

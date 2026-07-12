@@ -178,17 +178,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         console.log('✅ Created new OAuth user:', newUser.id, 'with company:', company.id);
         user.id = newUser.id;
 
-        // Set trial expiration for new OAuth users
+        // Set trial expiration for new OAuth users with timeout protection
         try {
-          await setTrialExpiration(newUser.id, 3);
+          const trialPromise = setTrialExpiration(newUser.id, 3);
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Trial setup timeout')), 5000)
+          );
+
+          await Promise.race([trialPromise, timeoutPromise]);
           console.log('✅ Set 3-day trial expiration for new user:', newUser.id);
         } catch (trialError) {
-          console.error('⚠️ Failed to set trial expiration:', trialError);
-          // Don't fail sign-in if trial setup fails
+          console.error('⚠️ Failed to set trial expiration (non-critical):', trialError);
+          // Don't fail sign-in if trial setup fails - continue with login
         }
 
-        // Set custom session cookie for new user
-        await setCustomSessionCookie(newUser.id, company.id, user.email);
+        // Set custom session cookie for new user with error handling
+        try {
+          await setCustomSessionCookie(newUser.id, company.id, user.email);
+        } catch (cookieError) {
+          console.error('⚠️ Failed to set session cookie (non-critical):', cookieError);
+          // Don't fail sign-in if cookie setup fails
+        }
 
         return true;
 
