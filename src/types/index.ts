@@ -122,3 +122,6 @@ export interface DateRange {
 
 export type CostCategory = string; // e.g., "materials", "labor", "overhead"
 export type CostBreakdown = Record<CostCategory, number>;
+
+// Export subscription types
+export * from './subscription';

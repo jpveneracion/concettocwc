@@ -4,6 +4,7 @@ import { findUserByEmail, createUserWithOAuth, findOAuthAccount, linkOAuthAccoun
 import type { AccountLinkRequest, OAuthProvider } from '@/types/oauth';
 import { cookies } from 'next/headers';
 import { sql } from '@/lib/db';
+import { setTrialExpiration } from '@/lib/subscription';
 
 // Helper function to set custom session cookie for compatibility with proxy middleware
 async function setCustomSessionCookie(userId: string, companyId: string, email: string) {
@@ -176,6 +177,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         console.log('✅ Created new OAuth user:', newUser.id, 'with company:', company.id);
         user.id = newUser.id;
+
+        // Set trial expiration for new OAuth users
+        try {
+          await setTrialExpiration(newUser.id, 3);
+          console.log('✅ Set 3-day trial expiration for new user:', newUser.id);
+        } catch (trialError) {
+          console.error('⚠️ Failed to set trial expiration:', trialError);
+          // Don't fail sign-in if trial setup fails
+        }
 
         // Set custom session cookie for new user
         await setCustomSessionCookie(newUser.id, company.id, user.email);

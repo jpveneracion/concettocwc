@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 import MobileNav from './MobileNav';
+import WarningBanner from './subscription/WarningBanner';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -10,6 +11,7 @@ const navItems = [
   { href: '/quotes/new', label: 'New quote', icon: '➕' },
   { href: '/products', label: 'Products', icon: '🏷️' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/account/subscription', label: 'Subscription', icon: '💳' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +34,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row md:h-screen md:overflow-hidden">
+      {/* Subscription Warning Banner */}
+      <WarningBanner />
+
       {/* Mobile header */}
       <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
         <div className="text-lg font-semibold text-blue-600">

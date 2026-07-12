@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { checkSubscriptionAccess } from '@/lib/subscription';
 
 export async function PATCH(
   req: Request,
@@ -11,6 +12,17 @@ export async function PATCH(
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription access - require full access for status updates
+    const access = await checkSubscriptionAccess(session);
+    if (access.mode !== 'full') {
+      return NextResponse.json({
+        error: 'Active subscription required for quote status updates',
+        checkoutUrl: '/subscription/checkout',
+        mode: access.mode,
+        reason: access.reason
+      }, { status: 403 });
     }
 
     const body = await req.json();

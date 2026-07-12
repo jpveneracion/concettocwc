@@ -15,6 +15,12 @@ Stack: **Next.js 14 (App Router) · TypeScript · Tailwind CSS · Neon (PostgreS
   - **Supplier Purchase Order** — measured size + final size + supplier cost
 - **Settings** — editable company info, terms, DEL note, closing note
 - **Demo watermark protection** — subscription-based watermarking for trial/demo accounts
+- **Subscription system** — Enterprise-grade subscription management with PayMongo payment gateway
+  - Two subscription tiers (Basic ₱499/month, Pro ₱999/month)
+  - 3-day trial periods with automatic conversion
+  - Access control based on subscription status
+  - Mobile-first subscription management UI
+  - Real-time webhook processing for payment events
 - **UUID primary keys** throughout — safe for distributed use and future API expansion
 
 ---
@@ -123,6 +129,12 @@ All tables use `gen_random_uuid()` (via the `pgcrypto` extension) for primary ke
 | `products` | Blind product codes with supplier cost and retail price |
 | `quotes` | Quote header — customer, date, totals, status |
 | `quote_items` | Each window panel in a quote, with measured + final sizes, areas, amounts |
+| `subscriptions` | Subscription lifecycle tracking with PayMongo integration |
+| `subscription_plans` | Plan definitions (Basic ₱499, Pro ₱999) |
+| `subscription_items` | Line items per subscription |
+| `invoices` | Billing invoices and payment tracking |
+| `payment_methods` | Stored payment methods (GCash, Maya, cards) |
+| `webhook_events` | Event log for PayMongo webhooks |
 
 ### Key relationships
 
@@ -130,10 +142,18 @@ All tables use `gen_random_uuid()` (via the `pgcrypto` extension) for primary ke
 quotes (id UUID PK)
   └── quote_items (quote_id UUID FK → quotes.id ON DELETE CASCADE)
         └── product_id UUID FK → products.id ON DELETE SET NULL
+
+subscriptions (id UUID PK)
+  ├── company_id UUID FK → companies.id ON DELETE CASCADE
+  ├── plan_id UUID FK → subscription_plans.id
+  ├── subscription_items (subscription_id UUID FK → subscriptions.id)
+  └── invoices (subscription_id UUID FK → subscriptions.id ON DELETE SET NULL)
 ```
 
 `ON DELETE CASCADE` on `quote_items` means deleting a quote also deletes all its items.  
 `ON DELETE SET NULL` on `product_id` means deleting a product doesn't delete historical quote items — the product code and description are stored directly on the item row for this reason.
+
+The subscription system maintains a 1:1 relationship between companies and subscriptions via the `company_id` foreign key in the `subscriptions` table.
 
 ---
 
@@ -150,11 +170,23 @@ src/
 │   │   ├── quotes/
 │   │   │   ├── route.ts          # GET all, POST create
 │   │   │   └── [id]/route.ts     # GET with items, PUT update, DELETE
+│   │   ├── subscriptions/
+│   │   │   └── create/route.ts   # POST create checkout session
+│   │   ├── account/
+│   │   │   └── subscription/
+│   │   │       ├── route.ts      # GET subscription details
+│   │   │       └── cancel/route.ts # POST cancel subscription
+│   │   ├── webhooks/
+│   │   │   └── paymongo/route.ts # POST process payment webhooks
 │   │   └── settings/route.ts     # GET, PUT
 │   ├── quotes/
 │   │   ├── page.tsx              # Quotes list
 │   │   ├── new/page.tsx          # New quote form
 │   │   └── [id]/page.tsx         # Edit quote + print preview
+│   ├── subscription/
+│   │   └── checkout/page.tsx     # Plan selection & checkout
+│   ├── account/
+│   │   └── subscription/page.tsx # Subscription management
 │   ├── products/page.tsx         # Product management
 │   ├── settings/page.tsx         # Settings
 │   ├── layout.tsx
@@ -163,13 +195,21 @@ src/
 ├── components/
 │   ├── AppLayout.tsx             # Sidebar navigation shell
 │   ├── QuoteForm.tsx             # Shared new/edit quote form
-│   └── PrintDoc.tsx              # Printable quotation / PO layout
+│   ├── PrintDoc.tsx              # Printable quotation / PO layout
+│   └── subscription/
+│       ├── PlanComparison.tsx    # Subscription plan comparison
+│       └── WarningBanner.tsx    # Subscription status warnings
 ├── lib/
 │   ├── db.ts                     # Neon SQL client
 │   ├── calc.ts                   # Shared calculation helpers
+│   ├── subscription.ts           # Subscription logic & helpers
 │   └── migrate.js                # One-time DB migration script
-└── types/
-    └── index.ts                  # Shared TypeScript types
+├── types/
+│   ├── index.ts                  # Shared TypeScript types
+│   └── subscription.ts           # Subscription-specific types
+└── __tests__/
+    └── subscription/
+        └── subscription.test.ts  # Subscription logic tests (55 tests)
 ```
 
 ---
@@ -194,11 +234,95 @@ Navigate to `/quotes/[id]?print=quotation` or `/quotes/[id]?print=po` to open th
 
 ---
 
-## Subscription Status
+## Subscription System
+
+The app includes a comprehensive subscription system with PayMongo payment integration for managing user access and billing.
+
+### Subscription Features
+
+**Two Subscription Tiers:**
+- **Basic Plan (₱499/month)**: Up to 50 quotes/month, standard templates, email support
+- **Pro Plan (₱999/month)**: Unlimited quotes, premium templates, priority support, custom branding
+
+**Key Capabilities:**
+- 3-day free trial with full functionality
+- Automatic trial conversion or read-only mode
+- Mobile-first subscription management interface
+- Real-time payment processing via PayMongo (GCash, Maya, cards)
+- Webhook-based subscription status synchronization
+- Graceful access control with read-only mode for payment issues
+- Comprehensive subscription management (upgrade, cancel, payment methods)
+
+### Access Control
+
+Subscription status controls access to creating and editing quotes:
+
+| Subscription Status | Create/Edit Quotes | View Quotes | Notes |
+|---|---|---|---|
+| `trialing` | ✅ Full access | ✅ Full access | During 3-day trial period |
+| `active` | ✅ Full access | ✅ Full access | Active paying subscription |
+| `past_due` | ❌ Read-only | ✅ Read-only | Payment failed (grace period) |
+| `cancelled` | ❌ Denied | ✅ Read-only | 7-day grace period after cancellation |
+| `suspended` | ❌ Denied | ❌ Denied | Account suspended |
+
+### Subscription Management
+
+**User Management:**
+- `/subscription/checkout` - Plan selection and checkout
+- `/account/subscription` - View current plan, usage, billing info
+- Upgrade/downgrade plans
+- Cancel subscription with grace period
+- Update payment methods
+
+**Admin/Developer Management:**
+- Database: Direct subscription management via `subscriptions` table
+- PayMongo Dashboard: Advanced subscription management
+- API: Programmatic subscription control
+- Webhooks: Real-time event monitoring
+
+### Technical Implementation
+
+**Database Tables:**
+- `subscriptions` - Main subscription lifecycle tracking
+- `subscription_plans` - Plan definitions and pricing  
+- `subscription_items` - Line items per subscription
+- `invoices` - Billing invoices and payment tracking
+- `payment_methods` - Stored payment methods
+- `webhook_events` - Event log for webhook replay
+
+**API Endpoints:**
+- `POST /api/subscriptions/create` - Create checkout session
+- `GET /api/account/subscription` - Get subscription details
+- `POST /api/account/subscription/cancel` - Cancel subscription
+- `POST /api/webhooks/paymongo` - Process payment webhooks
+
+**Documentation:**
+- `docs/subscription/IMPLEMENTATION_COMPLETE.md` - Complete implementation guide
+- `docs/subscription/QUICK_START.md` - Quick start guide
+- `docs/subscription/PAYMONGO_WEBHOOK_SETUP.md` - Webhook configuration
+- `docs/subscription/WEBHOOK_VERIFICATION.md` - Webhook testing guide
+
+### Environment Setup
+
+Add to your `.env.local` for subscription features:
+
+```env
+# PayMongo Payment Gateway
+PAYMONGO_SECRET_KEY=sk_test_your_test_key
+PAYMONGO_WEBHOOK_SECRET=whsec_your_webhook_secret
+PAYMONGO_PUBLIC_KEY=pk_test_your_public_key
+PAYMONGO_API_URL=https://api.paymongo.com/v1
+```
+
+---
+
+## Subscription Status (Legacy)
+
+**Note:** The subscription system has been completely re-implemented with PayMongo integration. The legacy subscription status system described below is maintained for backward compatibility.
 
 Companies can have the following subscription statuses:
 - `demo` - Demo account with watermarked documents
-- `trial` - Trial account with watermarked documents
+- `trial` - Trial account with watermarked documents  
 - `active` - Active paying account with clean documents
 - `past_due` - Past due account with watermarked documents
 
@@ -210,10 +334,12 @@ Companies can have the following subscription statuses:
 - Multi-page documents show watermark on each page
 
 **Managing subscription status:**
-The subscription status is stored in the `companies` table and can be updated via SQL:
+The legacy subscription status is stored in the `companies` table and can be updated via SQL:
 ```sql
 UPDATE companies SET subscription_status = 'active' WHERE code = 'YOUR_COMPANY_CODE';
 ```
+
+For new subscriptions, use the PayMongo-integrated subscription system instead.
 
 ---
 

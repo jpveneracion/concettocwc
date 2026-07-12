@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
+import { checkSubscriptionAccess } from '@/lib/subscription';
 import type { QuotePayload } from '@/types';
 
 export async function GET() {
@@ -11,6 +12,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check subscription access
+    const access = await checkSubscriptionAccess(session);
+
+    // Allow read access even in readonly mode
     const quotes = await sql`
       SELECT id, quote_number, customer_name, customer_address,
              customer_name_encrypted, customer_address_encrypted,
@@ -55,6 +60,8 @@ export async function GET() {
     return NextResponse.json({
       companyCode: session.companyCode,
       quotes: decryptedQuotes,
+      accessMode: access.mode,
+      subscriptionRequired: !access.allowed && access.mode !== 'readonly'
     });
   } catch (err) {
     console.error('GET /api/quotes', err);
@@ -67,6 +74,17 @@ export async function POST(req: Request) {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription access - require full access for quote creation
+    const access = await checkSubscriptionAccess(session);
+    if (access.mode !== 'full') {
+      return NextResponse.json({
+        error: 'Subscription required for quote creation',
+        checkoutUrl: '/subscription/checkout',
+        mode: access.mode,
+        reason: access.reason
+      }, { status: 402 });
     }
 
     const body: QuotePayload = await req.json();
