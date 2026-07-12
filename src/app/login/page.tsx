@@ -36,11 +36,18 @@ function LoginForm() {
     setLoading(true);
 
     try {
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await res.json();
 
@@ -49,6 +56,8 @@ function LoginForm() {
         setLoading(false);
         return;
       }
+
+      console.log('Login response received:', data);
 
       // Determine where to redirect based on account state
       if (data.defaultPassword) {
@@ -62,8 +71,13 @@ function LoginForm() {
         router.push('/dashboard');
       }
       // Remove router.refresh() - it conflicts with router.push()
-    } catch (err) {
-      setError('Unable to connect. Please try again.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (err.name === 'AbortError') {
+        setError('Login request timed out. Please try again.');
+      } else {
+        setError('Unable to connect. Please try again.');
+      }
       setLoading(false);
     }
   }
