@@ -1,37 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import { sql } from '@/lib/db';
 import { decryptPII } from '@/lib/crypto';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
+    // Read custom session cookie (the one that actually works in this system)
+    const sessionCookie = req.cookies.get('session');
 
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!sessionCookie) {
+      return NextResponse.json({ error: 'Unauthorized - no session' }, { status: 401 });
     }
 
-    // Get user ID from session or find user by email
-    let userId = session.user.id;
-    if (!userId) {
-      const userResult = await sql`
-        SELECT id, company_id FROM users WHERE email = ${session.user.email}
-      `;
-      if (!userResult[0]) {
-        return NextResponse.json({ error: 'User not found', needsSetup: true }, { status: 404 });
-      }
-      userId = userResult[0].id;
+    let sessionData;
+    try {
+      sessionData = JSON.parse(sessionCookie.value);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized - invalid session' }, { status: 401 });
     }
 
-    // Get company ID
-    const companyResult = await sql`
-      SELECT company_id FROM users WHERE id = ${userId}
-    `;
-    if (!companyResult[0]) {
-      return NextResponse.json({ error: 'Company not found', needsSetup: true }, { status: 404 });
-    }
+    const { userId, companyId, email } = sessionData;
 
-    const companyId = companyResult[0].company_id;
+    if (!userId || !companyId) {
+      return NextResponse.json({ error: 'Unauthorized - incomplete session' }, { status: 401 });
+    }
 
     const searchParams = req.nextUrl.searchParams;
     const period = (searchParams.get('period') as 'month' | 'year' | 'custom') || 'month';
