@@ -1,16 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSubscriptionInfo, AccountStatus, getTrialDaysRemaining } from './lib/subscription';
 
+// In-memory cache for subscription data
+interface CachedSubscription {
+  data: any;
+  expires: number;
+}
+
+const subscriptionCache = new Map<string, CachedSubscription>();
+
 // Cache TTL: 5 minutes in milliseconds
 const SUBSCRIPTION_CACHE_TTL = 5 * 60 * 1000;
 
-interface SessionData {
-  userId: number;
-  companyId: string;
-  subscriptionCache?: {
-    data: any;
-    timestamp: number;
-  };
+/**
+ * Get cached subscription data if available and not expired
+ */
+function getCachedSubscription(userId: string): any | null {
+  const cached = subscriptionCache.get(userId);
+  if (cached && cached.expires > Date.now()) {
+    return cached.data; // Cache hit
+  }
+  return null; // Cache miss or expired
+}
+
+/**
+ * Set subscription data in cache with expiration
+ */
+function setCachedSubscription(userId: string, data: any): void {
+  subscriptionCache.set(userId, {
+    data,
+    expires: Date.now() + SUBSCRIPTION_CACHE_TTL
+  });
 }
 
 export default async function proxy(req: NextRequest) {
@@ -42,18 +62,16 @@ export default async function proxy(req: NextRequest) {
 
   // Parse session and check subscription with caching
   try {
-    const sessionData = JSON.parse(session.value) as SessionData;
+    const sessionData = JSON.parse(session.value);
+    const userIdStr = String(sessionData.userId);
 
     // Check if we have cached subscription data that's still fresh
-    let subscriptionInfo = sessionData.subscriptionCache?.data;
-    const cacheAge = Date.now() - (sessionData.subscriptionCache?.timestamp || 0);
+    let subscriptionInfo = getCachedSubscription(userIdStr);
 
     // If cache is expired or missing, fetch fresh data from database
-    if (!subscriptionInfo || cacheAge > SUBSCRIPTION_CACHE_TTL) {
+    if (!subscriptionInfo) {
       subscriptionInfo = await getUserSubscriptionInfo(sessionData.userId);
-
-      // Note: We don't update the session cookie here to avoid middleware mutations
-      // The cache will be refreshed on the next request after TTL expires
+      setCachedSubscription(userIdStr, subscriptionInfo);
     }
 
     // For API routes, inject company context and subscription status into headers
