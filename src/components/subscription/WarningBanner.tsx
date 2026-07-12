@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { SubscriptionDetails } from '@/types/subscription';
+import type { TrialStatusResponse } from '@/types/subscription';
 
 interface SubscriptionWarning {
   show: boolean;
@@ -19,10 +19,10 @@ interface WarningBannerProps {
 /**
  * WarningBanner Component
  *
- * Displays subscription-related warnings based on current subscription status:
+ * Displays trial-related warnings based on current trial status:
  * - Trial ending (2 days or less) - Blue info banner
- * - Payment failed (past_due) - Red error banner
- * - Subscription cancelled - Yellow warning banner
+ * - Trial expired - Red error banner
+ * - Subscription active - No banner
  *
  * Silently handles API failures and only shows when warning conditions exist.
  */
@@ -35,9 +35,9 @@ export default function WarningBanner({ className = '' }: WarningBannerProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function checkSubscriptionStatus() {
+    async function checkTrialStatus() {
       try {
-        const response = await fetch('/api/account/subscription');
+        const response = await fetch('/api/auth/trial-status');
 
         if (!response.ok) {
           // Silent API failure - don't show banner
@@ -45,20 +45,20 @@ export default function WarningBanner({ className = '' }: WarningBannerProps) {
           return;
         }
 
-        const data: SubscriptionDetails = await response.json();
-        const newWarning = evaluateSubscriptionStatus(data);
+        const data: TrialStatusResponse = await response.json();
+        const newWarning = evaluateTrialStatus(data);
         setWarning(newWarning);
 
       } catch (error) {
         // Silent error handling - don't show banner on API failures
-        console.error('Failed to fetch subscription status:', error);
+        console.error('Failed to fetch trial status:', error);
         setWarning({ show: false, message: '', type: 'info' });
       } finally {
         setIsLoading(false);
       }
     }
 
-    checkSubscriptionStatus();
+    checkTrialStatus();
   }, []);
 
   // Don't render anything if loading, no warning, or error state
@@ -122,77 +122,47 @@ export default function WarningBanner({ className = '' }: WarningBannerProps) {
 }
 
 /**
- * Evaluates subscription status and determines if warning should be shown
+ * Evaluates trial status and determines if warning should be shown
  */
-function evaluateSubscriptionStatus(data: SubscriptionDetails): SubscriptionWarning {
-  const now = new Date();
+function evaluateTrialStatus(data: TrialStatusResponse): SubscriptionWarning {
+  // Trial Expired Error - User needs to activate subscription
+  if (data.requires_activation) {
+    return {
+      show: true,
+      message: 'Trial expired - Activate your account to continue access',
+      type: 'error',
+      actionUrl: '/activate-code',
+      actionText: 'Activate Account'
+    };
+  }
 
   // Trial Ending Warning (2 days or less remaining)
-  if (data.status === 'trialing' && data.trial_end) {
-    const trialEndDate = new Date(data.trial_end);
-    const daysLeft = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (daysLeft <= 2 && daysLeft > 0) {
-      return {
-        show: true,
-        message: `Trial ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'} - Subscribe now to continue access`,
-        type: 'info',
-        actionUrl: '/subscription/checkout',
-        actionText: 'Subscribe Now'
-      };
-    }
+  if (data.trial_active && data.trial_days_remaining <= 2) {
+    return {
+      show: true,
+      message: `Trial ends in ${data.trial_days_remaining} day${data.trial_days_remaining === 1 ? '' : 's'} - Activate now to continue access`,
+      type: 'info',
+      actionUrl: '/activate-code',
+      actionText: 'Activate Now'
+    };
   }
 
-  // Payment Failed Warning (past_due status)
-  if (data.status === 'past_due') {
-    // Check if still in grace period
-    if (data.current_period_end) {
-      const gracePeriodEnd = new Date(data.current_period_end);
-      if (gracePeriodEnd > now) {
-        const daysLeft = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        return {
-          show: true,
-          message: `Payment failed - Update payment method (grace period ends in ${daysLeft} days)`,
-          type: 'error',
-          actionUrl: '/account/subscription',
-          actionText: 'Update Payment'
-        };
-      }
-    } else {
-      return {
-        show: true,
-        message: 'Payment failed - Update payment method to maintain access',
-        type: 'error',
-        actionUrl: '/account/subscription',
-        actionText: 'Update Payment'
-      };
-    }
+  // Trial Active with more than 2 days - no warning needed
+  if (data.trial_active && data.trial_days_remaining > 2) {
+    return {
+      show: false,
+      message: '',
+      type: 'info'
+    };
   }
 
-  // Subscription Cancelled Warning
-  if (data.status === 'cancelled') {
-    if (data.current_period_end) {
-      const gracePeriodEnd = new Date(data.current_period_end);
-      const daysLeft = Math.ceil((gracePeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (daysLeft > 0) {
-        return {
-          show: true,
-          message: `Subscription cancelled - Grace period ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
-          type: 'warning',
-          actionUrl: '/account/subscription',
-          actionText: 'Manage Subscription'
-        };
-      }
-    } else {
-      return {
-        show: true,
-        message: 'Subscription cancelled - Reactivate to maintain access',
-        type: 'warning',
-        actionUrl: '/subscription/checkout',
-        actionText: 'Reactivate'
-      };
-    }
+  // Subscription Active - no warning needed
+  if (data.subscription_activated) {
+    return {
+      show: false,
+      message: '',
+      type: 'info'
+    };
   }
 
   // No warning condition found

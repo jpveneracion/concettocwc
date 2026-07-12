@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { setTrialExpiration } from '@/lib/subscription';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
@@ -67,6 +68,10 @@ export async function POST(req: Request) {
       VALUES (${newCompany.id}, ${userEmail}, ${emailHash}, ${passwordHash})
       RETURNING id, email
     `;
+
+    // Activate 3-day trial for new user
+    await setTrialExpiration(newUser.id, 3);
+    console.log(`✅ 3-day trial activated for new user ${newUser.id}`);
 
     return NextResponse.json({
       success: true,

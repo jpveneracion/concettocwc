@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
           />
           <MetricCard
             title="Conversion Rate"
-            value={`${analytics?.trial_to_conversion_rate.toFixed(1)}%`}
+            value={`${(analytics?.trial_to_conversion_rate || 0).toFixed(1)}%`}
             color="purple"
           />
         </div>
@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
             Payment Methods
           </h2>
           <div className="space-y-3">
-            {analytics?.payment_method_distribution.map((method) => (
+            {analytics?.payment_method_distribution?.map((method) => (
               <div key={method.method} className="flex items-center">
                 <div className="flex-1">
                   <div className="text-sm font-medium text-gray-900">
