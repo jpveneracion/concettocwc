@@ -61,7 +61,7 @@ function LoginForm() {
         // Everything is set up - go to dashboard
         router.push('/dashboard');
       }
-      router.refresh();
+      // Remove router.refresh() - it conflicts with router.push()
     } catch (err) {
       setError('Unable to connect. Please try again.');
       setLoading(false);
