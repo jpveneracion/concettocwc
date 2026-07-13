@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       is_active: searchParams.get('is_active') === 'true' ? true :
                  searchParams.get('is_active') === 'false' ? false :
                  undefined,
-      used_by: searchParams.get('used_by') ? parseInt(searchParams.get('used_by')!) : undefined,
+      used_by: searchParams.get('used_by') || undefined,
       campaign_name: searchParams.get('campaign_name') || undefined
     };
 
