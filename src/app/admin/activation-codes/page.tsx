@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { AccountLockedBanner } from '@/components/subscription/AccountLockedBanner';
 import { PaymentMethod, SubscriptionPlan } from '@/types/subscription';
+import AdminLayout from '@/components/AdminLayout';
 
 interface DashboardAnalytics {
   total_gcash_payments: number;
@@ -74,27 +75,9 @@ export default function AdminDashboardPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse">Loading analytics...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <AdminLayout>
+      <div className="space-y-6">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Admin Dashboard
@@ -281,7 +264,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 }
 
