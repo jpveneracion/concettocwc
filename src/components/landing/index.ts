@@ -1,10 +1,10 @@
 // src/components/landing/index.ts
-export { HeroSection } from './HeroSection';
-export { ProblemSection } from './ProblemSection';
-export { SolutionSection } from './SolutionSection';
-export { FeaturesSection } from './FeaturesSection';
-export { TechnicalSection } from './TechnicalSection';
-export { TrustSection } from './TrustSection';
-export { CtaSection } from './CtaSection';
-export { Navigation } from './Navigation';
-export { LandingFooter } from './LandingFooter';
+export { default as HeroSection } from './HeroSection';
+export { default as ProblemSection } from './ProblemSection';
+export { default as SolutionSection } from './SolutionSection';
+export { default as FeaturesSection } from './FeaturesSection';
+export { default as TechnicalSection } from './TechnicalSection';
+export { default as TrustSection } from './TrustSection';
+export { default as CtaSection } from './CtaSection';
+export { default as Navigation } from './Navigation';
+export { default as LandingFooter } from './LandingFooter';
