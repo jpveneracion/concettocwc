@@ -14,8 +14,8 @@ const defaultFooterProps: FooterProps = {
   year: new Date().getFullYear()
 };
 
-export default function LandingFooter(props: FooterProps = defaultFooterProps) {
-  const { companyName, links, techStack, year } = props;
+export default function LandingFooter(props: Partial<FooterProps> = {}) {
+  const { companyName, links, techStack, year } = { ...defaultFooterProps, ...props };
 
   return (
     <footer className="bg-gray-900 text-gray-300 py-12 px-4 sm:px-6 lg:px-8">

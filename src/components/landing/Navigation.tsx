@@ -14,8 +14,8 @@ const defaultNavProps: NavigationProps = {
   ctaLink: '/signup'
 };
 
-export default function Navigation(props: NavigationProps = defaultNavProps) {
-  const { logoText, links, ctaText, ctaLink } = props;
+export default function Navigation(props: Partial<NavigationProps> = {}) {
+  const { logoText, links, ctaText, ctaLink } = { ...defaultNavProps, ...props };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {

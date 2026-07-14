@@ -19,7 +19,7 @@ const defaultCtaProps: CtaSectionProps = {
   ]
 };
 
-export default function CtaSection(props: CtaSectionProps = defaultCtaProps) {
+export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
   const {
     headline,
     subtext,
@@ -28,7 +28,7 @@ export default function CtaSection(props: CtaSectionProps = defaultCtaProps) {
     secondaryCtaText,
     secondaryCtaLink,
     benefits
-  } = props;
+  } = { ...defaultCtaProps, ...props };
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
