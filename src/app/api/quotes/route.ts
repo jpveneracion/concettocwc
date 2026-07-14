@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
+import { validateQuoteCreation, restrictionErrorResponse } from '@/lib/api-restrictions';
 import type { QuotePayload } from '@/types';
 
 export async function GET() {
@@ -76,6 +77,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Parse request body early for trial restriction validation
+    const body: QuotePayload = await req.json();
+    const { quote_date } = body;
+
+    // Validate trial restrictions for quote creation
+    if (quote_date) {
+      const validationResult = await validateQuoteCreation(
+        session,
+        new Date(quote_date)
+      );
+
+      if (!validationResult.allowed) {
+        return restrictionErrorResponse(validationResult);
+      }
+    }
+
     // Check subscription access - require full access for quote creation
     const access = await checkSubscriptionAccess(session);
     if (access.mode !== 'full') {
@@ -87,9 +104,8 @@ export async function POST(req: Request) {
       }, { status: 402 });
     }
 
-    const body: QuotePayload = await req.json();
     const {
-      quote_number, customer_name, customer_address, quote_date,
+      quote_number, customer_name, customer_address,
       our_ref, installation_fee, delivery_fee, items,
     } = body;
 

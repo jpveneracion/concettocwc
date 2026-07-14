@@ -119,8 +119,12 @@ export async function getUserRestrictionState(userId: string): Promise<Restricti
       OperationType.MANAGE_PRODUCTS
     );
   } else {
-    // Partial access - can create past orders
-    allowedOperations.push(OperationType.MANAGE_PRODUCTS);
+    // Partial access - can create past orders and manage products
+    allowedOperations.push(
+      OperationType.CREATE_ORDER,
+      OperationType.CREATE_QUOTE,
+      OperationType.MANAGE_PRODUCTS
+    );
   }
 
   return {
