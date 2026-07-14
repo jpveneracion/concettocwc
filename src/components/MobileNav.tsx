@@ -1,6 +1,7 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useCallback, memo, useEffect } from 'react';
+import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -8,11 +9,11 @@ interface MobileNavProps {
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/quotes', label: 'Orders', icon: '📄' },
-  { href: '/quotes/new', label: 'New quote', icon: '➕' },
-  { href: '/products', label: 'Products', icon: '🏷️' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/dashboard', label: 'Dashboard', icon: '📊', requiresFutureOrders: false },
+  { href: '/quotes', label: 'Orders', icon: '📄', requiresFutureOrders: false },
+  { href: '/quotes/new', label: 'New quote', icon: '➕', requiresFutureOrders: true },
+  { href: '/products', label: 'Products', icon: '🏷️', requiresFutureOrders: false },
+  { href: '/settings', label: 'Settings', icon: '⚙️', requiresFutureOrders: false },
 ];
 
 const adminNavItems = [
@@ -24,6 +25,7 @@ const adminNavItems = [
 function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { canCreateFutureOrders } = useTrialRestrictions();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -99,6 +101,8 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
           {navItems.map((item) => {
             const active = pathname === item.href ||
               (item.href !== '/quotes' && pathname.startsWith(item.href));
+            const isRestricted = item.requiresFutureOrders && !canCreateFutureOrders;
+
             return (
               <button
                 key={item.href}
@@ -107,11 +111,17 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   active
                     ? 'bg-blue-50 text-blue-700 font-medium'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                } ${isRestricted ? 'opacity-60' : ''}`}
                 aria-current={active ? 'page' : undefined}
+                disabled={isRestricted}
               >
                 <span className="text-xl">{item.icon}</span>
-                {item.label}
+                <span className="flex-1 text-left">{item.label}</span>
+                {isRestricted && (
+                  <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded-full font-medium">
+                    🔒 Restricted
+                  </span>
+                )}
               </button>
             );
           })}

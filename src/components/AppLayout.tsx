@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import MobileNav from './MobileNav';
 import WarningBanner from './subscription/WarningBanner';
+import { TrialRestrictionBanner } from './TrialRestrictionBanner';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊' },
@@ -64,6 +65,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col md:h-screen bg-gray-50">
       {/* Subscription Warning Banner */}
       <WarningBanner />
+
+      {/* Trial Restriction Banner */}
+      <TrialRestrictionBanner />
 
       {/* Main Layout Container */}
       <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
