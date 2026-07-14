@@ -21,19 +21,19 @@ describe('Trial Restrictions - API Integration', () => {
     jest.clearAllMocks();
 
     // Setup crypto mocking that properly simulates encryption/decryption
-    mockedEncryptPII.mockImplementation((plaintext) => `encrypted_${plaintext}`);
-    mockedDecryptPII.mockImplementation((encrypted) => {
+    mockedEncryptPII.mockImplementation((plaintext: string) => `encrypted_${plaintext}`);
+    mockedDecryptPII.mockImplementation((encrypted: string | Buffer) => {
       if (typeof encrypted === 'string' && encrypted.startsWith('encrypted_')) {
         return encrypted.replace('encrypted_', '');
       }
-      return encrypted;
+      return typeof encrypted === 'string' ? encrypted : String(encrypted);
     });
 
     // Setup database mocking for successful quote creation
     mockedSql.mockResolvedValue([{ id: 1, quote_number: 'QT-001', customer_name: 'Test Customer', created_at: new Date() }]);
 
     // Setup default subscription access check (allow full access)
-    (checkSubscriptionAccess as jest.Mock).mockResolvedValue({
+    (checkSubscriptionAccess as jest.MockedFunction<typeof checkSubscriptionAccess>).mockResolvedValue({
       allowed: true,
       mode: 'full',
       reason: 'No subscription yet - can start trial'
@@ -50,10 +50,10 @@ describe('Trial Restrictions - API Integration', () => {
         email: 'test@example.com'
       };
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getSession as jest.MockedFunction<typeof getSession>).mockResolvedValue(mockSession as any);
 
       // Mock subscription check for full access
-      (getUserSubscriptionInfo as jest.Mock).mockResolvedValue({
+      (getUserSubscriptionInfo as jest.MockedFunction<typeof getUserSubscriptionInfo>).mockResolvedValue({
         user_id: 'user-123',
         trial_expires_at: new Date(Date.now() + 86400000),
         subscription_activated: false,
@@ -63,7 +63,7 @@ describe('Trial Restrictions - API Integration', () => {
       });
 
       // Mock subscription access to return full access
-      (checkSubscriptionAccess as jest.Mock).mockResolvedValue({
+      (checkSubscriptionAccess as jest.MockedFunction<typeof checkSubscriptionAccess>).mockResolvedValue({
         allowed: true,
         mode: 'full',
         reason: 'Test - full access granted'
@@ -122,10 +122,10 @@ describe('Trial Restrictions - API Integration', () => {
         email: 'expired@example.com'
       };
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getSession as jest.MockedFunction<typeof getSession>).mockResolvedValue(mockSession as any);
 
       // Mock expired trial
-      (getUserSubscriptionInfo as jest.Mock).mockResolvedValue({
+      (getUserSubscriptionInfo as jest.MockedFunction<typeof getUserSubscriptionInfo>).mockResolvedValue({
         user_id: 'expired-user',
         trial_expires_at: new Date(Date.now() - 86400000),
         subscription_activated: false,
@@ -135,7 +135,7 @@ describe('Trial Restrictions - API Integration', () => {
       });
 
       // Mock subscription access to return full access (so we can test the trial restrictions specifically)
-      (checkSubscriptionAccess as jest.Mock).mockResolvedValue({
+      (checkSubscriptionAccess as jest.MockedFunction<typeof checkSubscriptionAccess>).mockResolvedValue({
         allowed: true,
         mode: 'full',
         reason: 'Test - full access granted'
@@ -190,10 +190,10 @@ describe('Trial Restrictions - API Integration', () => {
         email: 'expired@example.com'
       };
 
-      (getSession as jest.Mock).mockResolvedValue(mockSession);
+      (getSession as jest.MockedFunction<typeof getSession>).mockResolvedValue(mockSession as any);
 
       // Mock expired trial
-      (getUserSubscriptionInfo as jest.Mock).mockResolvedValue({
+      (getUserSubscriptionInfo as jest.MockedFunction<typeof getUserSubscriptionInfo>).mockResolvedValue({
         user_id: 'expired-user',
         trial_expires_at: new Date(Date.now() - 86400000),
         subscription_activated: false,
@@ -203,7 +203,7 @@ describe('Trial Restrictions - API Integration', () => {
       });
 
       // Mock subscription access to return full access (so we can test the trial restrictions specifically)
-      (checkSubscriptionAccess as jest.Mock).mockResolvedValue({
+      (checkSubscriptionAccess as jest.MockedFunction<typeof checkSubscriptionAccess>).mockResolvedValue({
         allowed: true,
         mode: 'full',
         reason: 'Test - full access granted'
