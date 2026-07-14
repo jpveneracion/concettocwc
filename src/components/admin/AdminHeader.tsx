@@ -14,6 +14,21 @@ interface AdminHeaderProps {
 export default function AdminHeader({ adminUser, notifications }: AdminHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Helper function to format badge counts
+  const formatBadgeCount = (count: number): string => count > 9 ? '9+' : String(count);
+
+  // Escape key handler for mobile menu
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [mobileMenuOpen]);
+
   const quickActions: AdminQuickAction[] = [
     {
       label: 'Generate Code',
@@ -50,7 +65,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
             <span>{action.label}</span>
             {action.badge && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {action.badge > 9 ? '9+' : action.badge}
+                {formatBadgeCount(action.badge)}
               </span>
             )}
           </Link>
@@ -67,7 +82,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
           <span className="text-xl">🔔</span>
           {notifications.unreadCount > 0 && (
             <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              {notifications.unreadCount > 9 ? '9+' : notifications.unreadCount}
+              {formatBadgeCount(notifications.unreadCount)}
             </span>
           )}
         </button>
@@ -77,6 +92,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
           onClick={() => setMobileMenuOpen(true)}
           className="md:hidden p-2 text-purple-600 hover:bg-purple-100 rounded-lg"
           aria-label="Open admin menu"
+          aria-expanded={mobileMenuOpen}
         >
           <span className="text-xl">☰</span>
         </button>
@@ -98,7 +114,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
 
       {/* Mobile quick actions menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden="true">
           <div className="fixed top-16 right-0 w-64 bg-white shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-semibold text-gray-900 mb-3">Admin Quick Actions</h3>
             <div className="space-y-2">
@@ -113,7 +129,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
                   <span className="font-medium">{action.label}</span>
                   {action.badge && (
                     <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                      {action.badge > 9 ? '9+' : action.badge}
+                      {formatBadgeCount(action.badge)}
                     </span>
                   )}
                 </Link>
