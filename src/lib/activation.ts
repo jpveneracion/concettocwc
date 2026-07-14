@@ -61,7 +61,7 @@ export function generateActivationCode(): string {
  */
 export async function createActivationCode(
   request: GenerateActivationCodeRequest,
-  createdBy: number
+  createdBy: string
 ): Promise<ActivationCode> {
   const code = generateActivationCode();
   const now = new Date();
@@ -136,7 +136,7 @@ export async function validateActivationCode(
  */
 export async function redeemActivationCode(
   code: string,
-  userId: number,
+  userId: string,
   ipAddress: string,
   plan: SubscriptionPlan
 ): Promise<ActivationCode> {

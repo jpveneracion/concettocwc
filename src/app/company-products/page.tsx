@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import type { CompanyProductDefinition } from '@/types/company-product';
+import type { ProductUnit } from '@/types/product';
 
 const emptyFormState = { code: '', collection: '', description: '', unit: 'sqft' as const };
 
@@ -21,7 +22,7 @@ export default function CompanyProductsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [editingProduct, setEditingProduct] = useState<CompanyProductDefinition | null>(null);
-  const [editForm, setEditForm] = useState({ collection: '', description: '', unit: 'sqft' as const });
+  const [editForm, setEditForm] = useState({ collection: '', description: '', unit: 'sqft' as ProductUnit });
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -151,7 +152,7 @@ export default function CompanyProductsPage() {
 
   const cancelEdit = useCallback(() => {
     setEditingProduct(null);
-    setEditForm({ collection: '', description: '', unit: 'sqft' });
+    setEditForm({ collection: '', description: '', unit: 'sqft' as ProductUnit });
   }, []);
 
   const saveEdit = useCallback(async () => {
@@ -440,7 +441,7 @@ export default function CompanyProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                   <select
                     value={editForm.unit}
-                    onChange={e => setEditForm({ ...editForm, unit: e.target.value as 'sqft' | 'sqm' })}
+                    onChange={e => setEditForm({ ...editForm, unit: e.target.value as ProductUnit })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   >
                     <option value="sqft">Square Feet (sqft)</option>

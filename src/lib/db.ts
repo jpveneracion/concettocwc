@@ -6,7 +6,7 @@ if (!process.env.DATABASE_URL) {
 
 export const sql = neon(process.env.DATABASE_URL);
 
-export async function query<T>(sqlQuery: TemplateStringsArray, ...params: any[]): Promise<T[]> {
+export async function query<T>(sqlQuery: TemplateStringsArray, ...params: (string | number | boolean | null)[]): Promise<T[]> {
   const result = await sql(sqlQuery, ...params);
   return result as T[];
 }
@@ -15,7 +15,7 @@ export async function query<T>(sqlQuery: TemplateStringsArray, ...params: any[])
  * Database user record interface
  */
 interface UserRecord {
-  id: number;
+  id: string; // UUID in database
   email: string;
   name: string;
   trial_expires_at?: string;
@@ -30,7 +30,7 @@ interface UserRecord {
 /**
  * Update user subscription information
  */
-export async function updateUser(userId: number, updates: {
+export async function updateUser(userId: string, updates: {
   trial_expires_at?: string;
   subscription_activated?: boolean;
   activation_code?: string;
@@ -48,7 +48,7 @@ export async function updateUser(userId: number, updates: {
 /**
  * Get user by ID with subscription info
  */
-export async function getUser(userId: number): Promise<UserRecord> {
+export async function getUser(userId: string): Promise<UserRecord> {
   const result = await sql('SELECT * FROM users WHERE id = $1', [userId]);
   return result[0] as UserRecord;
 }

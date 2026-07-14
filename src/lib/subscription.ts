@@ -13,6 +13,11 @@ import {
 } from '@/types/subscription';
 import { getUser, updateUser, sql } from './db';
 
+// Database query result interfaces
+interface CountResult {
+  count: string;
+}
+
 // Re-export types and enums for convenience
 export type { UserSubscriptionInfo, TrialStatusResponse, SubscriptionPlan };
 export type { LegacySubscription, LegacySubscriptionPlan, SubscriptionAccess, SubscriptionDetails };
@@ -21,7 +26,7 @@ export { AccountStatus };
 /**
  * Calculate user's subscription status
  */
-export async function getUserSubscriptionInfo(userId: number): Promise<UserSubscriptionInfo> {
+export async function getUserSubscriptionInfo(userId: string): Promise<UserSubscriptionInfo> {
   const user = await getUser(userId);
 
   const trial_expires_at = user.trial_expires_at ? new Date(user.trial_expires_at) : undefined;
@@ -53,7 +58,7 @@ export async function getUserSubscriptionInfo(userId: number): Promise<UserSubsc
 /**
  * Calculate trial status response for API
  */
-export async function getTrialStatusResponse(userId: number): Promise<TrialStatusResponse> {
+export async function getTrialStatusResponse(userId: string): Promise<TrialStatusResponse> {
   const subscriptionInfo = await getUserSubscriptionInfo(userId);
   const trial_expires_at = subscriptionInfo.trial_expires_at;
 
@@ -94,7 +99,7 @@ export async function setTrialExpiration(userId: number | string, days: number =
 
   // For number IDs (legacy system), use the existing updateUser function
   const numericUserId = typeof userId === 'number' ? userId : parseInt(userId as string);
-  await updateUser(numericUserId, {
+  await updateUser(String(numericUserId), {
     trial_expires_at: trial_expires_at.toISOString()
   });
 
@@ -105,7 +110,7 @@ export async function setTrialExpiration(userId: number | string, days: number =
  * Activate user subscription with code
  */
 export async function activateSubscription(
-  userId: number,
+  userId: string,
   code: string,
   discount_percent: number,
   subscription_plan: SubscriptionPlan
@@ -121,7 +126,7 @@ export async function activateSubscription(
 /**
  * Check if user has access to protected resources
  */
-export async function checkUserAccess(userId: number): Promise<boolean> {
+export async function checkUserAccess(userId: string): Promise<boolean> {
   const subscriptionInfo = await getUserSubscriptionInfo(userId);
   return subscriptionInfo.has_access;
 }
@@ -160,9 +165,18 @@ export async function getSubscriptionPlan(planId: string): Promise<LegacySubscri
 }
 
 /**
+ * Session interface for legacy subscription access check
+ */
+interface SubscriptionSession {
+  companyId?: string;
+  userId?: string;
+  email?: string;
+}
+
+/**
  * Check subscription access permissions based on session (legacy system)
  */
-export async function checkSubscriptionAccess(session: any): Promise<SubscriptionAccess> {
+export async function checkSubscriptionAccess(session: SubscriptionSession | null | undefined): Promise<SubscriptionAccess> {
   if (!session?.companyId) {
     return {
       allowed: false,
@@ -297,7 +311,7 @@ export async function buildSubscriptionDetails(
     [subscription.company_id, periodStart, now]
   );
 
-  const quotesCreatedThisPeriod = parseInt((quotesResult[0] as any)?.count || '0');
+  const quotesCreatedThisPeriod = parseInt((quotesResult[0] as CountResult)?.count || '0');
 
   // Get quote limit from plan features
   const quotesLimit = (plan.features.quotes_limit as number | null) || null;

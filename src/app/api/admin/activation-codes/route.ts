@@ -1,7 +1,8 @@
 // src/app/api/admin/activation-codes/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import {
   createActivationCode,
   listActivationCodes,
@@ -14,7 +15,13 @@ import {
 // GET - List activation codes
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Admin access verified - only admin users can reach this point
 
@@ -23,7 +30,7 @@ export async function GET(req: NextRequest) {
       is_active: searchParams.get('is_active') === 'true' ? true :
                  searchParams.get('is_active') === 'false' ? false :
                  undefined,
-      used_by: searchParams.get('used_by') || undefined,
+      used_by: searchParams.get('used_by') ? parseInt(searchParams.get('used_by')!) : undefined,
       campaign_name: searchParams.get('campaign_name') || undefined
     };
 
@@ -42,12 +49,18 @@ export async function GET(req: NextRequest) {
 // POST - Generate new activation code
 export async function POST(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Admin access verified - only admin users can generate codes
 
     const body: GenerateActivationCodeRequest = await req.json();
-    const userId = parseInt(session.userId);
+    const userId = session.userId;
 
     // Validate required fields
     if (!body.discount_percent || !body.applicable_plans.length ||
@@ -76,7 +89,13 @@ export async function POST(req: NextRequest) {
 // DELETE - Deactivate activation code
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Admin access verified - only admin users can deactivate codes
 
@@ -105,7 +124,13 @@ export async function DELETE(req: NextRequest) {
 // PUT - Update activation code
 export async function PUT(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Admin access verified - only admin users can update codes
 

@@ -125,3 +125,6 @@ export type CostBreakdown = Record<CostCategory, number>;
 
 // Export subscription types
 export * from './subscription';
+
+// Export product types
+export * from './product';

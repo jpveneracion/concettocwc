@@ -30,13 +30,13 @@ export async function GET() {
     `;
 
     // Decrypt PII for response
-    const decryptedQuotes = quotes.map((q: any) => {
-      let customerName = q.customer_name;
-      let customerAddress = q.customer_address;
+    const decryptedQuotes = quotes.map((q) => {
+      let customerName = q.customer_name as string | null;
+      let customerAddress = q.customer_address as string | null;
 
       try {
         if (q.customer_name_encrypted) {
-          customerName = decryptPII(q.customer_name_encrypted);
+          customerName = decryptPII(q.customer_name_encrypted as string);
         }
       } catch (err) {
         console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
@@ -44,7 +44,7 @@ export async function GET() {
 
       try {
         if (q.customer_address_encrypted) {
-          customerAddress = decryptPII(q.customer_address_encrypted);
+          customerAddress = decryptPII(q.customer_address_encrypted as string);
         }
       } catch (err) {
         console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);

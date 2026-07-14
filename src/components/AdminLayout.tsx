@@ -3,12 +3,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import AdminHeader from './admin/AdminHeader';
-import AdminNavigation from './admin/AdminNavigation';
 import AdminNotificationCenter from './admin/AdminNotifications';
-import AdminProfile from './admin/AdminProfile';
 import type { AdminUser, AdminNotifications } from '@/types/admin';
 
 interface LayoutProps {
@@ -16,7 +14,6 @@ interface LayoutProps {
 }
 
 export default function AdminLayout({ children }: LayoutProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [notifications, setNotifications] = useState<AdminNotifications>({
@@ -118,28 +115,13 @@ export default function AdminLayout({ children }: LayoutProps) {
         {/* Admin Header */}
         <AdminHeader adminUser={adminUser} notifications={notifications} />
 
-        {/* Main content area with enhanced layout */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Enhanced sidebar with admin navigation */}
-          <aside className="hidden md:flex md:w-52 lg:w-52 flex-shrink-0 bg-white border-r border-gray-200 flex-col p-4 overflow-y-auto">
-            {/* Regular navigation would be inherited from AppLayout */}
-            {/* Add admin-specific navigation section */}
-            <AdminNavigation currentPath={pathname} />
+        {/* Main content area */}
+        <div className="flex-1 overflow-y-auto p-3 md:p-6">
+          {/* Admin notifications */}
+          <AdminNotificationCenter notifications={notifications} />
 
-            {/* Admin profile section */}
-            <div className="mt-auto pt-4 border-t border-gray-200">
-              <AdminProfile adminUser={adminUser} />
-            </div>
-          </aside>
-
-          {/* Main content */}
-          <main className="flex-1 overflow-y-auto p-3 md:p-6">
-            {/* Admin notifications */}
-            <AdminNotificationCenter notifications={notifications} />
-
-            {/* Page content */}
-            {children}
-          </main>
+          {/* Page content */}
+          {children}
         </div>
       </div>
     </AppLayout>

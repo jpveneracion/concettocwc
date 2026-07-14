@@ -52,7 +52,13 @@ export async function POST(req: Request) {
     );
 
     // Return response with information about duplicates removed
-    const response: any = {
+    interface ApprovalResponse {
+      product: unknown;
+      message: string;
+      duplicates_removed?: number;
+    }
+
+    const response: ApprovalResponse = {
       product: approvedProduct,
       message: 'Product approved successfully'
     };

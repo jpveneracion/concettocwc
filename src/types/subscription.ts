@@ -46,7 +46,7 @@ export interface LegacySubscriptionPlan {
   currency: string;
   interval: string;
   paymongo_plan_id: string;
-  features: Record<string, any>;
+  features: Record<string, number | boolean | string>;
   created_at: Date;
   updated_at: Date;
 }
@@ -154,7 +154,7 @@ export interface RedeemActivationCodeRequest {
  * Subscription info for user
  */
 export interface UserSubscriptionInfo {
-  user_id: number;
+  user_id: string; // UUID in database
   trial_expires_at?: Date;
   subscription_activated: boolean;
   activation_code?: string;
@@ -250,7 +250,7 @@ export interface SubscriptionAccess {
  * Subscription details interface
  */
 export interface SubscriptionDetails {
-  plan: any; // Can be either LegacySubscriptionPlan or new plan type
+  plan: LegacySubscriptionPlan; // Legacy subscription plan details
   status: string;
   trial_end: Date | null;
   current_period_end: Date | null;
@@ -300,7 +300,7 @@ export interface WebhookEvent {
   id: string;
   event_type: string;
   paymongo_event_id: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   processed: boolean;
   processing_error: string | null;
   created_at: Date;

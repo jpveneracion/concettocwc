@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSubscriptionInfo, AccountStatus, getTrialDaysRemaining } from './lib/subscription';
+import { UserSubscriptionInfo } from './types/subscription';
 
 // In-memory cache for subscription data
 interface CachedSubscription {
-  data: any;
+  data: UserSubscriptionInfo;
   expires: number;
 }
 
@@ -15,7 +16,7 @@ const SUBSCRIPTION_CACHE_TTL = 5 * 60 * 1000;
 /**
  * Get cached subscription data if available and not expired
  */
-function getCachedSubscription(userId: string): any | null {
+function getCachedSubscription(userId: string): UserSubscriptionInfo | null {
   const cached = subscriptionCache.get(userId);
   if (cached && cached.expires > Date.now()) {
     return cached.data; // Cache hit
@@ -26,7 +27,7 @@ function getCachedSubscription(userId: string): any | null {
 /**
  * Set subscription data in cache with expiration
  */
-function setCachedSubscription(userId: string, data: any): void {
+function setCachedSubscription(userId: string, data: UserSubscriptionInfo): void {
   subscriptionCache.set(userId, {
     data,
     expires: Date.now() + SUBSCRIPTION_CACHE_TTL

@@ -21,6 +21,7 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [canDelete, setCanDelete] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -39,6 +40,19 @@ export default function ProductsPage() {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const checkPermissions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/admin-status');
+      const data = await res.json();
+      if (res.ok && data.isAdmin) {
+        setCanDelete(true);
+      }
+    } catch (err) {
+      console.error('Permission check failed', err);
+      setCanDelete(false);
     }
   }, []);
 
@@ -115,7 +129,10 @@ export default function ProductsPage() {
     }
   }, [fetchProducts]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+    checkPermissions();
+  }, [fetchProducts, checkPermissions]);
 
   const filtered = (products || []).filter(
     (p) =>
@@ -145,15 +162,17 @@ export default function ProductsPage() {
         </div>
 
         {/* Card actions */}
-        <div className="pt-2 border-t border-gray-100">
-          <button
-            onClick={() => deleteProduct(product.id, product.code)}
-            className="w-full px-3 py-2 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
-            aria-label="Delete product"
-          >
-            🗑️ Delete
-          </button>
-        </div>
+        {canDelete && (
+          <div className="pt-2 border-t border-gray-100">
+            <button
+              onClick={() => deleteProduct(product.id, product.code)}
+              className="w-full px-3 py-2 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
+              aria-label="Delete product"
+            >
+              🗑️ Delete
+            </button>
+          </div>
+        )}
       </div>
     );
   }, [deleteProduct]);
@@ -164,7 +183,7 @@ export default function ProductsPage() {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200">
-            {['Code', 'Collection', 'Description', 'Unit', ''].map((h) => (
+            {['Code', 'Collection', 'Description', 'Unit', ...(canDelete ? [''] : [])].map((h) => (
               <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500">{h}</th>
             ))}
           </tr>
@@ -176,15 +195,17 @@ export default function ProductsPage() {
               <td className="px-4 py-3 text-gray-500">{p.collection}</td>
               <td className="px-4 py-3">{p.description}</td>
               <td className="px-4 py-3">{p.unit}</td>
-              <td className="px-4 py-3">
-                <button
-                  onClick={() => deleteProduct(p.id, p.code)}
-                  className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
-                  aria-label="Delete product"
-                >
-                  🗑️
-                </button>
-              </td>
+              {canDelete && (
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => deleteProduct(p.id, p.code)}
+                    className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
+                    aria-label="Delete product"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -196,13 +217,15 @@ export default function ProductsPage() {
     <AppLayout>
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <h1 className="text-lg font-semibold md:text-xl">Products</h1>
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-          aria-label={showForm ? 'Cancel adding product' : 'Add product'}
-        >
-          {showForm ? '✕ Cancel' : '➕ Add product'}
-        </button>
+        {canDelete && (
+          <button
+            onClick={() => setShowForm((s) => !s)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            aria-label={showForm ? 'Cancel adding product' : 'Add product'}
+          >
+            {showForm ? '✕ Cancel' : '➕ Add product'}
+          </button>
+        )}
       </div>
 
       {showForm && (

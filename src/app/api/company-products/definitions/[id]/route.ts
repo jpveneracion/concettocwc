@@ -13,15 +13,16 @@ import type { UpdateCompanyProductRequest } from '@/types/company-product';
  */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const product = await getCompanyProductById(params.id, session.companyId);
+    const product = await getCompanyProductById(id, session.companyId);
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -39,9 +40,10 @@ export async function GET(
  */
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -69,7 +71,7 @@ export async function PUT(
       return NextResponse.json({ error: 'description cannot exceed 1000 characters' }, { status: 400 });
     }
 
-    const updatedProduct = await updateCompanyProduct(params.id, session.companyId, updates);
+    const updatedProduct = await updateCompanyProduct(id, session.companyId, updates);
 
     return NextResponse.json(updatedProduct);
   } catch (err) {
@@ -93,15 +95,16 @@ export async function PUT(
  */
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await deleteCompanyProduct(params.id, session.companyId);
+    await deleteCompanyProduct(id, session.companyId);
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -1,12 +1,19 @@
 // src/app/api/admin/plans/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 
 // GET - Get available subscription plans
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Define available subscription plans
     const plans = [

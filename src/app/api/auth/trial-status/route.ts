@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await requireSession();
 
-    const trialStatus = await getTrialStatusResponse(parseInt(session.userId));
+    const trialStatus = await getTrialStatusResponse(session.userId);
 
     return NextResponse.json(trialStatus);
   } catch (error) {

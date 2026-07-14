@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 
 export async function GET() {
   try {
@@ -18,6 +20,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Require admin access for product creation
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await requireAdmin(session.userId);
+
     const body = await req.json();
     const { code, collection, description, unit } = body;
 
@@ -43,6 +53,11 @@ export async function POST(req: Request) {
     return NextResponse.json(product, { status: 201 });
   } catch (err) {
     console.error('POST /api/products', err);
+
+    if (err instanceof Error && err.message.includes('Forbidden')) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+
     return NextResponse.json({ error: 'Failed to save product' }, { status: 500 });
   }
 }

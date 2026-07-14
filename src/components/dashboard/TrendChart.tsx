@@ -49,7 +49,7 @@ export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) 
               borderRadius: '8px',
               fontSize: '12px',
             }}
-            formatter={(value: any) => {
+            formatter={(value: unknown) => {
               const localeMap: Record<string, string> = {
                 USD: 'en-US', EUR: 'de-DE', GBP: 'en-GB', JPY: 'ja-JP',
                 AUD: 'en-AU', CAD: 'en-CA', PHP: 'en-PH', SGD: 'en-SG',
@@ -62,7 +62,8 @@ export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) 
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
               });
-              return [formatter.format(value), 'Revenue'];
+              const numericValue = typeof value === 'number' ? value : typeof value === 'string' ? parseFloat(value) : 0;
+              return [formatter.format(numericValue || 0), 'Revenue'];
             }}
           />
           <Line

@@ -71,10 +71,14 @@ function LoginForm() {
         router.push('/dashboard');
       }
       // Remove router.refresh() - it conflicts with router.push()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      if (err.name === 'AbortError') {
-        setError('Login request timed out. Please try again.');
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Login request timed out. Please try again.');
+        } else {
+          setError('Unable to connect. Please try again.');
+        }
       } else {
         setError('Unable to connect. Please try again.');
       }

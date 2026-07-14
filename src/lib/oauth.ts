@@ -2,6 +2,31 @@ import { sql } from '@/lib/db';
 import crypto from 'crypto';
 import type { OAuthAccount, OAuthProvider, OAuthUserInfo, AccountLinkRequest, PiUserInfo } from '@/types/oauth';
 
+// User record interface for OAuth operations
+interface UserRecord {
+  id: string;
+  email: string;
+  email_hash: string;
+  password_hash?: string;
+  company_id: string;
+}
+
+// Company record interface
+interface CompanyRecord {
+  id: string;
+  code: string;
+  name: string;
+}
+
+// Company data interface for creation
+interface CompanyData {
+  code: string;
+  name: string;
+  address?: string;
+  mobile?: string;
+  email?: string;
+}
+
 // Find existing OAuth account
 export async function findOAuthAccount(provider: OAuthProvider, providerUserId: string): Promise<OAuthAccount | null> {
   const results = await sql`
@@ -10,18 +35,18 @@ export async function findOAuthAccount(provider: OAuthProvider, providerUserId: 
   `;
   if (!results[0]) return null;
 
-  return results[0] as OAuthAccount;
+  return results[0] as unknown as OAuthAccount;
 }
 
 // Find user by email
-export async function findUserByEmail(email: string): Promise<any> {
+export async function findUserByEmail(email: string): Promise<UserRecord | null> {
   const emailHash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
   const results = await sql`
     SELECT id, email, email_hash, password_hash, company_id
     FROM users
     WHERE email_hash = ${emailHash}
   `;
-  return results[0] || null;
+  return (results[0] as UserRecord) || null;
 }
 
 // Link OAuth account to existing user
@@ -38,11 +63,11 @@ export async function linkOAuthAccount(userId: string, accountData: AccountLinkR
     )
     RETURNING *
   `;
-  return account as OAuthAccount;
+  return account as unknown as OAuthAccount;
 }
 
 // Create new user with OAuth account
-export async function createUserWithOAuth(email: string, companyId: string, accountData: AccountLinkRequest): Promise<{ user: any; oauthAccount: OAuthAccount }> {
+export async function createUserWithOAuth(email: string, companyId: string, accountData: AccountLinkRequest): Promise<{ user: UserRecord; oauthAccount: OAuthAccount }> {
   const emailHash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
 
   // Create user without password_hash (OAuth users authenticate via OAuth providers)
@@ -55,20 +80,20 @@ export async function createUserWithOAuth(email: string, companyId: string, acco
   // Link OAuth account
   const oauthAccount = await linkOAuthAccount(user.id, accountData);
 
-  return { user, oauthAccount };
+  return { user: user as UserRecord, oauthAccount };
 }
 
 // Validate company code
-export async function validateCompanyCode(companyCode: string): Promise<any> {
+export async function validateCompanyCode(companyCode: string): Promise<CompanyRecord | null> {
   const results = await sql`
     SELECT id, code, name FROM companies
     WHERE UPPER(code) = ${companyCode.toUpperCase()}
   `;
-  return results[0] || null;
+  return (results[0] as CompanyRecord) || null;
 }
 
 // Create new company
-export async function createCompany(companyData: any): Promise<any> {
+export async function createCompany(companyData: CompanyData): Promise<CompanyRecord> {
   const [company] = await sql`
     INSERT INTO companies (code, name, address, mobile, email)
     VALUES (
@@ -80,7 +105,7 @@ export async function createCompany(companyData: any): Promise<any> {
     )
     RETURNING id, code, name
   `;
-  return company;
+  return company as CompanyRecord;
 }
 
 // Get OAuth accounts by user ID
@@ -88,5 +113,5 @@ export async function getOAuthAccountsByUserId(userId: string): Promise<OAuthAcc
   const results = await sql`
     SELECT * FROM oauth_accounts WHERE user_id = ${userId} ORDER BY created_at
   `;
-  return results as OAuthAccount[];
+  return results as unknown as OAuthAccount[];
 }

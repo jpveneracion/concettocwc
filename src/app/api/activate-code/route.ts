@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
                      req.headers.get('x-real-ip') ||
                      'unknown';
 
-    const userId = parseInt(session.userId);
+    const userId = session.userId;
 
     // Validate and redeem code
     try {

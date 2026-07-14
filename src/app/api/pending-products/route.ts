@@ -5,7 +5,12 @@ import {
   productCodeExists,
   createPendingProduct
 } from '@/lib/product-queries';
-import type { ProductStatus } from '@/types/product';
+import type { ProductStatus, UserRole } from '@/types/product';
+
+// Database query result interface
+interface UserRoleResult {
+  role: string;
+}
 
 /**
  * GET /api/pending-products
@@ -25,7 +30,7 @@ export async function GET(req: Request) {
     const userResult = await import('@/lib/db').then(({ sql }) =>
       sql`SELECT role FROM users WHERE id = ${userId}::uuid`
     );
-    const userRole = userResult[0]?.role || 'user';
+    const userRole = ((userResult[0] as UserRoleResult)?.role || 'user') as UserRole;
 
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get('status');
@@ -36,7 +41,7 @@ export async function GET(req: Request) {
       ? (statusParam.toUpperCase() as ProductStatus)
       : undefined;
 
-    const products = await getPendingProducts(companyId, userRole as any, status);
+    const products = await getPendingProducts(companyId, userRole, status);
 
     return NextResponse.json({
       products,

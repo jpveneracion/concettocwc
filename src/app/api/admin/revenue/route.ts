@@ -1,12 +1,19 @@
 // src/app/api/admin/revenue/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import { sql } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Get date range from query params (default: last 30 days)
     const searchParams = req.nextUrl.searchParams;

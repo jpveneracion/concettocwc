@@ -9,7 +9,8 @@ import type {
   ProductLookupResult,
   UserRole,
   ProductStatus,
-  ProductReviewStats
+  ProductReviewStats,
+  ProductUnit
 } from '@/types/product';
 import { ProductSource } from '@/types/product';
 
@@ -270,7 +271,7 @@ export async function lookupProductsWithCompany(
     code: p.code as string,
     description: p.description as string,
     collection: p.collection as string | null,
-    unit: p.unit as string,
+    unit: p.unit as ProductUnit,
     source: ProductSource.APPROVED
   }));
 
@@ -279,7 +280,7 @@ export async function lookupProductsWithCompany(
     code: p.code as string,
     description: p.description as string,
     collection: p.collection as string | null,
-    unit: p.unit as string,
+    unit: p.unit as ProductUnit,
     source: ProductSource.PENDING
   }));
 

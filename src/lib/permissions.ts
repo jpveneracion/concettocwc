@@ -67,9 +67,9 @@ export async function getUserRole(userId: string): Promise<UserRole> {
     console.log('getUserRole called for userId:', userId);
     const { sql } = await import('@/lib/db');
 
-    const result = await sql`
-      SELECT role, is_admin FROM users WHERE id = ${userId}::uuid
-    `;
+    const result = await sql(`
+      SELECT role, is_admin FROM users WHERE id = $1::uuid
+    `, [userId]);
 
     console.log('Database result:', result);
     const role = result[0]?.role || 'user';

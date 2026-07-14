@@ -1,12 +1,45 @@
 'use client';
 import { useState, createContext, useContext, useEffect } from 'react';
 import useLocalStorage, { useClearLocalStorage } from '../hooks/useLocalStorage';
-import { WizardState, WIZARD_DRAFT_KEY } from '../types/wizard';
+import { WizardState, WIZARD_DRAFT_KEY, MeasureUnit } from '../types/wizard';
 import { clearDraft } from '../lib/wizardStorage';
 
 interface QuoteWizardProps {
   quoteNumber: string;
-  existingData?: any;
+  existingData?: {
+    customer?: {
+      customer_name: string;
+      customer_address: string;
+      quote_date: string;
+      our_ref: string;
+      status: string;
+    };
+    measurements?: {
+      items: Array<{
+        id: string;
+        location: string;
+        product_id: string | null;
+        product_code: string;
+        product_collection: string;
+        product_description: string;
+        unit: MeasureUnit;
+        is_fixed: boolean;
+        measured_width: number;
+        measured_drop: number;
+        final_width: number;
+        final_drop: number;
+        area_sqft: number;
+        retail_price_sqft: number;
+        supplier_cost_sqft: number;
+        retail_amount: number;
+        supplier_amount: number;
+      }>;
+    };
+    review?: {
+      installation_fee: number;
+      delivery_fee: number;
+    };
+  };
   onComplete: (data: Record<string, unknown>) => void;
 }
 
@@ -23,12 +56,13 @@ interface CustomerStepData {
 
 interface MeasurementsStepData {
   items: Array<{
+    id: string;
     location: string;
     product_id: string | null;
     product_code: string;
     product_collection: string;
     product_description: string;
-    unit: string;
+    unit: MeasureUnit;
     is_fixed: boolean;
     measured_width: number;
     measured_drop: number;
@@ -201,26 +235,60 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
   };
 
   // Get step-specific props
-  const getStepProps = (): any => {
+  interface StepProps {
+    quoteNumber?: string;
+    existingData?: {
+      customer_name?: string;
+      customer_address?: string;
+      quote_date?: string;
+      our_ref?: string;
+      status?: string;
+    } | {
+      items?: Array<{
+        id: string;
+        location: string;
+        product_id: string | null;
+        product_code: string;
+        product_collection: string;
+        product_description: string;
+        unit: MeasureUnit;
+        is_fixed: boolean;
+        measured_width: number;
+        measured_drop: number;
+        final_width: number;
+        final_drop: number;
+        area_sqft: number;
+        retail_price_sqft: number;
+        supplier_cost_sqft: number;
+        retail_amount: number;
+        supplier_amount: number;
+      }>;
+    } | {
+      installation_fee?: number;
+      delivery_fee?: number;
+    } | undefined;
+  }
+
+  const getStepProps = (): StepProps => {
     switch (currentStep) {
       case 'customer':
         return {
           quoteNumber,
-          existingData: existingData ? {
-            customer_name: existingData.customer_name,
-            customer_address: existingData.customer_address,
-            quote_date: existingData.quote_date,
-            our_ref: existingData.our_ref,
-            status: existingData.status,
+          existingData: existingData?.customer ? {
+            customer_name: existingData.customer.customer_name,
+            customer_address: existingData.customer.customer_address,
+            quote_date: existingData.customer.quote_date,
+            our_ref: existingData.customer.our_ref,
+            status: existingData.customer.status,
           } : undefined,
         };
       case 'measurements':
         return {
-          existingData: stepData.measurements as any,
+          existingData: stepData.measurements || undefined,
         };
       case 'review':
         return {
-          existingData: stepData.review as any,
+          existingData: stepData.review || undefined,
         };
       default:
         return {};

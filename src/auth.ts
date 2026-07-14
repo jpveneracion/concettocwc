@@ -34,7 +34,7 @@ async function setCustomSessionCookie(userId: string, companyId: string, email: 
   }
 }
 
-const providers: any[] = [];
+const providers: Array<ReturnType<typeof Google>> = [];
 
 // Debug environment variables
 console.log('=== OAuth Configuration Debug ===');
@@ -229,7 +229,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: token.userId || token.sub || session.user.id,
           email: token.email as string,
           name: token.name as string,
-        } as any;
+        } as typeof session.user;
       }
       return session;
     }

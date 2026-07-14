@@ -1,17 +1,75 @@
 // src/app/api/admin/dashboard/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import { sql } from '@/lib/db';
 import {
   DashboardAnalytics,
   PaymentMethod,
-  SubscriptionPlan
+  SubscriptionPlan,
+  PaymentMethodStats,
+  DiscountStats,
+  PlanStats,
+  RevenueDataPoint,
+  UsageDataPoint
 } from '@/types/subscription';
+
+// Database query result interfaces
+interface PaymentMethodRow {
+  payment_method: string;
+  total_amount: number;
+  count: number;
+}
+
+interface CountResult {
+  count: string;
+}
+
+interface PaymentMethodDistributionRow {
+  payment_method: string;
+  amount: number;
+  count: number;
+  percentage: number;
+}
+
+interface DiscountDistributionRow {
+  discount_percent: number;
+  count: number;
+  total_amount: number;
+}
+
+interface PlanDistributionRow {
+  subscription_plan: string;
+  count: number;
+  revenue: number;
+  percentage: number;
+}
+
+interface RevenueOverTimeRow {
+  date: string;
+  gcash: number;
+  crypto: number;
+  usd: number;
+  total: number;
+}
+
+interface UsageOverTimeRow {
+  date: string;
+  generated: number;
+  used: number;
+  pending: number;
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAdmin();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Use new permission system that checks database roles
+    await requireAdmin(session.userId);
 
     // Admin access verified - only admin users can access analytics
 
@@ -49,9 +107,9 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       GROUP BY payment_method
     `, [startDate]);
 
-    const total_gcash_payments = paymentMethodResult.find((row: any) => row.payment_method === 'gcash')?.total_amount || 0;
-    const total_crypto_payments = paymentMethodResult.find((row: any) => row.payment_method === 'crypto')?.total_amount || 0;
-    const total_usd_payments = paymentMethodResult.find((row: any) => row.payment_method === 'usd_bank')?.total_amount || 0;
+    const total_gcash_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'gcash')?.total_amount || 0;
+    const total_crypto_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'crypto')?.total_amount || 0;
+    const total_usd_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'usd_bank')?.total_amount || 0;
 
     // Active subscriptions
     const activeSubsResult = await sql(`
@@ -111,14 +169,16 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
     // Plan distribution
     const planDistribution = await sql(`
       SELECT
-        subscription_plan,
+        u.subscription_plan,
         COUNT(*) as count,
-        COALESCE(SUM(payment_amount), 0) as revenue,
+        COALESCE(SUM(ac.payment_amount_usd), 0) as revenue,
         ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage
-      FROM users
-      WHERE subscription_activated = true
-      AND subscription_plan IS NOT NULL
-      GROUP BY subscription_plan
+      FROM users u
+      LEFT JOIN activation_codes ac ON u.activation_code = ac.code
+      WHERE u.subscription_activated = true
+      AND u.subscription_plan IS NOT NULL
+      AND u.created_at >= $1
+      GROUP BY u.subscription_plan
       ORDER BY revenue DESC
     `, [startDate]);
 
@@ -152,6 +212,42 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       LIMIT 30
     `, [startDate]);
 
+    // Transform database results to proper typed interfaces
+    const paymentMethodStats: PaymentMethodStats[] = (paymentMethodDistribution as PaymentMethodDistributionRow[]).map((row: PaymentMethodDistributionRow) => ({
+      method: row.payment_method as PaymentMethod,
+      amount: row.amount,
+      count: row.count,
+      percentage: row.percentage
+    }));
+
+    const discountStats: DiscountStats[] = (discountDistribution as DiscountDistributionRow[]).map((row: DiscountDistributionRow) => ({
+      discount_percent: row.discount_percent,
+      count: row.count,
+      total_amount: row.total_amount
+    }));
+
+    const planDistributionTyped: PlanStats[] = (planDistribution as PlanDistributionRow[]).map((row: PlanDistributionRow) => ({
+      plan: row.subscription_plan as SubscriptionPlan,
+      count: row.count,
+      revenue: row.revenue,
+      percentage: row.percentage
+    }));
+
+    const revenueOverTimeTyped: RevenueDataPoint[] = (revenueOverTime as RevenueOverTimeRow[]).map((row: RevenueOverTimeRow) => ({
+      date: row.date,
+      gcash: row.gcash,
+      crypto: row.crypto,
+      usd: row.usd,
+      total: row.total
+    }));
+
+    const usageOverTimeTyped: UsageDataPoint[] = (usageOverTime as UsageOverTimeRow[]).map((row: UsageOverTimeRow) => ({
+      date: row.date,
+      generated: row.generated,
+      used: row.used,
+      pending: row.pending
+    }));
+
     return {
       total_gcash_payments,
       total_crypto_payments,
@@ -160,11 +256,11 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       pending_codes,
       average_revenue_per_user: avg_revenue_per_user,
       trial_to_conversion_rate,
-      payment_method_distribution: paymentMethodDistribution as any,
-      discount_distribution: discountDistribution as any,
-      plan_distribution: planDistribution as any,
-      revenue_over_time: revenueOverTime as any,
-      activation_usage_over_time: usageOverTime as any
+      payment_method_distribution: paymentMethodStats,
+      discount_distribution: discountStats,
+      plan_distribution: planDistributionTyped,
+      revenue_over_time: revenueOverTimeTyped,
+      activation_usage_over_time: usageOverTimeTyped
     };
 
   } catch (error) {

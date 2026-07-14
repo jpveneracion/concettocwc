@@ -1,6 +1,6 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect } from 'react';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -15,9 +15,33 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
+const adminNavItems = [
+  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: '🛡️' },
+  { href: '/admin/pending-products', label: 'Pending Products', icon: '📋' },
+  { href: '/admin/activation-codes', label: 'Activation Codes', icon: '🔑' },
+];
+
 function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      try {
+        const res = await fetch('/api/auth/admin-status');
+        const data = await res.json();
+        if (res.ok && data.isAdmin) {
+          setIsAdmin(true);
+        }
+      } catch (err) {
+        console.error('Admin status check failed', err);
+        setIsAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, []);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -91,6 +115,35 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
               </button>
             );
           })}
+
+          {/* Admin Navigation - only visible to admins */}
+          {isAdmin && (
+            <>
+              <div className="pt-4 pb-2">
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4">
+                  Admin
+                </div>
+              </div>
+              {adminNavItems.map((item) => {
+                const active = pathname === item.href || pathname.startsWith(item.href);
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => handleItemClick(item.href)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors mb-1 ${
+                      active
+                        ? 'bg-purple-50 text-purple-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {item.label}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* Footer actions */}
