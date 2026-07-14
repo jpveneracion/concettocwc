@@ -128,3 +128,6 @@ export * from './subscription';
 
 // Export product types
 export * from './product';
+
+// Export landing page types
+export * from './landing';
