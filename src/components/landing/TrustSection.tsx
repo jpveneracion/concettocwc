@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Gift, Lightning, Headphones } from 'lucide-react';
+import { Gift, CloudLightning, Headphones } from 'lucide-react';
 import type { TrustSignalProps } from '@/types/landing';
 
 const trustSignals: TrustSignalProps[] = [
@@ -24,7 +24,7 @@ const trustSignals: TrustSignalProps[] = [
 
 const iconMap = {
   'gift': Gift,
-  'setup': Lightning,
+  'setup': CloudLightning,
   'support': Headphones
 };
 
