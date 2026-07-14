@@ -6,6 +6,7 @@ import {
   ValidationResult
 } from '@/types/trial-restrictions';
 import { getUserSubscriptionInfo } from '@/lib/subscription';
+import { getUTCMidnight, toUTCMidnight, getUTCNow } from '@/lib/utc-utils';
 
 /**
  * Check if user can create order with specific date
@@ -25,10 +26,10 @@ export async function canCreateOrderWithDate(
     };
   }
 
-  // Check if trial is still active
-  const now = new Date();
+  // Check if trial is still active using UTC comparisons
+  const nowUTC = getUTCNow();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > nowUTC;
 
   if (trialActive) {
     return {
@@ -38,13 +39,11 @@ export async function canCreateOrderWithDate(
     };
   }
 
-  // Trial has expired - check if target date is in the future
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const targetDay = new Date(targetDate);
-  targetDay.setHours(0, 0, 0, 0);
+  // Trial has expired - check if target date is in the future (using UTC)
+  const todayUTCMidnight = getUTCMidnight();
+  const targetUTCMidnight = toUTCMidnight(targetDate);
 
-  if (targetDay > today) {
+  if (targetUTCMidnight > todayUTCMidnight) {
     return {
       allowed: false,
       operation: OperationType.CREATE_ORDER,
@@ -74,10 +73,10 @@ export async function canCreateFutureOrders(userId: string): Promise<boolean> {
     return true;
   }
 
-  // Check if trial is still active
-  const now = new Date();
+  // Check if trial is still active using UTC comparisons
+  const nowUTC = getUTCNow();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > nowUTC;
 
   return trialActive;
 }
@@ -88,9 +87,9 @@ export async function canCreateFutureOrders(userId: string): Promise<boolean> {
 export async function getUserRestrictionState(userId: string): Promise<RestrictionState> {
   const subscriptionInfo = await getUserSubscriptionInfo(userId);
 
-  const now = new Date();
+  const nowUTC = getUTCNow();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > nowUTC;
   const subscriptionActive = subscriptionInfo.subscription_activated;
 
   // Determine restriction level
