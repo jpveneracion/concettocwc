@@ -113,7 +113,7 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
                   <span className="font-medium">{action.label}</span>
                   {action.badge && (
                     <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                      {action.badge}
+                      {action.badge > 9 ? '9+' : action.badge}
                     </span>
                   )}
                 </Link>
