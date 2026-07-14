@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import AdminLayout from '@/components/AdminLayout';
 
 export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,8 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-1">
@@ -63,6 +65,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
