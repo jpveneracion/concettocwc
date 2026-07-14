@@ -4,11 +4,11 @@
 
 import type { AdminNotifications } from '@/types/admin';
 
-interface AdminNotificationsProps {
+interface AdminNotificationCenterProps {
   notifications: AdminNotifications;
 }
 
-export default function AdminNotifications({ notifications }: AdminNotificationsProps) {
+export default function AdminNotificationCenter({ notifications }: AdminNotificationCenterProps) {
   const { pendingApprovals, systemAlerts, unreadCount } = notifications;
 
   if (unreadCount === 0 && systemAlerts.length === 0) {
@@ -18,7 +18,7 @@ export default function AdminNotifications({ notifications }: AdminNotifications
   return (
     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
       <div className="flex items-start gap-3">
-        <span className="text-2xl">⚠️</span>
+        <span className="text-2xl" role="img" aria-label="warning">⚠️</span>
         <div className="flex-1">
           <h4 className="font-semibold text-yellow-900 mb-2">Admin Notifications</h4>
 
@@ -32,8 +32,8 @@ export default function AdminNotifications({ notifications }: AdminNotifications
           {/* System alerts */}
           {systemAlerts.length > 0 && (
             <ul className="text-sm text-yellow-800 space-y-1">
-              {systemAlerts.map((alert, index) => (
-                <li key={index}>• {alert}</li>
+              {systemAlerts.map((alert) => (
+                <li key={alert}>• {alert}</li>
               ))}
             </ul>
           )}
