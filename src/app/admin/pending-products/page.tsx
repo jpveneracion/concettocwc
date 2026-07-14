@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AppLayout from '@/components/AppLayout';
+import AdminLayout from '@/components/AdminLayout';
 import type { PendingProduct, ProductReviewStats } from '@/types/product';
 
 export default function PendingProductsPage() {
@@ -117,7 +117,7 @@ export default function PendingProductsPage() {
   );
 
   return (
-    <AppLayout>
+    <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -289,6 +289,6 @@ export default function PendingProductsPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </AdminLayout>
   );
 }
