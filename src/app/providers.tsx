@@ -1,6 +1,6 @@
 'use client';
 
-import { SessionProvider, useSession } from '@/contexts/SessionContext';
+import { SessionProvider } from '@/contexts/SessionContext';
 import { TrialRestrictionProvider } from '@/contexts/TrialRestrictionContext';
 
 interface ProvidersProps {
@@ -10,18 +10,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
-      <TrialRestrictionWrapper>
+      <TrialRestrictionProvider>
         {children}
-      </TrialRestrictionWrapper>
+      </TrialRestrictionProvider>
     </SessionProvider>
-  );
-}
-
-function TrialRestrictionWrapper({ children }: { children: React.ReactNode }) {
-  const { session } = useSession();
-  return (
-    <TrialRestrictionProvider session={session}>
-      {children}
-    </TrialRestrictionProvider>
   );
 }

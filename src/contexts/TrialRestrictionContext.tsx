@@ -1,9 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
-import { getUserRestrictionState } from '@/lib/trial-restrictions';
 import type { RestrictionState, RestrictionLevel } from '@/types/trial-restrictions';
-import type { Session } from '@/lib/auth';
 
 interface TrialRestrictionContextType {
   // Current restriction state
@@ -26,10 +24,9 @@ const TrialRestrictionContext = createContext<TrialRestrictionContextType | unde
 
 interface TrialRestrictionProviderProps {
   children: ReactNode;
-  session: Session | null;
 }
 
-export function TrialRestrictionProvider({ children, session }: TrialRestrictionProviderProps) {
+export function TrialRestrictionProvider({ children }: TrialRestrictionProviderProps) {
   const [state, setState] = useState<RestrictionState>({
     level: 'none' as RestrictionLevel,
     trialExpired: false,
@@ -43,24 +40,16 @@ export function TrialRestrictionProvider({ children, session }: TrialRestriction
   const [error, setError] = useState<string | null>(null);
 
   const fetchRestrictionState = useCallback(async () => {
-    if (!session?.userId) {
-      setIsLoading(false);
-      setState({
-        level: 'none' as RestrictionLevel,
-        trialExpired: false,
-        trialExpiresAt: null,
-        subscriptionActive: false,
-        allowedOperations: [],
-        canCreatePastOrders: true,
-        canCreateFutureOrders: true
-      });
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
-      const restrictionState = await getUserRestrictionState(session.userId);
+      const response = await fetch('/api/trial/restrictions');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch restriction state');
+      }
+
+      const restrictionState = await response.json();
       setState(restrictionState);
     } catch (err) {
       console.error('Failed to fetch restriction state:', err);
@@ -78,7 +67,7 @@ export function TrialRestrictionProvider({ children, session }: TrialRestriction
     } finally {
       setIsLoading(false);
     }
-  }, [session?.userId]);
+  }, []);
 
   useEffect(() => {
     fetchRestrictionState();
