@@ -28,7 +28,7 @@ export async function canCreateOrderWithDate(
   // Check if trial is still active
   const now = new Date();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
 
   if (trialActive) {
     return {
@@ -77,7 +77,7 @@ export async function canCreateFutureOrders(userId: string): Promise<boolean> {
   // Check if trial is still active
   const now = new Date();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
 
   return trialActive;
 }
@@ -90,7 +90,7 @@ export async function getUserRestrictionState(userId: string): Promise<Restricti
 
   const now = new Date();
   const trialExpiresAt = subscriptionInfo.trial_expires_at;
-  const trialActive = trialExpiresAt && trialExpiresAt > now;
+  const trialActive = trialExpiresAt !== null && trialExpiresAt !== undefined && trialExpiresAt > now;
   const subscriptionActive = subscriptionInfo.subscription_activated;
 
   // Determine restriction level
