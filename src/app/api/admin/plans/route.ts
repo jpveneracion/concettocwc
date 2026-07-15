@@ -51,23 +51,26 @@ export async function POST(req: NextRequest) {
     const { name, description, price, currency, interval, discount_percent, features, is_active } = body;
 
     // Import subscription plans utility
-    const { createSubscriptionPlan, validateSubscriptionPlanData, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
+    const { createSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
 
-    // Validate plan data
-    const validation = validateSubscriptionPlanData({
-      name,
-      description,
-      price,
-      currency,
-      interval,
-      discount_percent,
-      features,
-      is_active
-    });
-
-    if (!validation.valid) {
+    // Basic validation
+    if (!name || !name.trim()) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validation.errors },
+        { error: 'Plan name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (price === undefined || price < 0) {
+      return NextResponse.json(
+        { error: 'Price must be a non-negative number' },
+        { status: 400 }
+      );
+    }
+
+    if (!interval || !['month', 'quarter', 'year'].includes(interval)) {
+      return NextResponse.json(
+        { error: 'Interval must be one of: month, quarter, year' },
         { status: 400 }
       );
     }
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
       currency: currency || 'PHP',
       interval,
       discount_percent: discount_percent || 0,
-      features: features || {},
+      features: features || [],
       is_active: is_active !== undefined ? is_active : true
     });
 
@@ -119,26 +122,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Import subscription plans utility
-    const { updateSubscriptionPlan, validateSubscriptionPlanData, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
-
-    // Validate updated data
-    const validation = validateSubscriptionPlanData({
-      name: name || 'temp',
-      description,
-      price: price || 0,
-      currency,
-      interval: interval || 'month',
-      discount_percent,
-      features,
-      is_active
-    });
-
-    if (!validation.valid) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validation.errors },
-        { status: 400 }
-      );
-    }
+    const { updateSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
 
     // Build updates object (only include defined fields)
     const updates: any = {};
