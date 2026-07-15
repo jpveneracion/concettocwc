@@ -8,6 +8,7 @@ export function proxy(req: NextRequest & { auth?: any }) {
   if (url.startsWith('/_next/static') ||
       url.startsWith('/_next/image') ||
       url.startsWith('/api/auth') ||
+      url.startsWith('/api/trial') ||
       url.endsWith('.css') ||
       url.endsWith('.js') ||
       url.endsWith('.json') ||
@@ -26,7 +27,8 @@ export function proxy(req: NextRequest & { auth?: any }) {
     '/api/products',
     '/api/logout',
     '/api/login',
-    '/api/signup'
+    '/api/signup',
+    '/api/trial/restrictions'
   ];
 
   // Check if current path is a public path
