@@ -9,6 +9,7 @@ interface SubscriptionPlanData {
   id?: string;
   name: string;
   description: string;
+  base_monthly_price?: number;
   price: number;
   currency: string;
   interval: 'month' | 'quarter' | 'year';
@@ -19,6 +20,7 @@ interface SubscriptionPlanData {
 
 interface SubscriptionPlan extends SubscriptionPlanData {
   id: string;
+  base_monthly_price?: number;
   created_at: string;
   updated_at: string;
 }

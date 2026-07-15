@@ -60,7 +60,7 @@ function CheckoutContent() {
     setError(null);
 
     try {
-      // Prepare API request
+      // Create subscription request (without PayMongo)
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: {
@@ -68,29 +68,23 @@ function CheckoutContent() {
         },
         body: JSON.stringify({
           plan_id: selectedPlan,
-          success_url: `${window.location.origin}/account/subscription?success=true`,
-          cancel_url: `${window.location.origin}/subscription/checkout?cancelled=true`
+          payment_method: 'manual' // Indicate manual payment processing
         })
       });
 
       // Handle response
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
+        throw new Error(errorData.error || 'Failed to create subscription request');
       }
 
       const data = await response.json();
 
-      // Validate response data
-      if (!data.checkout_url) {
-        throw new Error('Invalid response from payment server');
-      }
-
-      // Redirect to PayMongo checkout
-      window.location.href = data.checkout_url;
+      // Redirect to account/subscription with payment instructions
+      router.push('/account/subscription?request_created=true');
 
     } catch (err) {
-      console.error('Checkout creation error:', err);
+      console.error('Subscription creation error:', err);
 
       // Determine error type
       let errorType: CheckoutError['type'] = 'network';
@@ -106,9 +100,6 @@ function CheckoutContent() {
         } else if (err.message.includes('Invalid plan')) {
           errorType = 'validation';
           errorMessage = 'Selected plan is not available. Please choose a different plan.';
-        } else if (err.message.includes('checkout')) {
-          errorType = 'api';
-          errorMessage = 'Payment service error. Please try again in a few minutes.';
         }
       }
 

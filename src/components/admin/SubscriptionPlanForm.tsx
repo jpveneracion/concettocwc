@@ -18,6 +18,7 @@ interface SubscriptionPlanData {
   id?: string;
   name: string;
   description: string;
+  base_monthly_price?: number;
   price: number;
   currency: string;
   interval: 'month' | 'quarter' | 'year';
@@ -35,6 +36,7 @@ export default function SubscriptionPlanForm({
   const [formData, setFormData] = useState<SubscriptionPlanData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
+    base_monthly_price: initialData?.base_monthly_price || initialData?.price || 0,
     price: initialData?.price || 0,
     currency: initialData?.currency || 'PHP',
     interval: initialData?.interval || 'month',
@@ -55,7 +57,10 @@ export default function SubscriptionPlanForm({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        base_monthly_price: initialData.base_monthly_price || initialData.price || 0
+      });
       setFeatures(
         initialData.features.map((feature, index) => ({
           id: `feature-${index}`,
@@ -64,6 +69,25 @@ export default function SubscriptionPlanForm({
       );
     }
   }, [initialData]);
+
+  // Auto-calculate price based on base monthly price, discount, and interval
+  useEffect(() => {
+    const intervalMultipliers = {
+      month: 1,
+      quarter: 3,
+      year: 12
+    };
+
+    const basePrice = formData.base_monthly_price ?? formData.price;
+    const multiplier = intervalMultipliers[formData.interval];
+    const discountedPrice = basePrice * (1 - formData.discount_percent / 100);
+    const calculatedPrice = discountedPrice * multiplier;
+
+    setFormData(prev => ({
+      ...prev,
+      price: calculatedPrice
+    }));
+  }, [formData.base_monthly_price, formData.discount_percent, formData.interval, formData.price]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -76,8 +100,8 @@ export default function SubscriptionPlanForm({
       newErrors.description = 'Description is required';
     }
 
-    if (formData.price < 0) {
-      newErrors.price = 'Price must be non-negative';
+    if (formData.base_monthly_price !== undefined && formData.base_monthly_price < 0) {
+      newErrors.price = 'Base monthly price must be non-negative';
     }
 
     if (formData.discount_percent < 0 || formData.discount_percent > 100) {
@@ -172,10 +196,10 @@ export default function SubscriptionPlanForm({
             )}
           </div>
 
-          {/* Price */}
+          {/* Base Monthly Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price *
+              Base Monthly Price *
             </label>
             <div className="flex">
               <div className="relative flex-1">
@@ -184,12 +208,12 @@ export default function SubscriptionPlanForm({
                 </span>
                 <input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                  value={formData.base_monthly_price}
+                  onChange={(e) => setFormData({ ...formData, base_monthly_price: parseFloat(e.target.value) || 0 })}
                   className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     errors.price ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="0.00"
+                  placeholder="500.00"
                   min="0"
                   step="0.01"
                   disabled={isSubmitting || isLoading}
@@ -206,29 +230,9 @@ export default function SubscriptionPlanForm({
                 <option value="EUR">EUR</option>
               </select>
             </div>
-            {errors.price && (
-              <p className="text-sm text-red-600 mt-1">{errors.price}</p>
-            )}
-          </div>
-
-          {/* Interval */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Billing Interval *
-            </label>
-            <select
-              value={formData.interval}
-              onChange={(e) => setFormData({
-                ...formData,
-                interval: e.target.value as 'month' | 'quarter' | 'year'
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isSubmitting || isLoading}
-            >
-              <option value="month">Monthly</option>
-              <option value="quarter">Quarterly</option>
-              <option value="year">Annually</option>
-            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Base monthly rate for discount calculations
+            </p>
           </div>
 
           {/* Discount Percent */}
@@ -247,9 +251,10 @@ export default function SubscriptionPlanForm({
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.discount_percent ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="0"
+                placeholder="5"
                 min="0"
                 max="100"
+                step="0.01"
                 disabled={isSubmitting || isLoading}
               />
               <span className="ml-2 text-gray-600">%</span>
@@ -258,8 +263,52 @@ export default function SubscriptionPlanForm({
               <p className="text-sm text-red-600 mt-1">{errors.discount_percent}</p>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Percentage discount compared to monthly rate
+              Discount off monthly rate (e.g., 5% = 5% off ₱500/month)
             </p>
+          </div>
+
+          {/* Billing Interval */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Billing Interval *
+            </label>
+            <select
+              value={formData.interval}
+              onChange={(e) => setFormData({
+                ...formData,
+                interval: e.target.value as 'month' | 'quarter' | 'year'
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isSubmitting || isLoading}
+            >
+              <option value="month">Monthly</option>
+              <option value="quarter">Quarterly</option>
+              <option value="year">Annually</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              How often the customer is billed
+            </p>
+          </div>
+
+          {/* Auto-calculated Price */}
+          <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Calculated Price *
+                </label>
+                <p className="text-xs text-gray-500">
+                  {formData.base_monthly_price !== undefined ? `Auto-calculated: ${formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}${formData.base_monthly_price.toFixed(2)} × ${(1 - formData.discount_percent / 100).toFixed(2)} × ${formData.interval === 'month' ? '1' : formData.interval === 'quarter' ? '3' : '12'} months = ${formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}${formData.price.toFixed(2)}` : 'Using current price (no base monthly price set)'}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-gray-900">
+                  {formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}
+                  {formData.price.toFixed(2)}
+                </div>
+                <p className="text-xs text-gray-500">per {formData.interval}</p>
+              </div>
+            </div>
           </div>
         </div>
 

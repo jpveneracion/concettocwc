@@ -26,6 +26,7 @@ export interface SubscriptionPlanRecord {
 export interface CreateSubscriptionPlanInput {
   name: string;
   description?: string;
+  base_monthly_price?: number;
   price: number;
   currency?: string;
   interval: string;
@@ -40,6 +41,7 @@ export interface CreateSubscriptionPlanInput {
 export interface UpdateSubscriptionPlanInput {
   name?: string;
   description?: string;
+  base_monthly_price?: number;
   price?: number;
   currency?: string;
   interval?: string;
@@ -251,45 +253,28 @@ export async function updateSubscriptionPlan(
       updatedFeatures.features = updates.features;
     }
 
-    // Build the UPDATE query using template literal approach
-    const setParts: string[] = [];
-    const values: any[] = [];
+    // Build dynamic SET clause and values array (proven working pattern from db.ts)
+    const updateFields: Record<string, any> = {};
 
-    if (updates.name !== undefined) {
-      setParts.push('name = $1');
-      values.push(updates.name);
-    }
-    if (updates.price !== undefined) {
-      setParts.push(`price = $${values.length + 1}`);
-      values.push(updates.price.toFixed(2));
-    }
-    if (updates.currency !== undefined) {
-      setParts.push(`currency = $${values.length + 1}`);
-      values.push(updates.currency);
-    }
-    if (updates.interval !== undefined) {
-      setParts.push(`interval = $${values.length + 1}`);
-      values.push(updates.interval);
-    }
+    if (updates.name !== undefined) updateFields.name = updates.name;
+    if (updates.price !== undefined) updateFields.price = updates.price.toFixed(2);
+    if (updates.currency !== undefined) updateFields.currency = updates.currency;
+    if (updates.interval !== undefined) updateFields.interval = updates.interval;
 
-    // Always update features and updated_at
-    setParts.push(`features = $${values.length + 1}::jsonb`);
-    values.push(JSON.stringify(updatedFeatures));
+    const setClause = Object.keys(updateFields)
+      .map((key, index) => `${key} = $${index + 2}`)
+      .join(', ');
 
-    setParts.push(`updated_at = NOW()`);
+    const baseValues = [id, ...Object.values(updateFields)];
+    const values = [...baseValues, JSON.stringify(updatedFeatures)];
 
-    // Add the ID as the last parameter
-    values.push(id);
-
-    // Build the final query
-    const query = `
-      UPDATE subscription_plans
-      SET ${setParts.join(', ')}
-      WHERE id = $${values.length}
-      RETURNING *
-    `;
-
-    const result = await sql(query, ...values);
+    const result = await sql(
+      `UPDATE subscription_plans
+       SET ${setClause}, features = $${values.length}::jsonb, updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      values
+    );
 
     if (result.length === 0) {
       return null;
