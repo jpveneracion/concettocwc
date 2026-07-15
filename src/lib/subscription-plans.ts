@@ -256,58 +256,49 @@ export async function updateSubscriptionPlan(
       updatedFeatures.features = updates.features;
     }
 
-    // Build dynamic SET clause
-    const setClauses: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    // Build the UPDATE query using template literal approach
+    const setParts: string[] = [];
+    const values: any[] = [];
 
     if (updates.name !== undefined) {
-      setClauses.push(`name = $${paramIndex}`);
-      params.push(updates.name);
-      paramIndex++;
+      setParts.push('name = $1');
+      values.push(updates.name);
     }
-
     if (updates.price !== undefined) {
-      setClauses.push(`price = $${paramIndex}`);
-      params.push(updates.price.toFixed(2));
-      paramIndex++;
+      setParts.push(`price = $${values.length + 1}`);
+      values.push(updates.price.toFixed(2));
     }
-
     if (updates.currency !== undefined) {
-      setClauses.push(`currency = $${paramIndex}`);
-      params.push(updates.currency);
-      paramIndex++;
+      setParts.push(`currency = $${values.length + 1}`);
+      values.push(updates.currency);
     }
-
     if (updates.interval !== undefined) {
-      setClauses.push(`interval = $${paramIndex}`);
-      params.push(updates.interval);
-      paramIndex++;
+      setParts.push(`interval = $${values.length + 1}`);
+      values.push(updates.interval);
     }
-
     if (updates.paymongo_plan_id !== undefined) {
-      setClauses.push(`paymongo_plan_id = $${paramIndex}`);
-      params.push(updates.paymongo_plan_id);
-      paramIndex++;
+      setParts.push(`paymongo_plan_id = $${values.length + 1}`);
+      values.push(updates.paymongo_plan_id);
     }
 
     // Always update features and updated_at
-    setClauses.push(`features = $${paramIndex}::jsonb`);
-    params.push(JSON.stringify(updatedFeatures));
-    paramIndex++;
+    setParts.push(`features = $${values.length + 1}::jsonb`);
+    values.push(JSON.stringify(updatedFeatures));
 
-    setClauses.push(`updated_at = NOW()`);
+    setParts.push(`updated_at = NOW()`);
 
+    // Add the ID as the last parameter
+    values.push(id);
+
+    // Build the final query
     const query = `
       UPDATE subscription_plans
-      SET ${setClauses.join(', ')}
-      WHERE id = $${paramIndex}
+      SET ${setParts.join(', ')}
+      WHERE id = $${values.length}
       RETURNING *
     `;
 
-    params.push(id);
-
-    const result = await sql(query, ...params);
+    const result = await sql(query, ...values);
 
     if (result.length === 0) {
       return null;
