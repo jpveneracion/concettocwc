@@ -4,31 +4,29 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public access to landing page and auth pages
+  // Public paths that don't require authentication
   const publicPaths = [
     '/',
-    '/signup',
     '/login',
-    '/auth/account-choice',
-    '/auth/pi/signin',
-    '/auth/pi/callback',
+    '/signup',
+    '/auth',
     '/api/auth',
-    '/api/products',
-    '/api/logout',
     '/api/login',
-    '/api/signup'
+    '/api/signup',
+    '/api/logout',
+    '/api/products'
   ];
 
-  // Check if current path starts with any public path
-  const isPublicPath = publicPaths.some(path =>
-    pathname === path || pathname.startsWith(path + '/') || pathname.startsWith('/api/')
+  // Check if path is public
+  const isPublic = publicPaths.some(path =>
+    pathname === path || pathname.startsWith(path + '/')
   );
 
-  if (isPublicPath) {
+  if (isPublic) {
     return NextResponse.next();
   }
 
-  // For protected routes, check for session cookie
+  // For protected routes, check session cookie
   const sessionCookie = request.cookies.get('session');
 
   if (!sessionCookie) {
