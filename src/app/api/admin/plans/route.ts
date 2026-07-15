@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     await requireAdmin(session.userId);
 
     const body = await req.json();
-    const { name, description, price, currency, interval, discount_percent, features, is_active } = body;
+    const { name, description, amount, currency, interval, discount_percent, features, is_active } = body;
 
     // Import subscription plans utility
     const { createSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (price === undefined || price < 0) {
+    if (amount === undefined || amount < 0) {
       return NextResponse.json(
-        { error: 'Price must be a non-negative number' },
+        { error: 'Amount must be a non-negative number' },
         { status: 400 }
       );
     }
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     const newPlan = await createSubscriptionPlan({
       name,
       description,
-      price,
+      amount,
       currency: currency || 'PHP',
       interval,
       discount_percent: discount_percent || 0,
@@ -112,7 +112,7 @@ export async function PUT(req: NextRequest) {
     await requireAdmin(session.userId);
 
     const body = await req.json();
-    const { id, name, description, price, currency, interval, discount_percent, features, is_active } = body;
+    const { id, name, description, amount, currency, interval, discount_percent, features, is_active } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -125,10 +125,10 @@ export async function PUT(req: NextRequest) {
     const { updateSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
 
     // Build updates object (only include defined fields)
-    const updates: any = {};
+    const updates: Record<string, string | number | boolean | string[] | Record<string, any>> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
-    if (price !== undefined) updates.price = price;
+    if (amount !== undefined) updates.amount = amount;
     if (currency !== undefined) updates.currency = currency;
     if (interval !== undefined) updates.interval = interval;
     if (discount_percent !== undefined) updates.discount_percent = discount_percent;

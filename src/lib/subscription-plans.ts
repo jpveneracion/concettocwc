@@ -12,11 +12,11 @@ import { sql } from './db';
 export interface SubscriptionPlanRecord {
   id: string; // UUID
   name: string;
-  price: string; // DECIMAL in database comes as string
+  amount: string; // DECIMAL in database comes as string
   currency: string;
   interval: string;
-  paymongo_plan_id: string | null;
   features: Record<string, any>; // JSONB from database
+  paymongo_plan_id: string | null; // PayMongo payment plan ID
   created_at: string; // TIMESTAMPTZ comes as string
   updated_at: string; // TIMESTAMPTZ comes as string
 }
@@ -27,12 +27,11 @@ export interface SubscriptionPlanRecord {
 export interface CreateSubscriptionPlanInput {
   name: string;
   description?: string;
-  price: number;
+  amount: number;
   currency?: string;
   interval: string;
   discount_percent?: number;
   features?: Record<string, any>;
-  paymongo_plan_id?: string;
   is_active?: boolean;
 }
 
@@ -42,13 +41,13 @@ export interface CreateSubscriptionPlanInput {
 export interface UpdateSubscriptionPlanInput {
   name?: string;
   description?: string;
-  price?: number;
+  amount?: number;
   currency?: string;
   interval?: string;
   discount_percent?: number;
   features?: Record<string, any>;
-  paymongo_plan_id?: string;
   is_active?: boolean;
+  paymongo_plan_id?: string | null;
 }
 
 /**
@@ -60,8 +59,8 @@ export interface SubscriptionPlanFilters {
   currency?: string;
   min_discount_percent?: number;
   max_discount_percent?: number;
-  min_price?: number;
-  max_price?: number;
+  min_amount?: number;
+  max_amount?: number;
 }
 
 // ============================================================================
@@ -87,17 +86,15 @@ export async function createSubscriptionPlan(
     const result = await sql`
       INSERT INTO subscription_plans (
         name,
-        price,
+        amount,
         currency,
         interval,
-        paymongo_plan_id,
         features
       ) VALUES (
         ${planData.name},
-        ${planData.price.toFixed(2)},
+        ${planData.amount.toFixed(2)},
         ${planData.currency || 'PHP'},
         ${planData.interval},
-        ${planData.paymongo_plan_id || null},
         ${JSON.stringify(featuresObject)}::jsonb
       )
       RETURNING *
@@ -156,15 +153,15 @@ export async function getAllSubscriptionPlans(
         paramIndex++;
       }
 
-      if (filters.min_price !== undefined) {
-        query += ` AND CAST(price AS DECIMAL) >= $${paramIndex}`;
-        params.push(filters.min_price.toFixed(2));
+      if (filters.min_amount !== undefined) {
+        query += ` AND CAST(amount AS DECIMAL) >= $${paramIndex}`;
+        params.push(filters.min_amount.toFixed(2));
         paramIndex++;
       }
 
-      if (filters.max_price !== undefined) {
-        query += ` AND CAST(price AS DECIMAL) <= $${paramIndex}`;
-        params.push(filters.max_price.toFixed(2));
+      if (filters.max_amount !== undefined) {
+        query += ` AND CAST(amount AS DECIMAL) <= $${paramIndex}`;
+        params.push(filters.max_amount.toFixed(2));
         paramIndex++;
       }
     }
@@ -256,49 +253,27 @@ export async function updateSubscriptionPlan(
       updatedFeatures.features = updates.features;
     }
 
-    // Build the UPDATE query using template literal approach
-    const setParts: string[] = [];
-    const values: any[] = [];
+    // Build the UPDATE query values
+    const updateName = updates.name !== undefined ? updates.name : existingPlan.name;
+    const updateAmount = updates.amount !== undefined ? updates.amount.toFixed(2) : existingPlan.amount;
+    const updateCurrency = updates.currency !== undefined ? updates.currency : existingPlan.currency;
+    const updateInterval = updates.interval !== undefined ? updates.interval : existingPlan.interval;
+    const updatePaymongoPlanId = updates.paymongo_plan_id !== undefined ? updates.paymongo_plan_id : existingPlan.paymongo_plan_id;
 
-    if (updates.name !== undefined) {
-      setParts.push('name = $1');
-      values.push(updates.name);
-    }
-    if (updates.price !== undefined) {
-      setParts.push(`price = $${values.length + 1}`);
-      values.push(updates.price.toFixed(2));
-    }
-    if (updates.currency !== undefined) {
-      setParts.push(`currency = $${values.length + 1}`);
-      values.push(updates.currency);
-    }
-    if (updates.interval !== undefined) {
-      setParts.push(`interval = $${values.length + 1}`);
-      values.push(updates.interval);
-    }
-    if (updates.paymongo_plan_id !== undefined) {
-      setParts.push(`paymongo_plan_id = $${values.length + 1}`);
-      values.push(updates.paymongo_plan_id);
-    }
-
-    // Always update features and updated_at
-    setParts.push(`features = $${values.length + 1}::jsonb`);
-    values.push(JSON.stringify(updatedFeatures));
-
-    setParts.push(`updated_at = NOW()`);
-
-    // Add the ID as the last parameter
-    values.push(id);
-
-    // Build the final query
-    const query = `
+    // Use the Neon SQL client with template literal
+    const result = await sql`
       UPDATE subscription_plans
-      SET ${setParts.join(', ')}
-      WHERE id = $${values.length}
+      SET
+        name = ${updateName},
+        amount = ${updateAmount}::numeric,
+        currency = ${updateCurrency},
+        interval = ${updateInterval},
+        features = ${JSON.stringify(updatedFeatures)}::jsonb,
+        paymongo_plan_id = ${updatePaymongoPlanId},
+        updated_at = NOW()
+      WHERE id = ${id}
       RETURNING *
     `;
-
-    const result = await sql(query, ...values);
 
     if (result.length === 0) {
       return null;
@@ -423,7 +398,7 @@ export function formatSubscriptionPlanForAPI(plan: SubscriptionPlanRecord): Reco
     id: plan.id,
     name: plan.name,
     description: features.description || '',
-    price: parseFloat(plan.price),
+    price: parseFloat(plan.amount),
     currency: plan.currency,
     interval: plan.interval,
     discount_percent: features.discount_percent || 0,
@@ -471,8 +446,8 @@ export function validateSubscriptionPlanData(data: CreateSubscriptionPlanInput):
     errors.push('Plan name is required');
   }
 
-  if (data.price === undefined || data.price < 0) {
-    errors.push('Price must be a non-negative number');
+  if (data.amount === undefined || data.amount < 0) {
+    errors.push('Amount must be a non-negative number');
   }
 
   if (!data.interval || !isValidInterval(data.interval)) {

@@ -75,13 +75,13 @@ export async function PUT(
     await requireAdmin(session.userId);
 
     const body = await req.json();
-    const { name, description, price, currency, interval, discount_percent, features, paymongo_plan_id, is_active } = body;
+    const { name, description, amount, currency, interval, discount_percent, features, paymongo_plan_id, is_active } = body;
 
     // Build updates object (only include defined fields)
-    const updates: any = {};
+    const updates: Record<string, string | number | boolean | string[] | Record<string, any> | null> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
-    if (price !== undefined) updates.price = price;
+    if (amount !== undefined) updates.amount = amount;
     if (currency !== undefined) updates.currency = currency;
     if (interval !== undefined) updates.interval = interval;
     if (discount_percent !== undefined) updates.discount_percent = discount_percent;
