@@ -10,6 +10,7 @@
     "lint": "next lint",
     "db:migrate": "node src/lib/migrate.js",
     "db:migrate:company-products": "npx ts-node src/lib/migrations/apply-company-product-system.ts",
+    "db:migrate:subscription-plans": "npx ts-node src/lib/migrations/create-subscription-plans.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

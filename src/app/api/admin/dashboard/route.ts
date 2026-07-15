@@ -8,6 +8,9 @@ import {
   DashboardAnalytics,
   PaymentMethod,
   SubscriptionPlan,
+  SubscriptionPlanDetails,
+  SubscriptionPlanInterval,
+  SubscriptionPlanStatus,
   PaymentMethodStats,
   DiscountStats,
   PlanStats,
@@ -227,7 +230,21 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
     }));
 
     const planDistributionTyped: PlanStats[] = (planDistribution as PlanDistributionRow[]).map((row: PlanDistributionRow) => ({
-      plan: row.subscription_plan as SubscriptionPlan,
+      plan: {
+        id: row.subscription_plan,
+        name: row.subscription_plan,
+        description: '',
+        price: 0,
+        currency: 'PHP',
+        interval: 'month' as SubscriptionPlanInterval,
+        discount_percent: 0,
+        features: {},
+        status: SubscriptionPlanStatus.ACTIVE,
+        is_active: true,
+        sort_order: 0,
+        created_at: new Date(),
+        updated_at: new Date()
+      } as SubscriptionPlanDetails,
       count: row.count,
       revenue: row.revenue,
       percentage: row.percentage

@@ -205,7 +205,7 @@ export interface DiscountStats {
  * Plan type statistics
  */
 export interface PlanStats {
-  plan: SubscriptionPlan;
+  plan: SubscriptionPlanDetails;
   count: number;
   revenue: number;
   percentage: number;
@@ -324,4 +324,468 @@ export interface Invoice {
   paymongo_invoice_id: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+// ============================================================================
+// ADMIN SUBSCRIPTION PLAN MANAGEMENT TYPES
+// ============================================================================
+
+/**
+ * Subscription plan interval enumeration
+ */
+export enum SubscriptionPlanInterval {
+  MONTHLY = 'monthly',
+  QUARTERLY = 'quarterly',
+  ANNUAL = 'annual'
+}
+
+/**
+ * Subscription plan status enumeration
+ */
+export enum SubscriptionPlanStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  ARCHIVED = 'archived',
+  DRAFT = 'draft'
+}
+
+/**
+ * Subscription plan features structure (stored as JSON in database)
+ */
+export interface SubscriptionPlanFeatures {
+  // Quote limits
+  max_quotes_per_period?: number;
+  max_quotes_total?: number;
+
+  // User/seat limits
+  max_users?: number;
+  max_concurrent_users?: number;
+
+  // Storage limits
+  max_storage_mb?: number;
+  max_attachments_per_quote?: number;
+
+  // Feature flags
+  custom_templates?: boolean;
+  api_access?: boolean;
+  advanced_analytics?: boolean;
+  white_labeling?: boolean;
+  priority_support?: boolean;
+  custom_integrations?: boolean;
+
+  // Billing features
+  trial_days?: number;
+  discount_percentage?: number;
+  cancellation_policy?: string;
+
+  // Additional features (flexible JSON structure)
+  additional_features?: Record<string, boolean | number | string>;
+}
+
+/**
+ * Database model for subscription plans
+ */
+export interface SubscriptionPlanDetails {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: SubscriptionPlanInterval;
+  discount_percent: number;
+  features: SubscriptionPlanFeatures;
+  status: SubscriptionPlanStatus;
+  is_active: boolean;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date | null;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Create subscription plan request payload
+ */
+export interface CreateSubscriptionPlanRequest {
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: SubscriptionPlanInterval;
+  discount_percent: number;
+  features: SubscriptionPlanFeatures;
+  status?: SubscriptionPlanStatus;
+  sort_order?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Update subscription plan request payload (partial updates)
+ */
+export interface UpdateSubscriptionPlanRequest {
+  name?: string;
+  description?: string;
+  price?: number;
+  currency?: string;
+  interval?: SubscriptionPlanInterval;
+  discount_percent?: number;
+  features?: Partial<SubscriptionPlanFeatures>;
+  status?: SubscriptionPlanStatus;
+  is_active?: boolean;
+  sort_order?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Subscription plan list filters for API queries
+ */
+export interface SubscriptionPlanListFilters {
+  status?: SubscriptionPlanStatus;
+  is_active?: boolean;
+  interval?: SubscriptionPlanInterval;
+  search?: string;
+  min_price?: number;
+  max_price?: number;
+  currency?: string;
+  sort_by?: 'name' | 'price' | 'created_at' | 'sort_order';
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Subscription plan API response (single plan)
+ */
+export interface SubscriptionPlanResponse {
+  success: boolean;
+  data: SubscriptionPlanDetails;
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
+/**
+ * Subscription plan list API response
+ */
+export interface SubscriptionPlanListResponse {
+  success: boolean;
+  data: SubscriptionPlan[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  };
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
+/**
+ * Subscription plan operation result (CRUD operations)
+ */
+export interface SubscriptionPlanOperationResponse {
+  success: boolean;
+  data?: SubscriptionPlan;
+  message?: string;
+  errors?: Record<string, string[]>;
+  operation: 'create' | 'update' | 'delete' | 'archive';
+}
+
+/**
+ * Admin subscription plan statistics
+ */
+export interface AdminSubscriptionPlanStats {
+  total_plans: number;
+  active_plans: number;
+  draft_plans: number;
+  archived_plans: number;
+  total_subscribers: number;
+  total_revenue: number;
+  revenue_by_plan: PlanRevenueStats[];
+  subscriber_distribution: PlanDistributionStats[];
+  conversion_rates: ConversionRateStats;
+}
+
+/**
+ * Plan revenue statistics
+ */
+export interface PlanRevenueStats {
+  plan_id: string;
+  plan_name: string;
+  revenue: number;
+  subscriber_count: number;
+  average_revenue_per_subscriber: number;
+  period: 'monthly' | 'quarterly' | 'annual';
+}
+
+/**
+ * Plan distribution statistics
+ */
+export interface PlanDistributionStats {
+  plan_id: string;
+  plan_name: string;
+  subscriber_count: number;
+  percentage: number;
+  interval: SubscriptionPlanInterval;
+}
+
+/**
+ * Conversion rate statistics
+ */
+export interface ConversionRateStats {
+  trial_to_paid: number;
+  plan_upgrades: number;
+  plan_downgrades: number;
+  cancellations: number;
+  reactivations: number;
+}
+
+/**
+ * Subscription plan usage analytics data
+ */
+export interface SubscriptionPlanUsageData {
+  plan_id: string;
+  plan_name: string;
+  usage_metrics: {
+    total_quotes_created: number;
+    total_users_active: number;
+    average_quotes_per_user: number;
+    storage_used_mb: number;
+    api_calls_count: number;
+  };
+  period_start: Date;
+  period_end: Date;
+  trends: UsageTrendData[];
+}
+
+/**
+ * Usage trend data point
+ */
+export interface UsageTrendData {
+  date: Date;
+  metric_name: string;
+  value: number;
+  change_percent?: number;
+}
+
+/**
+ * Subscription plan validation result
+ */
+export interface SubscriptionPlanValidationResult {
+  is_valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  validated_fields: ValidatedField[];
+}
+
+/**
+ * Validation error structure
+ */
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+  severity: 'error';
+}
+
+/**
+ * Validation warning structure
+ */
+export interface ValidationWarning {
+  field: string;
+  message: string;
+  code: string;
+  severity: 'warning';
+}
+
+/**
+ * Validated field information
+ */
+export interface ValidatedField {
+  field: string;
+  value: unknown;
+  is_valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+// ============================================================================
+// UI COMPONENT PROP TYPES
+// ============================================================================
+
+/**
+ * Subscription plan list component props
+ */
+export interface SubscriptionPlanListProps {
+  plans: SubscriptionPlanDetails[];
+  isLoading?: boolean;
+  filters?: SubscriptionPlanListFilters;
+  onFilterChange?: (filters: SubscriptionPlanListFilters) => void;
+  onPlanSelect?: (plan: SubscriptionPlanDetails) => void;
+  onPlanEdit?: (plan: SubscriptionPlanDetails) => void;
+  onPlanDelete?: (plan: SubscriptionPlanDetails) => void;
+  onPlanDuplicate?: (plan: SubscriptionPlanDetails) => void;
+  onPlanCreate?: () => void;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  };
+  onPageChange?: (page: number) => void;
+}
+
+/**
+ * Subscription plan form component props
+ */
+export interface SubscriptionPlanFormProps {
+  mode: 'create' | 'edit';
+  initialData?: SubscriptionPlanDetails;
+  onSubmit: (data: CreateSubscriptionPlanRequest | UpdateSubscriptionPlanRequest) => Promise<void>;
+  onCancel: () => void;
+  isLoading?: boolean;
+  validationErrors?: Record<string, string[]>;
+  availableFeatures?: string[];
+}
+
+/**
+ * Subscription plan card component props
+ */
+export interface SubscriptionPlanCardProps {
+  plan: SubscriptionPlanDetails;
+  isSelected?: boolean;
+  isComparable?: boolean;
+  onSelect?: (plan: SubscriptionPlanDetails) => void;
+  onEdit?: (plan: SubscriptionPlanDetails) => void;
+  onDelete?: (plan: SubscriptionPlanDetails) => void;
+  onDuplicate?: (plan: SubscriptionPlanDetails) => void;
+  showFeatures?: boolean;
+  showStats?: boolean;
+  comparisonPlans?: SubscriptionPlanDetails[];
+  highlightDifferences?: boolean;
+}
+
+/**
+ * Subscription plan comparison component props
+ */
+export interface SubscriptionPlanComparisonProps {
+  plans: SubscriptionPlanDetails[];
+  highlightedPlanId?: string;
+  onPlanSelect?: (plan: SubscriptionPlanDetails) => void;
+  showOnlyDifferences?: boolean;
+  groupFeatures?: boolean;
+}
+
+/**
+ * Subscription plan feature editor component props
+ */
+export interface SubscriptionPlanFeatureEditorProps {
+  features: SubscriptionPlanFeatures;
+  onChange: (features: SubscriptionPlanFeatures) => void;
+  availableFeatures?: FeatureDefinition[];
+  readOnly?: boolean;
+  validationErrors?: Record<string, string[]>;
+}
+
+/**
+ * Feature definition for the feature editor
+ */
+export interface FeatureDefinition {
+  key: string;
+  label: string;
+  type: 'boolean' | 'number' | 'string' | 'select';
+  description?: string;
+  category?: string;
+  options?: string[]; // for select type
+  default_value?: boolean | number | string;
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+  };
+}
+
+// ============================================================================
+// UTILITY TYPES AND TYPE GUARDS
+// ============================================================================
+
+/**
+ * Type guard for subscription plan
+ */
+export function isSubscriptionPlan(obj: unknown): obj is SubscriptionPlanDetails {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'name' in obj &&
+    'description' in obj &&
+    'price' in obj &&
+    'currency' in obj &&
+    'interval' in obj &&
+    'features' in obj
+  );
+}
+
+/**
+ * Type guard for subscription plan features
+ */
+export function isSubscriptionPlanFeatures(obj: unknown): obj is SubscriptionPlanFeatures {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    ('max_quotes_per_period' in obj || 'max_users' in obj || 'custom_templates' in obj)
+  );
+}
+
+/**
+ * Type guard for create subscription plan request
+ */
+export function isCreateSubscriptionPlanRequest(obj: unknown): obj is CreateSubscriptionPlanRequest {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'name' in obj &&
+    'description' in obj &&
+    'price' in obj &&
+    'currency' in obj &&
+    'interval' in obj &&
+    'features' in obj
+  );
+}
+
+/**
+ * Extract common plan fields from various plan types
+ */
+export type CommonPlanFields = Pick<SubscriptionPlanDetails,
+  'id' | 'name' | 'description' | 'price' | 'currency' | 'interval' | 'discount_percent'
+>;
+
+/**
+ * Plan summary type for display purposes
+ */
+export type SubscriptionPlanSummary = Pick<SubscriptionPlanDetails,
+  'id' | 'name' | 'description' | 'price' | 'currency' | 'interval' | 'discount_percent' | 'is_active'
+> & {
+  subscriber_count?: number;
+  revenue?: number;
+};
+
+/**
+ * Plan update history entry
+ */
+export interface PlanUpdateHistoryEntry {
+  id: string;
+  plan_id: string;
+  changed_by: string;
+  changed_at: Date;
+  changes: PlanChange[];
+  reason?: string;
+}
+
+/**
+ * Individual plan change
+ */
+export interface PlanChange {
+  field: string;
+  old_value: unknown;
+  new_value: unknown;
 }

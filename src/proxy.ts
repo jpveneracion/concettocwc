@@ -58,7 +58,7 @@ export default async function proxy(req: NextRequest) {
   const session = req.cookies.get('session');
 
   if (!session) {
-    // For API routes, return 401 instead of redirect
+    // For API routes, return 401 instead of redirect (excluding public endpoints)
     if (pathname.startsWith('/api')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
