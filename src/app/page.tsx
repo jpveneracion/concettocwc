@@ -36,6 +36,7 @@ export default function Home() {
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
+      <TechnicalSection />
       <TrustSection />
       <CtaSection
         headline="Ready to Transform Your Blinds Business?"

@@ -66,6 +66,7 @@ if (providers.length === 0) {
 
 export const authOptions = {
   providers,
+  trustHost: true, // Allow localhost for development
   session: {
     strategy: 'jwt' as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -74,6 +75,7 @@ export const authOptions = {
     signIn: '/login',
     error: '/login',
   },
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }: any) {
       if (!user?.email || !account) {
