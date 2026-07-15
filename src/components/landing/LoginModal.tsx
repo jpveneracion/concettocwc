@@ -32,16 +32,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleOAuthSignIn = async (providerId: string) => {
     setIsLoading(true);
     try {
-      // OAuth handles both login and signup automatically
-      const result = await signIn(providerId, {
-        callbackUrl: '/dashboard',
-        redirect: true
-      });
-
-      if (result?.error) {
-        console.error('OAuth sign-in error:', result.error);
-        setIsLoading(false);
-      }
+      // Redirect to OAuth provider directly - this will handle the flow
+      window.location.href = `/api/auth/signin/${providerId}?callbackUrl=${encodeURIComponent('/dashboard')}`;
     } catch (error) {
       console.error('OAuth sign-in failed:', error);
       setIsLoading(false);
