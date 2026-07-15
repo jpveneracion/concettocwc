@@ -1,6 +1,6 @@
-import { DefaultSession } from 'next-auth'
+import { DefaultSession } from 'auth'
 
-declare module 'next-auth' {
+declare module 'auth' {
   interface Session {
     provider?: string;
     providerAccountId?: string;
@@ -12,7 +12,7 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+declare module 'auth/jwt' {
   interface JWT {
     provider?: string;
     providerAccountId?: string;

@@ -64,10 +64,10 @@ if (providers.length === 0) {
   console.warn('⚠️ No OAuth providers configured - OAuth authentication will not work');
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const authOptions = {
   providers,
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt' as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -75,7 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: '/login',
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: any) {
       if (!user?.email || !account) {
         console.error('OAuth sign-in failed: Missing user data');
         return false;
@@ -208,34 +208,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     },
 
-    async jwt({ token, account, user, profile }) {
+    async jwt({ token, account, user, profile }: any) {
       if (account && user) {
         token.provider = account.provider;
         token.providerAccountId = account.providerAccountId;
         token.email = profile?.email || user.email;
-        token.emailVerified = profile?.email_verified || false;
+        token.emailVerified = (profile as any)?.email_verified || false;
         // Store the user ID from signIn callback
         token.userId = user.id;
       }
       return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (token) {
-        session.provider = token.provider as string;
-        session.providerAccountId = token.providerAccountId as string;
-        session.user = {
-          ...session.user,
-          id: token.userId || token.sub || session.user.id,
+        (session as any).provider = token.provider as string;
+        (session as any).providerAccountId = token.providerAccountId as string;
+        (session as any).user = {
+          ...(session.user || {}),
+          id: token.userId || token.sub || '',
           email: token.email as string,
           name: token.name as string,
-        } as typeof session.user;
+        };
       }
       return session;
     }
   },
   events: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: any) {
       console.log('✅ OAuth sign-in successful:', {
         user: user.email,
         userId: user.id,
@@ -244,4 +244,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   debug: process.env.NODE_ENV === 'development'
-});
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);

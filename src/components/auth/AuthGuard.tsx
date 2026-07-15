@@ -21,7 +21,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Check if user has completed account setup
-    if (session && !session.companyId) {
+    if (session && !(session as any).companyId) {
       router.replace('/auth/account-choice');
     }
   }, [session, status, router, currentPath]);
