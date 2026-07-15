@@ -1,6 +1,13 @@
 import { sql } from '@/lib/db';
-import crypto from 'crypto';
 import type { OAuthAccount, OAuthProvider, OAuthUserInfo, AccountLinkRequest, PiUserInfo } from '@/types/oauth';
+
+// Edge-compatible email hashing function
+async function hashEmail(email: string): Promise<string> {
+  const emailBuffer = new TextEncoder().encode(email.toLowerCase().trim());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', emailBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 // User record interface for OAuth operations
 interface UserRecord {
@@ -40,7 +47,7 @@ export async function findOAuthAccount(provider: OAuthProvider, providerUserId: 
 
 // Find user by email
 export async function findUserByEmail(email: string): Promise<UserRecord | null> {
-  const emailHash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
+  const emailHash = await hashEmail(email);
   const results = await sql`
     SELECT id, email, email_hash, password_hash, company_id
     FROM users
@@ -68,7 +75,7 @@ export async function linkOAuthAccount(userId: string, accountData: AccountLinkR
 
 // Create new user with OAuth account
 export async function createUserWithOAuth(email: string, companyId: string, accountData: AccountLinkRequest): Promise<{ user: UserRecord; oauthAccount: OAuthAccount }> {
-  const emailHash = crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
+  const emailHash = await hashEmail(email);
 
   // Create user without password_hash (OAuth users authenticate via OAuth providers)
   const [user] = await sql`

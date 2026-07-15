@@ -1,40 +1,37 @@
+import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Public paths that don't require authentication
+export default auth((req) => {
+  // Allow public access to landing page and auth pages
   const publicPaths = [
     '/',
-    '/login',
     '/signup',
-    '/auth',
-    '/api/auth',
-    '/api/login',
-    '/api/signup',
+    '/login',
+    '/auth/account-choice',
+    '/auth/pi/signin',
+    '/auth/pi/callback',
+    '/api/products',
     '/api/logout',
-    '/api/products'
+    '/api/login',
+    '/api/signup'
   ];
 
-  // Check if path is public
-  const isPublic = publicPaths.some(path =>
-    pathname === path || pathname.startsWith(path + '/')
+  // Check if current path is a public path
+  const isPublicPath = publicPaths.some(path =>
+    req.nextUrl.pathname === path || req.nextUrl.pathname.startsWith(path + '/')
   );
 
-  if (isPublic) {
+  if (isPublicPath) {
     return NextResponse.next();
   }
 
-  // For protected routes, check session cookie
-  const sessionCookie = request.cookies.get('session');
-
-  if (!sessionCookie) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // For protected routes, check authentication
+  if (!req.auth) {
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
