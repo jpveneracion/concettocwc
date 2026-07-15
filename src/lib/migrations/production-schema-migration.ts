@@ -413,15 +413,13 @@ const PRODUCTION_SCHEMA: DatabaseSchema = {
         { name: 'amount', type: 'numeric', nullable: false },
         { name: 'currency', type: 'text', nullable: false, defaultValue: '\'PHP\'::text' },
         { name: 'interval', type: 'text', nullable: false, defaultValue: '\'month\'::text' },
-        { name: 'paymongo_plan_id', type: 'text', nullable: true },
         { name: 'features', type: 'jsonb', nullable: true, defaultValue: '\'{}\'}::jsonb' },
         { name: 'created_at', type: 'timestamp with time zone', nullable: false, defaultValue: 'now()' },
         { name: 'updated_at', type: 'timestamp with time zone', nullable: false, defaultValue: 'now()' }
       ],
       constraints: [
         { name: 'subscription_plans_pkey', type: 'PRIMARY KEY', columns: ['id'] },
-        { name: 'subscription_plans_name_key', type: 'UNIQUE', columns: ['name'] },
-        { name: 'subscription_plans_paymongo_plan_id_key', type: 'UNIQUE', columns: ['paymongo_plan_id'] }
+        { name: 'subscription_plans_name_key', type: 'UNIQUE', columns: ['name'] }
       ],
       indexes: []
     },

@@ -75,7 +75,7 @@ export async function PUT(
     await requireAdmin(session.userId);
 
     const body = await req.json();
-    const { name, description, price, currency, interval, discount_percent, features, paymongo_plan_id, is_active } = body;
+    const { name, description, price, currency, interval, discount_percent, features, is_active } = body;
 
     // Build updates object (only include defined fields)
     const updates: any = {};
@@ -86,7 +86,6 @@ export async function PUT(
     if (interval !== undefined) updates.interval = interval;
     if (discount_percent !== undefined) updates.discount_percent = discount_percent;
     if (features !== undefined) updates.features = features;
-    if (paymongo_plan_id !== undefined) updates.paymongo_plan_id = paymongo_plan_id;
     if (is_active !== undefined) updates.is_active = is_active;
 
     // Check if there's anything to update

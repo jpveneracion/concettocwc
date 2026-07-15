@@ -50,7 +50,7 @@ describe('getSubscriptionByCompanyId()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -143,7 +143,6 @@ describe('getSubscriptionPlan()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: {
           quotes_limit: 1000,
           users_limit: 10,
@@ -253,7 +252,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -263,7 +262,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -310,7 +308,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 0,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-basic',
         features: { quotes_limit: 50 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -355,7 +352,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 0,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-basic',
         features: { quotes_limit: 50 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -390,7 +386,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -400,7 +396,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -437,7 +432,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: periodEndDate,
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -447,7 +442,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -482,7 +476,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: periodEndDate,
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -492,7 +486,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -529,7 +522,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: periodEndDate,
         cancel_at_period_end: true,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -539,7 +532,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -574,7 +566,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: periodEndDate,
         cancel_at_period_end: true,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -584,7 +576,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -635,7 +626,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -664,7 +655,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -674,7 +665,6 @@ describe('checkSubscriptionAccess()', () => {
         amount: 29000,
         currency: 'PHP',
         interval: 'monthly',
-        paymongo_plan_id: 'paymongo-plan-pro',
         features: { quotes_limit: 1000 },
         created_at: new Date('2026-01-01'),
         updated_at: new Date('2026-01-01')
@@ -714,7 +704,7 @@ describe('checkSubscriptionAccess()', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -801,8 +791,7 @@ describe('requireActiveSubscription()', () => {
             amount: 29000,
             currency: 'PHP',
             interval: 'monthly',
-            paymongo_plan_id: 'paymongo-plan-pro',
-            features: { quotes_limit: 1000 },
+                features: { quotes_limit: 1000 },
             created_at: new Date(),
             updated_at: new Date()
           },
@@ -866,7 +855,7 @@ describe('Additional subscription helper functions', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };
@@ -895,7 +884,6 @@ describe('Additional subscription helper functions', () => {
           amount: 0,
           currency: 'PHP',
           interval: 'monthly',
-          paymongo_plan_id: 'paymongo-basic',
           features: { quotes_limit: 50 },
           created_at: new Date(),
           updated_at: new Date()
@@ -906,7 +894,6 @@ describe('Additional subscription helper functions', () => {
           amount: 29000,
           currency: 'PHP',
           interval: 'monthly',
-          paymongo_plan_id: 'paymongo-pro',
           features: { quotes_limit: 1000 },
           created_at: new Date(),
           updated_at: new Date()
@@ -917,7 +904,6 @@ describe('Additional subscription helper functions', () => {
           amount: 99000,
           currency: 'PHP',
           interval: 'monthly',
-          paymongo_plan_id: 'paymongo-enterprise',
           features: { quotes_limit: -1 },
           created_at: new Date(),
           updated_at: new Date()
@@ -959,7 +945,7 @@ describe('Additional subscription helper functions', () => {
         trial_end: null,
         current_period_end: new Date('2026-08-10'),
         cancel_at_period_end: false,
-        paymongo_subscription_id: 'paymongo-123',
+        paymongo_subscription_id: null,
         created_at: new Date('2026-07-01'),
         updated_at: new Date('2026-07-10')
       };

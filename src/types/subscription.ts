@@ -45,7 +45,6 @@ export interface LegacySubscriptionPlan {
   amount: number;
   currency: string;
   interval: string;
-  paymongo_plan_id: string;
   features: Record<string, number | boolean | string>;
   created_at: Date;
   updated_at: Date;

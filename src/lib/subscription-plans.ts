@@ -15,7 +15,6 @@ export interface SubscriptionPlanRecord {
   price: string; // DECIMAL in database comes as string
   currency: string;
   interval: string;
-  paymongo_plan_id: string | null;
   features: Record<string, any>; // JSONB from database
   created_at: string; // TIMESTAMPTZ comes as string
   updated_at: string; // TIMESTAMPTZ comes as string
@@ -32,7 +31,6 @@ export interface CreateSubscriptionPlanInput {
   interval: string;
   discount_percent?: number;
   features?: Record<string, any>;
-  paymongo_plan_id?: string;
   is_active?: boolean;
 }
 
@@ -47,7 +45,6 @@ export interface UpdateSubscriptionPlanInput {
   interval?: string;
   discount_percent?: number;
   features?: Record<string, any>;
-  paymongo_plan_id?: string;
   is_active?: boolean;
 }
 
@@ -90,14 +87,12 @@ export async function createSubscriptionPlan(
         price,
         currency,
         interval,
-        paymongo_plan_id,
         features
       ) VALUES (
         ${planData.name},
         ${planData.price.toFixed(2)},
         ${planData.currency || 'PHP'},
         ${planData.interval},
-        ${planData.paymongo_plan_id || null},
         ${JSON.stringify(featuresObject)}::jsonb
       )
       RETURNING *
@@ -275,10 +270,6 @@ export async function updateSubscriptionPlan(
     if (updates.interval !== undefined) {
       setParts.push(`interval = $${values.length + 1}`);
       values.push(updates.interval);
-    }
-    if (updates.paymongo_plan_id !== undefined) {
-      setParts.push(`paymongo_plan_id = $${values.length + 1}`);
-      values.push(updates.paymongo_plan_id);
     }
 
     // Always update features and updated_at

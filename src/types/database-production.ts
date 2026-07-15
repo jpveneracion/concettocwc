@@ -258,7 +258,6 @@ export interface SubscriptionPlan {
   amount: number; // numeric
   currency: string;
   interval: SubscriptionInterval;
-  paymongo_plan_id: string | null;
   features: JsonB;
   created_at: TimestampWithTimezone;
   updated_at: TimestampWithTimezone;
