@@ -32,8 +32,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleOAuthSignIn = async (providerId: string) => {
     setIsLoading(true);
     try {
-      // Redirect to OAuth provider directly - this will handle the flow
-      window.location.href = `/api/auth/signin/${providerId}?callbackUrl=${encodeURIComponent('/dashboard')}`;
+      // Use NextAuth signIn with proper redirect handling
+      await signIn(providerId, {
+        callbackUrl: '/dashboard'
+      });
     } catch (error) {
       console.error('OAuth sign-in failed:', error);
       setIsLoading(false);
