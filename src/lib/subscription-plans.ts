@@ -77,10 +77,11 @@ export async function createSubscriptionPlan(
   try {
     // Build features object with additional metadata
     const featuresObject = {
-      ...(planData.features || {}),
       description: planData.description || '',
       discount_percent: planData.discount_percent || 0,
-      is_active: planData.is_active !== undefined ? planData.is_active : true
+      is_active: planData.is_active !== undefined ? planData.is_active : true,
+      // Handle features array - store as nested array in JSONB
+      features: Array.isArray(planData.features) ? planData.features : []
     };
 
     const result = await sql`
@@ -236,8 +237,7 @@ export async function updateSubscriptionPlan(
 
     // Build updated features object
     const updatedFeatures = {
-      ...(existingPlan.features || {}),
-      ...(updates.features || {})
+      ...(existingPlan.features || {})
     };
 
     // Add additional fields to features if provided
@@ -249,6 +249,11 @@ export async function updateSubscriptionPlan(
     }
     if (updates.is_active !== undefined) {
       updatedFeatures.is_active = updates.is_active;
+    }
+
+    // Handle features array update
+    if (Array.isArray(updates.features)) {
+      updatedFeatures.features = updates.features;
     }
 
     // Build dynamic SET clause
@@ -412,6 +417,17 @@ export async function deactivateSubscriptionPlan(id: string): Promise<Subscripti
  */
 export function formatSubscriptionPlanForAPI(plan: SubscriptionPlanRecord): Record<string, any> {
   const features = plan.features || {};
+
+  // Extract features array from JSONB object, or use empty array as fallback
+  const featuresArray = Array.isArray(features.features)
+    ? features.features
+    : (typeof features === 'object' && Object.keys(features).length > 0
+        ? Object.keys(features).filter(key =>
+            typeof features[key] === 'boolean' && features[key] === true ||
+            typeof features[key] === 'string' && features[key] !== ''
+          ).map(key => key)
+        : []);
+
   return {
     id: plan.id,
     name: plan.name,
@@ -420,7 +436,7 @@ export function formatSubscriptionPlanForAPI(plan: SubscriptionPlanRecord): Reco
     currency: plan.currency,
     interval: plan.interval,
     discount_percent: features.discount_percent || 0,
-    features: features,
+    features: featuresArray,
     is_active: features.is_active !== undefined ? features.is_active : true,
     created_at: plan.created_at,
     updated_at: plan.updated_at
