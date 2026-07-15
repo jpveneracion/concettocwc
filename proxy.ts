@@ -3,6 +3,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function proxy(req: NextRequest & { auth?: any }) {
+  // Skip middleware for static assets
+  const url = req.nextUrl.pathname;
+  if (url.startsWith('/_next/static') ||
+      url.startsWith('/_next/image') ||
+      url.startsWith('/api/auth') ||
+      url.endsWith('.css') ||
+      url.endsWith('.js') ||
+      url.endsWith('.json') ||
+      url.includes('.')) {
+    return NextResponse.next();
+  }
+
   // Allow public access to landing page and auth pages
   const publicPaths = [
     '/',

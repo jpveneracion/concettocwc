@@ -31,10 +31,21 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const handleOAuthSignIn = async (providerId: string) => {
     setIsLoading(true);
-    // OAuth handles both login and signup automatically
-    await signIn(providerId, {
-      callbackUrl: '/dashboard'
-    });
+    try {
+      // OAuth handles both login and signup automatically
+      const result = await signIn(providerId, {
+        callbackUrl: '/dashboard',
+        redirect: true
+      });
+
+      if (result?.error) {
+        console.error('OAuth sign-in error:', result.error);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('OAuth sign-in failed:', error);
+      setIsLoading(false);
+    }
   };
 
   const handleEmailContinue = (e: React.FormEvent) => {
