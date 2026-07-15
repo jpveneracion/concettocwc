@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export default auth((req: NextRequest & { auth?: any }) => {
+export function proxy(req: NextRequest & { auth?: any }) {
   // Allow public access to landing page and auth pages
   const publicPaths = [
     '/',
@@ -32,7 +32,7 @@ export default auth((req: NextRequest & { auth?: any }) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
