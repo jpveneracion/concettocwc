@@ -170,6 +170,27 @@ function CheckoutContent() {
           />
         </div>
 
+        {/* Selected Plan Summary */}
+        {selectedPlan && (
+          <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">✓</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Plan Selected</p>
+                  <p className="text-xs text-blue-700">Ready to start your free trial</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold text-blue-900">3-Day Free Trial</p>
+                <p className="text-xs text-blue-700">No credit card required</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Section */}
         <div className="flex flex-col items-center gap-6">
           <button
@@ -188,7 +209,7 @@ function CheckoutContent() {
             {isLoading ? (
               <div className="flex items-center justify-center gap-3">
                 <span className="text-xl animate-spin">⏳</span>
-                <span>Creating checkout...</span>
+                <span>Setting up your trial...</span>
               </div>
             ) : (
               'Start Free Trial'

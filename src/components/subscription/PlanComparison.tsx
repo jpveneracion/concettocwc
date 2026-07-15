@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Plan {
   id: string;
   name: string;
   price: number;
+  currency: string;
   interval: string;
   description: string;
+  discount_percent: number;
   features: string[];
-  popular?: boolean;
-  highlighted?: boolean;
+  is_active: boolean;
 }
 
 interface PlanComparisonProps {
@@ -18,51 +19,42 @@ interface PlanComparisonProps {
   selectedPlan?: string;
 }
 
-const plans: Plan[] = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 499,
-    interval: 'month',
-    description: 'Perfect for small businesses starting out',
-    features: [
-      '50 quotes per month',
-      'Standard quote templates',
-      'Email support (48-hour response)',
-      'Basic customization options',
-      'Mobile app access',
-      'Cloud storage (1GB)'
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 999,
-    interval: 'month',
-    description: 'For growing businesses that need more power',
-    features: [
-      'Unlimited quotes',
-      'Premium templates library',
-      'Priority support (24-hour response)',
-      'Custom branding & logos',
-      'Advanced analytics dashboard',
-      'Cloud storage (10GB)',
-      'API access',
-      'Team collaboration tools',
-      'Custom workflows'
-    ],
-    popular: true
-  }
-];
-
 /**
  * PlanComparison Component
  *
- * Displays subscription plans side-by-side with feature comparison
- * and selection interaction
+ * Fetches and displays actual subscription plans from the database
+ * with feature comparison and selection interaction
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
+
+  // Fetch actual subscription plans from database
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/admin/plans?include_inactive=true');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch subscription plans');
+        }
+
+        const data = await response.json();
+        const activePlans = data.plans.filter((plan: Plan) => plan.is_active);
+        setPlans(activePlans);
+      } catch (err) {
+        console.error('Error fetching plans:', err);
+        setError('Failed to load subscription plans');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
 
   const handlePlanClick = (planId: string) => {
     if (onPlanSelect) {
@@ -73,8 +65,41 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   const isSelected = (planId: string) => selectedPlan === planId;
   const isHovered = (planId: string) => hoveredPlan === planId;
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin text-4xl mb-4">⏳</div>
+          <p className="text-gray-600">Loading subscription plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <p className="text-red-800">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 text-sm font-medium text-red-700 hover:text-red-900 underline"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <p className="text-yellow-800">No active subscription plans available. Please contact support.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+    <div className={`grid grid-cols-1 gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : ''}`}>
       {plans.map((plan) => (
         <div
           key={plan.id}
@@ -87,12 +112,12 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           onMouseLeave={() => setHoveredPlan(null)}
           onClick={() => handlePlanClick(plan.id)}
         >
-          {/* Popular Badge */}
-          {plan.popular && (
+          {/* Popular Badge - Highlight middle plan if 3 plans, or second if 2 plans */}
+          {(plans.length === 3 && plan === plans[1]) || (plans.length === 2 && plan === plans[1]) ? (
             <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-1 text-sm font-semibold rounded-bl-xl">
               Most Popular
             </div>
-          )}
+          ) : null}
 
           {/* Plan Header */}
           <div className="p-8 pb-6">
@@ -110,9 +135,15 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
 
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-4xl font-bold text-gray-900">
-                ₱{plan.price.toLocaleString()}
+                {plan.currency === 'PHP' ? '₱' : plan.currency === 'USD' ? '$' : '€'}
+                {plan.price.toLocaleString()}
               </span>
               <span className="text-gray-600">/{plan.interval}</span>
+              {plan.discount_percent > 0 && (
+                <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                  Save {plan.discount_percent}%
+                </span>
+              )}
             </div>
 
             <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
@@ -125,7 +156,6 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                   ? 'bg-blue-600 text-white shadow-lg hover:bg-blue-700'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                 }
-                ${plan.popular && !isSelected(plan.id) ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
               `}
             >
               {isSelected(plan.id) ? 'Selected' : 'Select Plan'}
@@ -139,14 +169,18 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                 What's included:
               </h4>
               <ul className="space-y-3">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
-                      <span className="text-green-600 text-xs">✓</span>
-                    </div>
-                    <span className="text-gray-700 text-sm">{feature}</span>
-                  </li>
-                ))}
+                {plan.features && plan.features.length > 0 ? (
+                  plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                        <span className="text-green-600 text-xs">✓</span>
+                      </div>
+                      <span className="text-gray-700 text-sm">{feature}</span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500 text-sm">No features listed</li>
+                )}
               </ul>
             </div>
           </div>
