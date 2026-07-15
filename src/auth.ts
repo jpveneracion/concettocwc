@@ -76,6 +76,8 @@ export const authOptions = {
     error: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  // Allow API routes to be accessed without authentication for public endpoints
+  skipCSRFCheck: true,
   callbacks: {
     async signIn({ user, account, profile }: any) {
       if (!user?.email || !account) {
