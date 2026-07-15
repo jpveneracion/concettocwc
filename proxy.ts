@@ -41,7 +41,10 @@ export function proxy(req: NextRequest & { auth?: any }) {
   }
 
   // For protected routes, check authentication
-  if (!req.auth) {
+  // Check for custom session cookie (used by your app) instead of NextAuth auth
+  const session = req.cookies.get('session');
+
+  if (!session && !req.auth) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
