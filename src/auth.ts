@@ -213,11 +213,20 @@ export const authOptions = {
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       // Handle redirects after OAuth sign-in
       console.log('OAuth redirect:', { url, baseUrl });
-      // If the URL is relative, make it absolute
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
+
+      // If URL is explicitly provided (like callback URLs), use it
+      if (url && url !== '/login') {
+        console.log('Using provided URL:', url);
+        // If the URL is relative, make it absolute
+        if (url.startsWith('/')) {
+          return `${baseUrl}${url}`;
+        }
+        return url;
       }
-      return url;
+
+      // Default redirect to dashboard after successful OAuth sign-in
+      console.log('Redirecting to dashboard after successful sign-in');
+      return `${baseUrl}/dashboard`;
     },
 
     async jwt({ token, account, user, profile }: any) {
