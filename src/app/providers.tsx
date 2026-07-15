@@ -1,6 +1,5 @@
 'use client';
 
-import { SessionProvider } from '@/contexts/SessionContext';
 import { TrialRestrictionProvider } from '@/contexts/TrialRestrictionContext';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import { useState, useEffect } from 'react';
@@ -31,16 +30,14 @@ export function Providers({ children }: ProvidersProps) {
   }, [isAuthenticated]);
 
   return (
-    <SessionProvider>
-      <TrialRestrictionProvider>
-        {children}
-        {showOnboarding && (
-          <OnboardingModal
-            isOpen={showOnboarding}
-            onClose={() => setShowOnboarding(false)}
-          />
-        )}
-      </TrialRestrictionProvider>
-    </SessionProvider>
+    <TrialRestrictionProvider>
+      {children}
+      {showOnboarding && (
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+        />
+      )}
+    </TrialRestrictionProvider>
   );
 }

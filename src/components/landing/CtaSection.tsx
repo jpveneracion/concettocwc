@@ -1,21 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import type { CtaSectionProps } from '@/types/landing';
+import LoginModal from './LoginModal';
 
 const defaultCtaProps: CtaSectionProps = {
-  headline: 'Ready to Transform Your Blinds Business?',
-  subtext: 'Join manufacturers and retailers who\'ve modernized their quotation workflow',
-  primaryCtaText: 'Start Your Free Trial',
+  headline: 'Ready to Transform Your Business Operations?',
+  subtext: 'Join businesses that have modernized their workflow management',
+  primaryCtaText: 'Get Started Today',
   primaryCtaLink: '/signup',
   secondaryCtaText: 'Learn More About Features',
   secondaryCtaLink: '#features',
   benefits: [
-    'No credit card required for trial',
-    'OAuth authentication for secure setup',
-    'Mobile-first design for on-the-go access',
-    'Instant company setup and dashboard access'
+    'Risk-free trial to experience the platform',
+    'Quick setup with streamlined onboarding',
+    'Mobile-ready for on-the-go access',
+    'Instant dashboard and business insights'
   ]
 };
 
@@ -30,12 +31,19 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
     benefits
   } = { ...defaultCtaProps, ...props };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handlePrimaryCtaClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setIsModalOpen(true);
   };
 
   return (
@@ -51,12 +59,12 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-          <a
-            href={primaryCtaLink}
+          <button
+            onClick={handlePrimaryCtaClick}
             className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl text-center"
           >
             {primaryCtaText}
-          </a>
+          </button>
           <a
             href={secondaryCtaLink}
             onClick={(e) => handleSmoothScroll(e, secondaryCtaLink)}
@@ -82,6 +90,12 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
           ))}
         </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }

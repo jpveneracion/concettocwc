@@ -1,0 +1,19 @@
+
+> concetto-blinds@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 51472, using available port 3001 instead.
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://100.79.163.14:3001
+- Environments: .env.local, .env
+✓ Ready in 684ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          51472
+- Dir:          E:\laragon\www\concettowc
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 51472 /F to stop it.
+[?25h

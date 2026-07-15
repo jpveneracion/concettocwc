@@ -1,28 +1,28 @@
 'use client';
 
 import React from 'react';
-import { FileSpreadsheet, FileText, Receipt } from 'lucide-react';
+import { FileSpreadsheet, FileText, Receipt, LucideIcon } from 'lucide-react';
 import type { ProblemCardProps } from '@/types/landing';
 
 const problemCards: ProblemCardProps[] = [
   {
     icon: 'spreadsheet',
-    title: 'Excel Spreadsheets',
+    title: 'Spreadsheet Management',
     description: 'Version control issues, calculation errors, and time-consuming data entry'
   },
   {
     icon: 'paper',
-    title: 'Paper Measurements',
-    description: 'Lost measurement sheets, difficult organization, no backup system'
+    title: 'Paper-Based Processes',
+    description: 'Lost documents, difficult organization, and no backup systems'
   },
   {
     icon: 'invoice',
-    title: 'Manual Invoicing',
-    description: 'Slow processing, payment delays, and manual tracking nightmares'
+    title: 'Manual Document Processing',
+    description: 'Slow processing, delays, and tracking challenges'
   }
 ];
 
-const iconMap = {
+const iconMap: Record<ProblemCardProps['icon'], LucideIcon> = {
   spreadsheet: FileSpreadsheet,
   paper: FileText,
   invoice: Receipt
@@ -33,12 +33,12 @@ export default function ProblemSection() {
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">
-          The Challenges of Manual Workflows
+          The Challenges of Manual Business Processes
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {problemCards.map((card, index) => {
-            const Icon = iconMap[card.icon as keyof typeof iconMap];
+            const Icon = iconMap[card.icon];
             return (
               <div key={index} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-red-200 transition-colors">
                 <div className="flex justify-center mb-4">

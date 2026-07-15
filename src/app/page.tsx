@@ -12,9 +12,9 @@ import {
 
 // Landing page content configuration
 const heroContent = {
-  headline: 'Still Using Excel for Window Blinds Quotations?',
-  subheadline: 'Transform your manual workflows into a streamlined digital platform. Modernize your business from paper measurements to automated invoicing.',
-  primaryCtaText: 'Start Your Free Trial',
+  headline: 'Streamline Your Business Quotations and Management',
+  subheadline: 'Transform manual workflows into an efficient digital platform. Modernize from paper-based processes to automated business management.',
+  primaryCtaText: 'Get Started Today',
   primaryCtaLink: '/signup',
   secondaryCtaText: 'See How It Works',
   secondaryCtaLink: '#solution'
@@ -28,7 +28,6 @@ export default function Home() {
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
-      <TechnicalSection />
       <TrustSection />
       <CtaSection />
       <LandingFooter />

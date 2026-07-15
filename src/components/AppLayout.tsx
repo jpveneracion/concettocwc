@@ -33,12 +33,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   async function handleLogout() {
     try {
-      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      const res = await fetch('/api/logout', { method: 'POST' });
       if (!res.ok) {
         console.error('Logout failed');
         return;
       }
-      router.push('/login');
+      // Force a hard redirect to ensure session is cleared
+      window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
     }

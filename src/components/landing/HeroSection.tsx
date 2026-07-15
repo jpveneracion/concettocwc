@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, FileText } from 'lucide-react';
 import type { HeroSectionProps } from '@/types/landing';
+import LoginModal from './LoginModal';
 
 export default function HeroSection({
   headline,
@@ -12,6 +13,8 @@ export default function HeroSection({
   secondaryCtaText,
   secondaryCtaLink
 }: HeroSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const element = document.querySelector(href);
@@ -20,12 +23,17 @@ export default function HeroSection({
     }
   };
 
+  const handlePrimaryCtaClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center">
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
             {headline}
           </h1>
 
@@ -36,12 +44,12 @@ export default function HeroSection({
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <a
-              href={primaryCtaLink}
+            <button
+              onClick={handlePrimaryCtaClick}
               className="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl text-center"
             >
               {primaryCtaText}
-            </a>
+            </button>
             <a
               href={secondaryCtaLink}
               onClick={(e) => handleSmoothScroll(e, secondaryCtaLink)}
@@ -69,6 +77,12 @@ export default function HeroSection({
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }

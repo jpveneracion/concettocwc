@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Code, Shield, Globe, Zap } from 'lucide-react';
+import { Code, Shield, Globe, Zap, LucideIcon } from 'lucide-react';
 import type { TechnicalCardProps } from '@/types/landing';
 
 const technicalHighlights: TechnicalCardProps[] = [
@@ -27,7 +27,7 @@ const technicalHighlights: TechnicalCardProps[] = [
   }
 ];
 
-const iconMap = {
+const iconMap: Record<TechnicalCardProps['icon'], LucideIcon> = {
   'tech-stack': Code,
   'security': Shield,
   'global': Globe,
@@ -44,10 +44,10 @@ export default function TechnicalSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {technicalHighlights.map((tech, index) => {
-            const Icon = iconMap[tech.icon as keyof typeof iconMap];
+            const Icon = iconMap[tech.icon];
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200"
               >
                 <div className="flex justify-center mb-4">

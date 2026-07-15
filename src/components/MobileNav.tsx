@@ -47,16 +47,17 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
 
   const handleLogout = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      const res = await fetch('/api/logout', { method: 'POST' });
       if (!res.ok) {
         console.error('Logout failed');
         return;
       }
-      router.push('/login');
+      // Force a hard redirect to ensure session is cleared
+      window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
     }
-  }, [router]);
+  }, []);
 
   const handleItemClick = useCallback((href: string) => {
     onClose();

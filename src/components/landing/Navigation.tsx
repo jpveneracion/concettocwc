@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import type { NavigationProps } from '@/types/landing';
+import LoginModal from './LoginModal';
 
 const defaultNavProps: NavigationProps = {
   logoText: 'Concetto',
@@ -17,6 +18,7 @@ const defaultNavProps: NavigationProps = {
 export default function Navigation(props: Partial<NavigationProps> = {}) {
   const { logoText, links, ctaText, ctaLink } = { ...defaultNavProps, ...props };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('#')) {
@@ -27,6 +29,12 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
         setMobileMenuOpen(false);
       }
     }
+  };
+
+  const handleCtaClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -52,19 +60,19 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
                 {link.text}
               </a>
             ))}
-            <a
-              href={ctaLink}
+            <button
+              onClick={handleCtaClick}
               className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
             >
               {ctaText}
-            </a>
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-indigo-600 focus:outline-none"
+              className="p-4 text-gray-700 hover:text-indigo-600 focus:outline-none"
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6" />
@@ -89,16 +97,22 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
                   {link.text}
                 </a>
               ))}
-              <a
-                href={ctaLink}
-                className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-center"
+              <button
+                onClick={handleCtaClick}
+                className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-center w-full"
               >
                 {ctaText}
-              </a>
+              </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </nav>
   );
 }

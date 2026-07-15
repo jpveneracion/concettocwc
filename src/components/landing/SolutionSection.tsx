@@ -1,28 +1,28 @@
 'use client';
 
 import React from 'react';
-import { Smartphone, Wand2, FileCheck, FileText } from 'lucide-react';
+import { Smartphone, Wand2, FileCheck, FileText, LucideIcon } from 'lucide-react';
 import type { SolutionFeatureProps } from '@/types/landing';
 
 const solutionFeatures: SolutionFeatureProps[] = [
   {
     icon: 'smartphone',
-    title: 'Digital Measurements',
-    description: 'Mobile-optimized measurement collection with automatic calculations'
+    title: 'Digital Collection',
+    description: 'Mobile-optimized data collection with automated calculations'
   },
   {
     icon: 'wizard',
-    title: 'Smart Quotations',
-    description: 'Wizard-based quote creation with real-time pricing'
+    title: 'Smart Document Creation',
+    description: 'Streamlined document creation with real-time pricing'
   },
   {
     icon: 'invoice-check',
-    title: 'Automated Invoicing',
-    description: 'Generate professional invoices from approved quotes instantly'
+    title: 'Automated Processing',
+    description: 'Generate professional documents instantly from approved inputs'
   }
 ];
 
-const iconMap = {
+const iconMap: Record<SolutionFeatureProps['icon'], LucideIcon> = {
   smartphone: Smartphone,
   wizard: Wand2,
   'invoice-check': FileCheck
@@ -37,12 +37,12 @@ export default function SolutionSection() {
         </h2>
 
         <p className="text-lg sm:text-xl text-gray-700 text-center mb-12 max-w-3xl mx-auto">
-          From paper to digital, from spreadsheets to automation, from manual to streamlined
+          Transform your business processes with modern digital automation and streamlined workflows
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {solutionFeatures.map((feature, index) => {
-            const Icon = iconMap[feature.icon as keyof typeof iconMap];
+            const Icon = iconMap[feature.icon];
             return (
               <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <div className="flex justify-center mb-4">
@@ -65,7 +65,7 @@ export default function SolutionSection() {
         <div className="mt-12 flex justify-center items-center gap-4">
           <div className="text-center">
             <FileText className="w-12 h-12 text-gray-400 mx-auto" />
-            <p className="text-sm text-gray-600 mt-2">Paper</p>
+            <p className="text-sm text-gray-600 mt-2">Manual</p>
           </div>
           <div className="text-2xl text-indigo-600">→</div>
           <div className="text-center">
