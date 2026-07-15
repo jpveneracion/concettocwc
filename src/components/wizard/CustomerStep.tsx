@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
+import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
+import { getUTCMidnight, toUTCMidnight, isFutureUTCDate } from '@/lib/utc-utils';
 
 interface CustomerData {
   customer_name: string;
@@ -17,6 +19,7 @@ interface CustomerStepProps {
 
 export default function CustomerStep({ quoteNumber, existingData }: CustomerStepProps) {
   const { setStepData } = useWizard();
+  const { canCreateFutureOrders, isLoading: restrictionsLoading } = useTrialRestrictions();
 
   const [customer, setCustomer] = useState(existingData?.customer_name ?? '');
   const [address, setAddress] = useState(existingData?.customer_address ?? '');
@@ -24,6 +27,7 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
   const [ref, setRef] = useState(existingData?.our_ref ?? '');
   const [status, setStatus] = useState<'draft' | 'sent' | 'delivered' | 'cancelled'>(existingData?.status ?? 'draft');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dateWarning, setDateWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const data: CustomerData = {
@@ -34,13 +38,37 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
       status,
     };
     setStepData('customer', data);
-  }, [customer, address, date, ref, status, setStepData]);
+
+    // Check for future date restrictions
+    if (!restrictionsLoading && date) {
+      const selectedDate = new Date(date);
+      const todayUTC = getUTCMidnight();
+      const selectedDateUTC = toUTCMidnight(selectedDate);
+
+      if (selectedDateUTC > todayUTC && !canCreateFutureOrders) {
+        setDateWarning('Future dates are not allowed after trial expiration. Please select today or a past date, or activate your subscription.');
+      } else {
+        setDateWarning(null);
+      }
+    }
+  }, [customer, address, date, ref, status, setStepData, canCreateFutureOrders, restrictionsLoading]);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
     if (!customer.trim()) {
       newErrors.customer = 'Customer name is required';
+    }
+
+    // Check if future date is allowed
+    if (date) {
+      const selectedDate = new Date(date);
+      const todayUTC = getUTCMidnight();
+      const selectedDateUTC = toUTCMidnight(selectedDate);
+
+      if (selectedDateUTC > todayUTC && !canCreateFutureOrders) {
+        newErrors.date = 'Future dates require an active subscription. Please select today or a past date.';
+      }
     }
 
     setErrors(newErrors);
@@ -50,9 +78,9 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
   // Expose validation function to parent wizard
   useEffect(() => {
     // Store validation function for wizard to use
-    (window as any).__customerStepValidation = validate;
+    window.__customerStepValidation = validate;
     return () => {
-      delete (window as any).__customerStepValidation;
+      delete window.__customerStepValidation;
     };
   }, [customer, address, date, ref, status]);
 
@@ -89,10 +117,18 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
           <label className="block text-sm text-gray-600 mb-1">Quote Date</label>
           <input
             type="date"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+            className={`w-full border ${errors.date ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm`}
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            max={canCreateFutureOrders ? undefined : new Date().toISOString().slice(0, 10)}
           />
+          {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
+          {dateWarning && !errors.date && (
+            <p className="text-xs text-amber-600 mt-1">{dateWarning}</p>
+          )}
+          {!canCreateFutureOrders && !errors.date && !dateWarning && (
+            <p className="text-xs text-gray-500 mt-1">Only today and past dates are available</p>
+          )}
         </div>
 
         {/* Quote Number (Read-only) */}

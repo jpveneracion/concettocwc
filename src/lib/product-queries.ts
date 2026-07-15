@@ -13,9 +13,31 @@ import type {
   ProductUnit
 } from '@/types/product';
 import { ProductSource } from '@/types/product';
+import type { CompanyProductDefinition } from '@/types/company-product';
+
+/**
+ * Combined pending product interface for both pending_products and company_product_definitions
+ */
+interface CombinedPendingProduct {
+  id: string;
+  company_id: string;
+  code: string;
+  collection: string | null;
+  description: string;
+  unit: ProductUnit;
+  status: ProductStatus;
+  submitted_by: string | null;
+  reviewed_by: string | null;
+  review_notes: string | null;
+  created_at: Date;
+  updated_at: Date;
+  reviewed_at: Date | null;
+  source: 'pending_products' | 'company_product_definitions';
+}
 
 /**
  * Get pending products with role-based filtering
+ * Now includes both pending_products table and company_product_definitions table
  */
 export async function getPendingProducts(
   companyId: string,
@@ -24,33 +46,71 @@ export async function getPendingProducts(
 ): Promise<PendingProduct[]> {
   const canViewAll = userRole === 'admin' || userRole === 'superadmin';
 
-  let query = `
+  // Build queries for both tables
+  let pendingProductsQuery = `
     SELECT id, company_id, code, collection, description, unit, status,
            submitted_by, reviewed_by, review_notes,
-           created_at, updated_at, reviewed_at
+           created_at, updated_at, reviewed_at,
+           'pending_products' as source
     FROM pending_products
+    WHERE 1=1
+  `;
+
+  let companyProductsQuery = `
+    SELECT cpd.id, cpd.company_id, cpd.code, cpd.collection, cpd.description, cpd.unit,
+           CASE WHEN cpd.is_approved_for_global = false THEN 'pending' ELSE 'approved' END as status,
+           cpd.submitted_by, NULL::uuid as reviewed_by, NULL::text as review_notes,
+           cpd.created_at, cpd.updated_at, NULL::timestamptz as reviewed_at,
+           'company_product_definitions' as source
+    FROM company_product_definitions cpd
     WHERE 1=1
   `;
 
   const params: (string | ProductStatus)[] = [];
   let paramIndex = 1;
 
+  // Apply role-based filtering for pending_products table
   if (!canViewAll) {
-    query += ` AND company_id = $${paramIndex}::uuid`;
+    pendingProductsQuery += ` AND company_id = $${paramIndex}::uuid`;
+    companyProductsQuery += ` AND cpd.company_id = $${paramIndex}::uuid`;
     params.push(companyId);
     paramIndex++;
   }
 
+  // Apply status filtering
   if (status) {
-    query += ` AND status = $${paramIndex}`;
+    pendingProductsQuery += ` AND status = $${paramIndex}`;
+    companyProductsQuery += ` AND (CASE WHEN cpd.is_approved_for_global = false THEN 'pending' ELSE 'approved' END) = $${paramIndex}`;
     params.push(status);
     paramIndex++;
   }
 
-  query += ` ORDER BY created_at DESC`;
+  // Combine both queries with UNION
+  const combinedQuery = `
+    ${pendingProductsQuery}
+    UNION ALL
+    ${companyProductsQuery}
+    ORDER BY created_at DESC
+  `;
 
-  const result = await sql(query.trim(), params);
-  return result as unknown as PendingProduct[];
+  const result = await sql(combinedQuery.trim(), params);
+
+  // Convert CombinedPendingProduct back to PendingProduct format
+  return result.map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    company_id: row.company_id as string,
+    code: row.code as string,
+    collection: row.collection as string | null,
+    description: row.description as string,
+    unit: row.unit as ProductUnit,
+    status: row.status as ProductStatus,
+    submitted_by: row.submitted_by as string | null,
+    reviewed_by: row.reviewed_by as string | null,
+    review_notes: row.review_notes as string | null,
+    created_at: row.created_at as Date,
+    updated_at: row.updated_at as Date,
+    reviewed_at: row.reviewed_at as Date | null
+  })) as PendingProduct[];
 }
 
 /**
@@ -140,7 +200,21 @@ export async function findDuplicateProducts(code: string): Promise<PendingProduc
     ORDER BY created_at ASC
   `, [code]);
 
-  return result as unknown as PendingProduct[];
+  return result.map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    company_id: row.company_id as string,
+    code: row.code as string,
+    collection: row.collection as string | null,
+    description: row.description as string,
+    unit: row.unit as ProductUnit,
+    status: row.status as ProductStatus,
+    submitted_by: row.submitted_by as string | null,
+    reviewed_by: row.reviewed_by as string | null,
+    review_notes: row.review_notes as string | null,
+    created_at: row.created_at as Date,
+    updated_at: row.updated_at as Date,
+    reviewed_at: row.reviewed_at as Date | null
+  }));
 }
 
 /**
@@ -301,9 +375,11 @@ export async function lookupProducts(
 
 /**
  * Get product review statistics for admin dashboard
+ * Now includes both pending_products table and company_product_definitions table
  */
 export async function getProductReviewStats(): Promise<ProductReviewStats> {
-  const stats = await sql(`
+  // Get stats from pending_products table
+  const pendingStats = await sql(`
     SELECT
       COUNT(*) FILTER (WHERE status = 'pending') as "pendingCount",
       COUNT(*) FILTER (WHERE status = 'approved') as "approvedCount",
@@ -311,7 +387,20 @@ export async function getProductReviewStats(): Promise<ProductReviewStats> {
     FROM pending_products
   `);
 
-  // Find duplicate codes
+  // Get stats from company_product_definitions table
+  const companyStats = await sql(`
+    SELECT
+      COUNT(*) FILTER (WHERE is_approved_for_global = false) as "pendingCount",
+      COUNT(*) FILTER (WHERE is_approved_for_global = true) as "approvedCount"
+    FROM company_product_definitions
+  `);
+
+  // Combine stats
+  const pendingCount = parseInt(pendingStats[0]?.pendingCount || '0') + parseInt(companyStats[0]?.pendingCount || '0');
+  const approvedCount = parseInt(pendingStats[0]?.approvedCount || '0') + parseInt(companyStats[0]?.approvedCount || '0');
+  const rejectedCount = parseInt(pendingStats[0]?.rejectedCount || '0');
+
+  // Find duplicate codes from pending_products table
   const duplicates = await sql(`
     SELECT UPPER(code) as code
     FROM pending_products
@@ -322,9 +411,9 @@ export async function getProductReviewStats(): Promise<ProductReviewStats> {
   `);
 
   return {
-    pendingCount: parseInt(stats[0]?.pendingCount || '0'),
-    approvedCount: parseInt(stats[0]?.approvedCount || '0'),
-    rejectedCount: parseInt(stats[0]?.rejectedCount || '0'),
-    duplicateCodes: duplicates.map((d: Record<string, any>) => d.code)
+    pendingCount,
+    approvedCount,
+    rejectedCount,
+    duplicateCodes: duplicates.map((d: Record<string, unknown>) => d.code as string)
   };
 }

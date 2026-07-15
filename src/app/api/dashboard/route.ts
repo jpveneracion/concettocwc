@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { decryptPII } from '@/lib/crypto';
+import { getUTCNow, createUTCDate } from '@/lib/utc-utils';
+
+// TypeScript interfaces for SQL query results
+interface RevenueTrendRow {
+  month: string;
+  month_num: number;
+  revenue: string | number;
+}
+
+interface PopularCollectionRow {
+  product_collection: string;
+  count: string | number;
+  revenue: string | number;
+}
+
+interface TopCustomerRow {
+  customer_name_encrypted: string;
+  total_revenue: string | number;
+  quote_count: string | number;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,13 +54,13 @@ export async function GET(req: NextRequest) {
     let dateEnd: string;
 
     if (period === 'month') {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const now = getUTCNow();
+      const firstDay = createUTCDate(now.getUTCFullYear(), now.getUTCMonth(), 1);
       dateStart = firstDay.toISOString().split('T')[0];
       dateEnd = now.toISOString().split('T')[0];
     } else if (period === 'year') {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), 0, 1);
+      const now = getUTCNow();
+      const firstDay = createUTCDate(now.getUTCFullYear(), 0, 1);
       dateStart = firstDay.toISOString().split('T')[0];
       dateEnd = now.toISOString().split('T')[0];
     } else {
@@ -127,8 +147,8 @@ async function getMonthlySales(companyId: string, startDate: string, endDate: st
 }
 
 async function getYearlySales(companyId: string): Promise<number> {
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), 0, 1);
+  const now = getUTCNow();
+  const firstDay = createUTCDate(now.getUTCFullYear(), 0, 1);
   const dateStart = firstDay.toISOString().split('T')[0];
   const dateEnd = now.toISOString().split('T')[0];
 
@@ -206,10 +226,13 @@ async function getRevenueTrends(companyId: string) {
     ORDER BY month_num
   `, [companyId]);
 
-  return result.map((row: Record<string, any>) => ({
-    month: row.month as string,
-    revenue: Number(row.revenue),
-  }));
+  return result.map((row: Record<string, any>) => {
+    const typedRow = row as RevenueTrendRow;
+    return {
+      month: typedRow.month,
+      revenue: Number(typedRow.revenue),
+    };
+  });
 }
 
 async function getPopularCollections(
@@ -233,11 +256,14 @@ async function getPopularCollections(
     LIMIT 10
   `, [companyId, startDate, endDate]);
 
-  return result.map((row: Record<string, any>) => ({
-    collection: row.product_collection as string,
-    count: Number(row.count),
-    revenue: Number(row.revenue),
-  }));
+  return result.map((row: Record<string, any>) => {
+    const typedRow = row as PopularCollectionRow;
+    return {
+      collection: typedRow.product_collection,
+      count: Number(typedRow.count),
+      revenue: Number(typedRow.revenue),
+    };
+  });
 }
 
 async function getTopCustomers(companyId: string, startDate: string, endDate: string) {
@@ -256,13 +282,16 @@ async function getTopCustomers(companyId: string, startDate: string, endDate: st
     LIMIT 10
   `, [companyId, startDate, endDate]);
 
-  return result.map((row: Record<string, any>) => ({
-    customerName: row.customer_name_encrypted
-      ? decryptPII(Buffer.from(row.customer_name_encrypted as string))
-      : 'Unknown',
-    totalRevenue: Number(row.total_revenue),
-    quoteCount: Number(row.quote_count),
-  }));
+  return result.map((row: Record<string, any>) => {
+    const typedRow = row as TopCustomerRow;
+    return {
+      customerName: typedRow.customer_name_encrypted
+        ? decryptPII(Buffer.from(typedRow.customer_name_encrypted))
+        : 'Unknown',
+      totalRevenue: Number(typedRow.total_revenue),
+      quoteCount: Number(typedRow.quote_count),
+    };
+  });
 }
 
 async function getQuoteStats(companyId: string, startDate: string, endDate: string) {

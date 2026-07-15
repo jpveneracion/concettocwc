@@ -31,13 +31,34 @@ export async function GET(req: Request) {
       ORDER BY collection ASC
     `;
 
-    // Also get all unique collections from products (for setup)
-    const allCollections = await sql`
-      SELECT DISTINCT collection
-      FROM products
-      WHERE collection IS NOT NULL AND collection != ''
-      ORDER BY collection ASC
-    `;
+    // Get all unique collections from both products (global) and company_product_definitions (company-specific)
+    let allCollections;
+
+    if (session.isAdmin) {
+      // Admins see all collections from both tables
+      allCollections = await sql`
+        SELECT DISTINCT collection
+        FROM products
+        WHERE collection IS NOT NULL AND collection != ''
+        UNION
+        SELECT DISTINCT collection
+        FROM company_product_definitions
+        WHERE collection IS NOT NULL AND collection != ''
+        ORDER BY collection ASC
+      `;
+    } else {
+      // Non-admins see global collections + their own company's collections
+      allCollections = await sql`
+        SELECT DISTINCT collection
+        FROM products
+        WHERE collection IS NOT NULL AND collection != ''
+        UNION
+        SELECT DISTINCT collection
+        FROM company_product_definitions
+        WHERE collection IS NOT NULL AND collection != '' AND company_id = ${session.companyId}
+        ORDER BY collection ASC
+      `;
+    }
 
     // Merge to show which collections have pricing and which don't
     const merged = allCollections.map((c) => {

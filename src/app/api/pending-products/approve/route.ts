@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { approvePendingProduct, findDuplicateProducts } from '@/lib/product-queries';
+import { promoteCompanyProduct } from '@/lib/company-product-queries';
 import { requireAdmin } from '@/lib/permissions';
 
 /**
  * POST /api/pending-products/approve
  * Approve pending product and move to main products table
  * Admin only: Removes ALL pending products with the same code (duplicate handling)
+ * Now handles both pending_products and company_product_definitions tables
  */
 export async function POST(req: Request) {
   try {
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'pending_product_id is required' }, { status: 400 });
     }
 
-    // Check for duplicates before approving
+    // Check if product is from pending_products table
     const pendingProduct = await import('@/lib/db').then(async ({ sql }) => {
       const result = await sql`
         SELECT code, description FROM pending_products
@@ -37,38 +39,72 @@ export async function POST(req: Request) {
       return result[0];
     });
 
-    if (!pendingProduct) {
-      return NextResponse.json({ error: 'Pending product not found or already processed' }, { status: 404 });
+    if (pendingProduct) {
+      // Handle pending_products table approval
+      // Find duplicates with same code
+      const duplicates = await findDuplicateProducts(pendingProduct.code);
+
+      // Approve the product (this will also remove duplicates)
+      const approvedProduct = await approvePendingProduct(
+        pending_product_id,
+        userId,
+        review_notes
+      );
+
+      // Return response with information about duplicates removed
+      interface ApprovalResponse {
+        product: {
+          id: string;
+          code: string;
+          collection: string | null;
+          description: string;
+          unit: string;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        message: string;
+        duplicates_removed?: number;
+      }
+
+      const response: ApprovalResponse = {
+        product: approvedProduct,
+        message: 'Product approved successfully'
+      };
+
+      if (duplicates.length > 1) {
+        response.duplicates_removed = duplicates.length - 1;
+        response.message = `Product approved. ${duplicates.length - 1} duplicate(s) with same code removed.`;
+      }
+
+      return NextResponse.json(response, { status: 200 });
     }
 
-    // Find duplicates with same code
-    const duplicates = await findDuplicateProducts(pendingProduct.code);
+    // Check if product is from company_product_definitions table
+    const companyProduct = await import('@/lib/db').then(async ({ sql }) => {
+      const result = await sql`
+        SELECT code, description FROM company_product_definitions
+        WHERE id = ${pending_product_id}::uuid AND is_approved_for_global = false
+      `;
+      return result[0];
+    });
 
-    // Approve the product (this will also remove duplicates)
-    const approvedProduct = await approvePendingProduct(
-      pending_product_id,
-      userId,
-      review_notes
-    );
+    if (companyProduct) {
+      // Handle company_product_definitions table approval
+      const promotionResult = await promoteCompanyProduct(
+        pending_product_id,
+        userId
+      );
 
-    // Return response with information about duplicates removed
-    interface ApprovalResponse {
-      product: unknown;
-      message: string;
-      duplicates_removed?: number;
+      return NextResponse.json({
+        product: promotionResult.global_product,
+        message: 'Company product promoted to global catalog successfully'
+      }, { status: 200 });
     }
 
-    const response: ApprovalResponse = {
-      product: approvedProduct,
-      message: 'Product approved successfully'
-    };
+    // Product not found in either table
+    return NextResponse.json({ error: 'Pending product not found or already processed' }, { status: 404 });
 
-    if (duplicates.length > 1) {
-      response.duplicates_removed = duplicates.length - 1;
-      response.message = `Product approved. ${duplicates.length - 1} duplicate(s) with same code removed.`;
-    }
-
-    return NextResponse.json(response, { status: 200 });
   } catch (err) {
     console.error('POST /api/pending-products/approve', err);
 

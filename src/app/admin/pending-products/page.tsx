@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
-import type { PendingProduct, ProductReviewStats } from '@/types/product';
+import { useAdminNotifications } from '@/contexts/AdminNotificationContext';
+import type { PendingProduct } from '@/types/product';
 
 export default function PendingProductsPage() {
+  const { refreshNotifications } = useAdminNotifications();
   const [pendingProducts, setPendingProducts] = useState<PendingProduct[]>([]);
-  const [stats, setStats] = useState<ProductReviewStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -66,6 +67,7 @@ export default function PendingProductsPage() {
       setSelectedProduct(null);
       setReviewNotes('');
       await fetchPendingProducts();
+      await refreshNotifications(); // Refresh admin notifications
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to approve product');
     } finally {
@@ -103,6 +105,7 @@ export default function PendingProductsPage() {
       setSelectedProduct(null);
       setReviewNotes('');
       await fetchPendingProducts();
+      await refreshNotifications(); // Refresh admin notifications
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reject product');
     } finally {

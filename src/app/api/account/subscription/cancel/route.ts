@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getSubscriptionByCompanyId, cancelSubscriptionAtPeriodEnd } from '@/lib/subscription';
+import { getUTCNow, addUTCDays } from '@/lib/utc-utils';
 
 const GRACE_PERIOD_DAYS = 7;
 
@@ -37,8 +38,7 @@ export async function POST(): Promise<NextResponse> {
     await cancelSubscriptionAtPeriodEnd(subscription.id);
 
     // 4. Calculate Grace Period
-    const gracePeriodEnd = new Date();
-    gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
+    const gracePeriodEnd = addUTCDays(getUTCNow(), GRACE_PERIOD_DAYS);
 
     // 5. PayMongo Integration (TODO)
     // TODO: Call PayMongo API to cancel subscription

@@ -19,3 +19,10 @@ declare module 'next-auth/jwt' {
     companyId?: string;
   }
 }
+
+// Window interface extension for wizard validation functions
+declare global {
+  interface Window {
+    __customerStepValidation?: () => boolean;
+  }
+}

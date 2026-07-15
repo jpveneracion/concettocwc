@@ -7,20 +7,17 @@ import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import AdminHeader from './admin/AdminHeader';
 import AdminNotificationCenter from './admin/AdminNotifications';
-import type { AdminUser, AdminNotifications } from '@/types/admin';
+import { AdminNotificationProvider, useAdminNotifications } from '@/contexts/AdminNotificationContext';
+import type { AdminUser } from '@/types/admin';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: LayoutProps) {
+function AdminLayoutContent({ children }: LayoutProps) {
   const router = useRouter();
+  const { notifications, refreshNotifications } = useAdminNotifications();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [notifications, setNotifications] = useState<AdminNotifications>({
-    pendingApprovals: 0,
-    systemAlerts: [],
-    unreadCount: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -39,7 +36,7 @@ export default function AdminLayout({ children }: LayoutProps) {
           });
 
           // Fetch admin notifications
-          await fetchNotifications();
+          await refreshNotifications();
         } else {
           // Redirect if not admin
           router.push('/dashboard');
@@ -53,26 +50,7 @@ export default function AdminLayout({ children }: LayoutProps) {
     }
 
     checkAdminStatus();
-  }, [router]);
-
-  const fetchNotifications = async () => {
-    try {
-      // Fetch pending products count for notifications
-      const pendingRes = await fetch('/api/pending-products');
-      if (pendingRes.ok) {
-        const pendingData = await pendingRes.json();
-        const pendingCount = pendingData.products?.length || 0;
-
-        setNotifications({
-          pendingApprovals: pendingCount,
-          systemAlerts: pendingCount > 5 ? ['High volume of pending products'] : [],
-          unreadCount: pendingCount,
-        });
-      }
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-    }
-  };
+  }, [router, refreshNotifications]);
 
   // Show loading state
   if (loading) {
@@ -125,5 +103,13 @@ export default function AdminLayout({ children }: LayoutProps) {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function AdminLayout({ children }: LayoutProps) {
+  return (
+    <AdminNotificationProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminNotificationProvider>
   );
 }

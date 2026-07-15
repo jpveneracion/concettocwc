@@ -258,6 +258,22 @@ export async function promoteCompanyProduct(
 }
 
 /**
+ * Reject company product promotion (delete the company product)
+ */
+export async function rejectCompanyProduct(
+  companyProductId: string,
+  adminId: string,
+  reviewNotes?: string
+): Promise<void> {
+  // For company products, rejection means deleting the product definition
+  // since companies can recreate it if needed
+  await sql(`
+    DELETE FROM company_product_definitions
+    WHERE id = $1::uuid AND is_approved_for_global = false
+  `, [companyProductId]);
+}
+
+/**
  * Get company product usage statistics
  */
 export async function getCompanyProductUsage(companyId: string): Promise<CompanyProductUsage[]> {

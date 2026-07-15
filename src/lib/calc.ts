@@ -41,7 +41,7 @@ export function calcAmounts(area: number, retail: number, cost: number) {
 }
 
 export function generateQuoteNumber(sequenceNum: number): string {
-  const yr = new Date().getFullYear().toString().slice(-2);
+  const yr = new Date().getUTCFullYear().toString().slice(-2);
   const seq = sequenceNum.toString().padStart(5, '0');
   return `CWC-DF-QT-${yr}-${seq}`;
 }

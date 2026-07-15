@@ -92,3 +92,11 @@ export interface CompanyProductUsage {
   usage_count: number;
   last_used: Date | null;
 }
+
+/**
+ * Company product with company name (for admin display)
+ */
+export interface CompanyProductWithCompanyName extends CompanyProductDefinition {
+  company_name: string;
+  company_code?: string;
+}

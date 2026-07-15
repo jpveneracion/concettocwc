@@ -3,14 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ResponsiveTable from '@/components/ResponsiveTable';
-import type { CompanyProductDefinition } from '@/types/company-product';
+import { useAdminNotifications } from '@/contexts/AdminNotificationContext';
+import type { CompanyProductDefinition, CompanyProductWithCompanyName } from '@/types/company-product';
 
 export default function AdminCompanyProductsPage() {
-  const [pendingProducts, setPendingProducts] = useState<CompanyProductDefinition[]>([]);
+  const { refreshNotifications } = useAdminNotifications();
+  const [pendingProducts, setPendingProducts] = useState<CompanyProductWithCompanyName[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<CompanyProductDefinition | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<CompanyProductWithCompanyName | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
 
@@ -64,6 +66,7 @@ export default function AdminCompanyProductsPage() {
       setSelectedProduct(null);
       setReviewNotes('');
       await fetchPendingProducts();
+      await refreshNotifications(); // Refresh admin notifications
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to promote product');
     } finally {
@@ -78,7 +81,7 @@ export default function AdminCompanyProductsPage() {
   );
 
   // Mobile card render
-  const renderMobileCard = useCallback((product: CompanyProductDefinition) => {
+  const renderMobileCard = useCallback((product: CompanyProductWithCompanyName) => {
     return (
       <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
         <div className="flex justify-between items-start">
@@ -92,7 +95,7 @@ export default function AdminCompanyProductsPage() {
         <div className="text-sm text-gray-700">{product.description}</div>
 
         <div className="text-xs text-gray-500 space-y-1">
-          <div>Company: {(product as any).company_name || 'Unknown'}</div>
+          <div>Company: {product.company_name || 'Unknown'}</div>
           <div>Submitted: {new Date(product.created_at).toLocaleDateString()}</div>
         </div>
 
@@ -127,7 +130,7 @@ export default function AdminCompanyProductsPage() {
               <td className="px-4 py-3 font-mono font-medium">{product.code}</td>
               <td className="px-4 py-3 text-gray-500">{product.collection || '-'}</td>
               <td className="px-4 py-3">{product.description}</td>
-              <td className="px-4 py-3 text-gray-600">{(product as any).company_name || 'Unknown'}</td>
+              <td className="px-4 py-3 text-gray-600">{product.company_name || 'Unknown'}</td>
               <td className="px-4 py-3">{product.unit}</td>
               <td className="px-4 py-3 text-gray-500">
                 {new Date(product.created_at).toLocaleDateString()}
@@ -242,7 +245,7 @@ export default function AdminCompanyProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Company
                   </label>
-                  <div className="text-gray-900">{(selectedProduct as any).company_name || 'Unknown'}</div>
+                  <div className="text-gray-900">{selectedProduct.company_name || 'Unknown'}</div>
                 </div>
 
                 <div>
