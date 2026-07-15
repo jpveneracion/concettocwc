@@ -49,6 +49,11 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow trial restrictions API route without session (public endpoint)
+  if (pathname === '/api/trial/restrictions') {
+    return NextResponse.next();
+  }
+
   // Check for session cookie
   const session = req.cookies.get('session');
 
