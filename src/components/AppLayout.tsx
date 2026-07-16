@@ -30,6 +30,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+  const [countError, setCountError] = useState<string | null>(null);
 
   async function handleLogout() {
     try {
@@ -45,6 +47,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Helper function to format badge counts
+  const formatBadgeCount = (count: number): string => count > 9 ? '9+' : String(count);
+
+  // Function to fetch pending verification count
+  async function fetchPendingCount() {
+    try {
+      setCountError(null);
+      const res = await fetch('/api/payment-verifications/pending/count');
+
+      if (!res.ok) {
+        if (res.status === 403 || res.status === 401) {
+          // Not authorized - silently set count to 0
+          setPendingCount(0);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (typeof data.count === 'number') {
+        setPendingCount(data.count);
+      } else {
+        console.error('Invalid count data received:', data);
+        setPendingCount(0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending count:', err);
+      setCountError('failed');
+      // On error, set to 0 to avoid showing incorrect information
+      setPendingCount(0);
+    }
+  }
+
   useEffect(() => {
     async function checkAdminStatus() {
       try {
@@ -52,6 +87,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         if (res.ok && data.isAdmin) {
           setIsAdmin(true);
+          // Fetch pending count for admin users
+          fetchPendingCount();
         }
       } catch (err) {
         console.error('Admin status check failed', err);
@@ -121,18 +158,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               {adminNavItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href);
+                const showBadge = item.href === '/admin/dashboard' && pendingCount > 0;
+
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors relative ${
                       active
                         ? 'bg-purple-50 text-purple-700 font-medium'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                   >
                     <span>{item.icon}</span>
-                    {item.label}
+                    <span>{item.label}</span>
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {formatBadgeCount(pendingCount)}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
