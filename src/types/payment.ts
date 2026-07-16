@@ -60,8 +60,8 @@ export interface VerificationListFilters {
   status?: VerificationStatus;
   user_id?: string;
   plan_id?: string;
-  date_from?: Date;
-  date_to?: Date;
+  date_from?: string;
+  date_to?: string;
   search?: string; // Search by reference number or user email
 }
 
