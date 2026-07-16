@@ -5,8 +5,28 @@ import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
 import { activateSubscriptionWithVerification } from '@/lib/subscription-activation';
-import type { ApproveVerificationRequest, ApproveVerificationResponse, VerificationStatus } from '@/types/payment';
+import type { ApproveVerificationRequest, ApproveVerificationResponse } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
+
+/**
+ * Validate UUID format
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Sanitize admin notes
+ */
+function sanitizeAdminNotes(notes?: string): string | undefined {
+  if (!notes) return undefined;
+  return notes
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/['"]/g, '') // Remove quotes
+    .trim()
+    .slice(0, 1000); // Limit length
+}
 
 /**
  * POST /api/payment-verifications/[id]/approve
@@ -31,14 +51,40 @@ export async function POST(
     const { id } = await params;
     const userId = session.userId;
 
-    // 2. Authorization Check - Require admin access
-    await requireAdmin(userId);
+    // 2. Validate ID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid verification ID format' },
+        { status: 400 }
+      );
+    }
 
-    // 3. Parse request body
-    const body = await req.json() as ApproveVerificationRequest;
-    const { admin_notes } = body;
+    // 3. Authorization Check - Require admin access
+    try {
+      await requireAdmin(userId);
+    } catch (authError) {
+      if (authError instanceof Error && authError.message.includes('Forbidden')) {
+        return NextResponse.json(
+          { error: 'Forbidden - Admin access required' },
+          { status: 403 }
+        );
+      }
+      throw authError;
+    }
 
-    // 4. Get verification record
+    // 4. Parse request body
+    let admin_notes: string | undefined;
+    try {
+      const body = await req.json() as ApproveVerificationRequest;
+      admin_notes = sanitizeAdminNotes(body.admin_notes);
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: 'Invalid request format' },
+        { status: 400 }
+      );
+    }
+
+    // 5. Get verification record
     const verification = await getPaymentVerificationById(id);
     if (!verification) {
       return NextResponse.json(
@@ -47,18 +93,17 @@ export async function POST(
       );
     }
 
-    // 5. Check verification status - only pending verifications can be approved
+    // 6. Check verification status - only pending verifications can be approved
     if (verification.status !== VerificationStatus.PENDING) {
       return NextResponse.json(
         {
-          error: `Cannot approve verification with status '${verification.status}'.
-                  Only pending verifications can be approved.`
+          error: `Cannot approve verification with status '${verification.status}'. Only pending verifications can be approved.`
         },
         { status: 400 }
       );
     }
 
-    // 6. Update verification status to approved
+    // 7. Update verification status to approved
     const updatedVerification = await updatePaymentVerificationStatus(
       id,
       VerificationStatus.APPROVED,
@@ -73,7 +118,7 @@ export async function POST(
       );
     }
 
-    // 7. Activate subscription with verification
+    // 8. Activate subscription with verification
     const subscriptionResult = await activateSubscriptionWithVerification(
       verification.user_id,
       verification.plan_id,
@@ -81,6 +126,14 @@ export async function POST(
     );
 
     if (!subscriptionResult.success) {
+      // Rollback verification status if subscription activation fails
+      await updatePaymentVerificationStatus(
+        id,
+        VerificationStatus.PENDING,
+        userId,
+        'Subscription activation failed - rolled back to pending'
+      );
+
       return NextResponse.json(
         { error: subscriptionResult.error || 'Failed to activate subscription' },
         { status: 500 }
@@ -89,7 +142,7 @@ export async function POST(
 
     const subscriptionId = subscriptionResult.subscription_id;
 
-    // 8. Send payment approval notification
+    // 9. Send payment approval notification
     // TODO: This function will be implemented in later tasks
     // For now, we'll add a placeholder comment
     // await sendPaymentApprovalNotification(
@@ -100,7 +153,7 @@ export async function POST(
 
     const userNotified = false; // Placeholder until notification function is implemented
 
-    // 9. Build success response
+    // 10. Build success response
     const response: ApproveVerificationResponse = {
       success: true,
       subscription_id: subscriptionId,
@@ -116,7 +169,7 @@ export async function POST(
     // Handle authorization errors
     if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       );
     }

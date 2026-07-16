@@ -4,8 +4,35 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
-import type { RejectVerificationRequest, RejectVerificationResponse, VerificationStatus } from '@/types/payment';
+import type { RejectVerificationRequest, RejectVerificationResponse } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
+
+/**
+ * Validate UUID format
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Sanitize admin notes and rejection reason
+ */
+function sanitizeRejectionInput(reason: string, adminNotes?: string): { sanitizedReason: string; sanitizedNotes?: string } {
+  const sanitizedReason = reason
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/['"]/g, '') // Remove quotes
+    .trim()
+    .slice(0, 500); // Limit reason length
+
+  const sanitizedNotes = adminNotes ? adminNotes
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/['"]/g, '') // Remove quotes
+    .trim()
+    .slice(0, 1000) : undefined; // Limit notes length
+
+  return { sanitizedReason, sanitizedNotes };
+}
 
 /**
  * POST /api/payment-verifications/[id]/reject
@@ -30,14 +57,41 @@ export async function POST(
     const userId = session.userId;
     const { id } = await params;
 
-    // 2. Authorization Check - Require admin access
-    await requireAdmin(userId);
+    // 2. Validate ID format
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid verification ID format' },
+        { status: 400 }
+      );
+    }
 
-    // 3. Parse request body
-    const body = await req.json() as RejectVerificationRequest;
-    const { reason, admin_notes } = body;
+    // 3. Authorization Check - Require admin access
+    try {
+      await requireAdmin(userId);
+    } catch (authError) {
+      if (authError instanceof Error && authError.message.includes('Forbidden')) {
+        return NextResponse.json(
+          { error: 'Forbidden - Admin access required' },
+          { status: 403 }
+        );
+      }
+      throw authError;
+    }
 
-    // 4. Validate required fields
+    // 4. Parse request body
+    let reason: string, admin_notes: string | undefined;
+    try {
+      const body = await req.json() as RejectVerificationRequest;
+      reason = body.reason;
+      admin_notes = body.admin_notes;
+    } catch (parseError) {
+      return NextResponse.json(
+        { error: 'Invalid request format' },
+        { status: 400 }
+      );
+    }
+
+    // 5. Validate required fields
     if (!reason || reason.trim().length === 0) {
       return NextResponse.json(
         { error: 'Rejection reason is required' },
@@ -45,7 +99,10 @@ export async function POST(
       );
     }
 
-    // 5. Get verification record
+    // 6. Sanitize input
+    const { sanitizedReason, sanitizedNotes } = sanitizeRejectionInput(reason, admin_notes);
+
+    // 7. Get verification record
     const verification = await getPaymentVerificationById(id);
     if (!verification) {
       return NextResponse.json(
@@ -54,23 +111,26 @@ export async function POST(
       );
     }
 
-    // 6. Check verification status - only pending verifications can be rejected
+    // 8. Check verification status - only pending verifications can be rejected
     if (verification.status !== VerificationStatus.PENDING) {
       return NextResponse.json(
         {
-          error: `Cannot reject verification with status '${verification.status}'.
-                  Only pending verifications can be rejected.`
+          error: `Cannot reject verification with status '${verification.status}'. Only pending verifications can be rejected.`
         },
         { status: 400 }
       );
     }
 
-    // 7. Update verification status to rejected with reason
+    // 9. Update verification status to rejected with reason
+    const finalNotes = sanitizedNotes
+      ? `${sanitizedNotes}\n\nRejection reason: ${sanitizedReason}`
+      : `Rejection reason: ${sanitizedReason}`;
+
     const updatedVerification = await updatePaymentVerificationStatus(
       id,
       VerificationStatus.REJECTED,
       userId,
-      admin_notes ? `${admin_notes}\n\nRejection reason: ${reason}` : `Rejection reason: ${reason}`
+      finalNotes
     );
 
     if (!updatedVerification) {
@@ -80,19 +140,19 @@ export async function POST(
       );
     }
 
-    // 8. Send payment rejection notification
+    // 10. Send payment rejection notification
     // TODO: This function will be implemented in later tasks
     // For now, we'll add a placeholder comment
     // await sendPaymentRejectionNotification(
     //   verification.user_id,
     //   verification.plan_id,
     //   id,
-    //   reason
+    //   sanitizedReason
     // );
 
     const userNotified = false; // Placeholder until notification function is implemented
 
-    // 9. Build success response
+    // 11. Build success response
     const response: RejectVerificationResponse = {
       success: true,
       message: 'Payment verification rejected successfully',
@@ -107,7 +167,7 @@ export async function POST(
     // Handle authorization errors
     if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json(
-        { error: error.message },
+        { error: 'Forbidden - Admin access required' },
         { status: 403 }
       );
     }

@@ -1,7 +1,8 @@
 // src/app/api/payment-verifications/route.ts
 
 import { NextResponse } from 'next/server';
-import { getSession, requireAdmin } from '@/lib/auth';
+import { getSession, requireSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import {
   createPaymentVerification,
   getAllPaymentVerifications
@@ -10,10 +11,28 @@ import { uploadToPinata, validateScreenshotFile } from '@/lib/pinata';
 import type {
   CreateVerificationRequest,
   CreateVerificationResponse,
-  VerificationListFilters,
-  VerificationStatus
+  VerificationListFilters
 } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
+
+/**
+ * Validate UUID format
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Sanitize user input to prevent injection attacks
+ */
+function sanitizeInput(input: string): string {
+  return input
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/['"]/g, '') // Remove quotes
+    .trim()
+    .slice(0, 1000); // Limit length
+}
 
 /**
  * POST /api/payment-verifications
@@ -41,7 +60,19 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 3. Validate screenshot base64 and convert to File
+    // 3. Validate and sanitize plan_id
+    if (!isValidUUID(body.plan_id)) {
+      return NextResponse.json(
+        { error: 'Invalid plan_id format' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Validate and sanitize optional fields
+    const sanitizedReferenceNumber = body.reference_number ? sanitizeInput(body.reference_number) : undefined;
+    const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : undefined;
+
+    // 5. Validate screenshot base64 and convert to File
     let file: File;
     try {
       const base64Data = body.screenshot_base64.split(',')[1];
@@ -70,7 +101,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 4. Upload to Pinata IPFS
+    // 6. Upload to Pinata IPFS
     const uploadResult = await uploadToPinata(file, {
       name: `payment-proof-${session.userId}-${Date.now()}`,
       keyvalues: {
@@ -87,16 +118,16 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 5. Create verification record
+    // 7. Create verification record
     const verification = await createPaymentVerification({
       user_id: session.userId,
       plan_id: body.plan_id,
       screenshot_url: uploadResult.cid,
-      reference_number: body.reference_number,
-      notes: body.notes
+      reference_number: sanitizedReferenceNumber,
+      notes: sanitizedNotes
     });
 
-    // 6. Return success response
+    // 8. Return success response
     const response: CreateVerificationResponse = {
       success: true,
       verification_id: verification.id,
@@ -108,6 +139,14 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   } catch (error) {
     console.error('Payment verification creation error:', error);
+
+    // Check for JSON parsing errors
+    if (error instanceof SyntaxError && error.message.includes('JSON')) {
+      return NextResponse.json(
+        { error: 'Invalid request format' },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -123,10 +162,29 @@ export async function POST(req: Request): Promise<NextResponse> {
  */
 export async function GET(req: Request): Promise<NextResponse> {
   try {
-    // 1. Admin Authorization Check
-    const session = await requireAdmin();
+    // 1. Authentication Check
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
+    }
 
-    // 2. Parse query parameters
+    // 2. Admin Authorization Check
+    try {
+      await requireAdmin(session.userId);
+    } catch (authError) {
+      if (authError instanceof Error && authError.message.includes('Forbidden')) {
+        return NextResponse.json(
+          { error: 'Forbidden - Admin access required' },
+          { status: 403 }
+        );
+      }
+      throw authError;
+    }
+
+    // 3. Parse query parameters
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get('status');
 
@@ -136,38 +194,92 @@ export async function GET(req: Request): Promise<NextResponse> {
       const validStatuses = Object.values(VerificationStatus);
       if (validStatuses.includes(statusParam as VerificationStatus)) {
         validStatus = statusParam as VerificationStatus;
+      } else {
+        return NextResponse.json(
+          { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 4. Validate and sanitize user_id and plan_id if provided
+    const userIdParam = searchParams.get('user_id');
+    const planIdParam = searchParams.get('plan_id');
+
+    if (userIdParam && !isValidUUID(userIdParam)) {
+      return NextResponse.json(
+        { error: 'Invalid user_id format' },
+        { status: 400 }
+      );
+    }
+
+    if (planIdParam && !isValidUUID(planIdParam)) {
+      return NextResponse.json(
+        { error: 'Invalid plan_id format' },
+        { status: 400 }
+      );
+    }
+
+    // 5. Sanitize search parameter
+    const searchParam = searchParams.get('search');
+    const sanitizedSearch = searchParam ? sanitizeInput(searchParam) : undefined;
+
+    // 6. Validate pagination parameters
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
+
+    let limit = 50;
+    let offset = 0;
+
+    if (limitParam) {
+      limit = parseInt(limitParam);
+      if (isNaN(limit) || limit < 1 || limit > 100) {
+        return NextResponse.json(
+          { error: 'Limit must be between 1 and 100' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (offsetParam) {
+      offset = parseInt(offsetParam);
+      if (isNaN(offset) || offset < 0) {
+        return NextResponse.json(
+          { error: 'Offset must be a non-negative number' },
+          { status: 400 }
+        );
       }
     }
 
     const filters: VerificationListFilters = {
       status: validStatus,
-      user_id: searchParams.get('user_id') || undefined,
-      plan_id: searchParams.get('plan_id') || undefined,
+      user_id: userIdParam || undefined,
+      plan_id: planIdParam || undefined,
       date_from: searchParams.get('date_from') || undefined,
       date_to: searchParams.get('date_to') || undefined,
-      search: searchParams.get('search') || undefined,
-      limit: parseInt(searchParams.get('limit') || '50'),
-      offset: parseInt(searchParams.get('offset') || '0')
+      search: sanitizedSearch,
+      limit,
+      offset
     };
 
-    // 3. Get verifications from database
+    // 7. Get verifications from database
     const result = await getAllPaymentVerifications(filters);
 
-    // 4. Return paginated response
+    // 8. Return paginated response
     return NextResponse.json({
       verifications: result.verifications,
       total: result.total,
       pagination: {
-        limit: filters.limit,
-        offset: filters.offset,
-        has_more: result.total > filters.offset + filters.limit
+        limit,
+        offset,
+        has_more: result.total > offset + limit
       }
     }, { status: 200 });
 
   } catch (error) {
     console.error('Payment verifications list error:', error);
 
-    // Check if admin authorization failed
+    // Check for authorization errors
     if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },

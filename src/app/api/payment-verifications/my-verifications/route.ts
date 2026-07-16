@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getPaymentVerificationsByUserId } from '@/lib/db';
 import { getPinataUrl } from '@/lib/pinata';
-import type { VerificationStatus } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
 
 /**
@@ -58,6 +57,14 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   } catch (error) {
     console.error('My verifications error:', error);
+
+    // Handle database errors
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: 'Failed to retrieve verification history' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Internal server error' },

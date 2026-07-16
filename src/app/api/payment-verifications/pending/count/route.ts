@@ -1,7 +1,8 @@
 // src/app/api/payment-verifications/pending/count/route.ts
 
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import { getPendingVerificationCount } from '@/lib/db';
 
 /**
@@ -12,19 +13,38 @@ import { getPendingVerificationCount } from '@/lib/db';
  */
 export async function GET(req: Request) {
   try {
-    // 1. Admin Authorization Check
-    await requireAdmin();
+    // 1. Authentication Check
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
+    }
 
-    // 2. Get pending verification count from database
+    // 2. Admin Authorization Check
+    try {
+      await requireAdmin(session.userId);
+    } catch (authError) {
+      if (authError instanceof Error && authError.message.includes('Forbidden')) {
+        return NextResponse.json(
+          { error: 'Forbidden - Admin access required' },
+          { status: 403 }
+        );
+      }
+      throw authError;
+    }
+
+    // 3. Get pending verification count from database
     const count = await getPendingVerificationCount();
 
-    // 3. Return count response
+    // 4. Return count response
     return NextResponse.json({ count }, { status: 200 });
 
   } catch (error) {
     console.error('Pending verification count error:', error);
 
-    // Check if admin authorization failed
+    // Handle authorization errors
     if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
@@ -32,11 +52,11 @@ export async function GET(req: Request) {
       );
     }
 
-    // Check if unauthorized
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
+    // Handle database errors
+    if (error instanceof Error) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Failed to retrieve pending count' },
+        { status: 500 }
       );
     }
 

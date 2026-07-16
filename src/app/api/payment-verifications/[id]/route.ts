@@ -1,10 +1,19 @@
 // src/app/api/payment-verifications/[id]/route.ts
 
 import { NextResponse } from 'next/server';
-import { getSession, requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, sql } from '@/lib/db';
 import { getPinataUrl } from '@/lib/pinata';
 import type { PaymentVerification, VerificationStatus } from '@/types/payment';
+
+/**
+ * Validate UUID format
+ */
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
 
 /**
  * GET /api/payment-verifications/[id]
@@ -26,8 +35,16 @@ export async function GET(
       );
     }
 
-    // 2. Await params and get verification record
+    // 2. Await params and validate ID format
     const { id } = await params;
+    if (!isValidUUID(id)) {
+      return NextResponse.json(
+        { error: 'Invalid verification ID format' },
+        { status: 400 }
+      );
+    }
+
+    // 3. Get verification record
     const verification = await getPaymentVerificationById(id);
     if (!verification) {
       return NextResponse.json(
@@ -36,8 +53,15 @@ export async function GET(
       );
     }
 
-    // 3. Authorization Check - allow admin or verification owner
-    const isAdmin = await requireAdmin().catch(() => null);
+    // 4. Authorization Check - allow admin or verification owner
+    let isAdmin = false;
+    try {
+      await requireAdmin(session.userId);
+      isAdmin = true;
+    } catch {
+      // User is not admin, check if they are the owner
+    }
+
     const isOwner = verification.user_id === session.userId;
 
     if (!isAdmin && !isOwner) {
@@ -47,7 +71,7 @@ export async function GET(
       );
     }
 
-    // 4. Get user and plan details for response
+    // 5. Get user and plan details for response
     let userEmail: string | undefined, userName: string | undefined, planName: string | undefined, planAmount: number | undefined;
 
     try {
@@ -70,7 +94,7 @@ export async function GET(
       console.error('Error fetching joined data:', error);
     }
 
-    // 5. Build response with gateway URL and proper type conversion
+    // 6. Build response with gateway URL and proper type conversion
     const response: PaymentVerification & {
       user_email?: string;
       user_name?: string;
@@ -100,6 +124,14 @@ export async function GET(
 
   } catch (error) {
     console.error('Get verification error:', error);
+
+    // Check for authorization errors
+    if (error instanceof Error && error.message.includes('Forbidden')) {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -1,7 +1,8 @@
 // src/app/api/payment-verifications/stats/route.ts
 
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/auth';
+import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/permissions';
 import { getVerificationStats } from '@/lib/db';
 import type { VerificationStats } from '@/types/payment';
 
@@ -13,13 +14,32 @@ import type { VerificationStats } from '@/types/payment';
  */
 export async function GET(req: Request) {
   try {
-    // 1. Admin Authorization Check
-    await requireAdmin();
+    // 1. Authentication Check
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
+    }
 
-    // 2. Get verification statistics from database
+    // 2. Admin Authorization Check
+    try {
+      await requireAdmin(session.userId);
+    } catch (authError) {
+      if (authError instanceof Error && authError.message.includes('Forbidden')) {
+        return NextResponse.json(
+          { error: 'Forbidden - Admin access required' },
+          { status: 403 }
+        );
+      }
+      throw authError;
+    }
+
+    // 3. Get verification statistics from database
     const stats = await getVerificationStats();
 
-    // 3. Return stats response with proper typing
+    // 4. Return stats response with proper typing
     const response: VerificationStats = {
       total_pending: stats.total_pending,
       pending_today: stats.pending_today,
@@ -34,7 +54,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Verification statistics error:', error);
 
-    // Check if admin authorization failed
+    // Handle authorization errors
     if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
@@ -42,11 +62,11 @@ export async function GET(req: Request) {
       );
     }
 
-    // Check if unauthorized
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
+    // Handle database errors
+    if (error instanceof Error) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Failed to retrieve verification statistics' },
+        { status: 500 }
       );
     }
 
