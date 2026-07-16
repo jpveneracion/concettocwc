@@ -209,10 +209,10 @@ function CheckoutContent() {
             {isLoading ? (
               <div className="flex items-center justify-center gap-3">
                 <span className="text-xl animate-spin">⏳</span>
-                <span>Setting up your trial...</span>
+                <span>Processing payment...</span>
               </div>
             ) : (
-              'Start Free Trial'
+              'Proceed to Payment'
             )}
           </button>
 
