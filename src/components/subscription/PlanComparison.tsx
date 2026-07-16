@@ -30,6 +30,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
+  const [touchedPlan, setTouchedPlan] = useState<string | null>(null);
 
   // Fetch actual subscription plans from database
   useEffect(() => {
@@ -64,6 +65,15 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
 
   const isSelected = (planId: string) => selectedPlan === planId;
   const isHovered = (planId: string) => hoveredPlan === planId;
+  const isTouched = (planId: string) => touchedPlan === planId;
+
+  const handleTouchStart = (planId: string) => {
+    setTouchedPlan(planId);
+  };
+
+  const handleTouchEnd = () => {
+    setTouchedPlan(null);
+  };
 
   if (loading) {
     return (
@@ -99,17 +109,19 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   }
 
   return (
-    <div className={`grid grid-cols-1 gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : ''}`}>
+    <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : ''}`}>
       {plans.map((plan) => (
         <div
           key={plan.id}
           className={`
             relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 cursor-pointer
             ${isSelected(plan.id) ? 'ring-4 ring-blue-500 shadow-xl transform scale-105' : 'hover:shadow-xl hover:transform hover:scale-103'}
-            ${isHovered(plan.id) ? 'shadow-xl' : ''}
+            ${isTouched(plan.id) ? 'shadow-xl transform scale-102' : ''}
           `}
           onMouseEnter={() => setHoveredPlan(plan.id)}
           onMouseLeave={() => setHoveredPlan(null)}
+          onTouchStart={() => handleTouchStart(plan.id)}
+          onTouchEnd={handleTouchEnd}
           onClick={() => handlePlanClick(plan.id)}
         >
           {/* Popular Badge - Highlight middle plan if 3 plans, or second if 2 plans */}
@@ -120,7 +132,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           ) : null}
 
           {/* Plan Header */}
-          <div className="p-8 pb-6">
+          <div className="p-4 sm:p-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
               {isSelected(plan.id) && (
@@ -163,7 +175,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           </div>
 
           {/* Features List */}
-          <div className="px-8 pb-8">
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="border-t border-gray-200 pt-6">
               <h4 className="text-sm font-semibold text-gray-900 mb-4">
                 What's included:

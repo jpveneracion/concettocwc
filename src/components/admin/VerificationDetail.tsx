@@ -217,9 +217,9 @@ export default function VerificationDetail({
       aria-modal="true"
       aria-labelledby="verification-detail-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <h2
               id="verification-detail-title"
@@ -232,7 +232,7 @@ export default function VerificationDetail({
           <button
             onClick={onClose}
             disabled={actionState.loading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100"
             aria-label="Close modal"
           >
             <X className="w-6 h-6" />
@@ -240,7 +240,7 @@ export default function VerificationDetail({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Success Message */}
           {actionState.success && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
@@ -264,7 +264,8 @@ export default function VerificationDetail({
               </div>
               <button
                 onClick={() => setActionState({ ...actionState, error: null })}
-                className="text-red-400 hover:text-red-600"
+                className="text-red-400 hover:text-red-600 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-red-100"
+                aria-label="Dismiss error"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -477,7 +478,7 @@ export default function VerificationDetail({
 
         {/* Footer Actions */}
         {isPending && (
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
             {!confirmState.showApproveConfirm && !confirmState.showRejectConfirm ? (
               <div className="flex flex-col sm:flex-row gap-3">
                 <button

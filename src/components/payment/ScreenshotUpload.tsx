@@ -99,7 +99,7 @@ export default function ScreenshotUpload({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`
-            relative border-2 border-dashed rounded-lg p-6 text-center
+            relative border-2 border-dashed rounded-lg p-4 sm:p-6 text-center
             ${isDragging
               ? 'border-blue-500 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
@@ -137,8 +137,9 @@ export default function ScreenshotUpload({
             />
             <button
               onClick={handleRemove}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-3 hover:bg-red-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Remove screenshot"
+              aria-label="Remove screenshot"
             >
               ✕
             </button>
