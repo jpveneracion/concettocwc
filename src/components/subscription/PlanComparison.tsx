@@ -36,15 +36,15 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/admin/plans?include_inactive=true');
+        // Use public API endpoint that doesn't require admin access
+        const response = await fetch('/api/subscription-plans?include_inactive=false');
 
         if (!response.ok) {
           throw new Error('Failed to fetch subscription plans');
         }
 
         const data = await response.json();
-        const activePlans = data.plans.filter((plan: Plan) => plan.is_active);
-        setPlans(activePlans);
+        setPlans(data.plans || []);
       } catch (err) {
         console.error('Error fetching plans:', err);
         setError('Failed to load subscription plans');
