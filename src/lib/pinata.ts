@@ -1,15 +1,41 @@
 // src/lib/pinata.ts
 
-import { create } from 'ipfs-http-client';
-import type { APISignature } from '@pinata/sdk';
-
 // Pinata configuration
 const PINATA_CONFIG = {
   apiKey: process.env.PINATA_API_KEY || '',
   apiSecret: process.env.PINATA_SECRET_API_KEY || '',
   gatewayUrl: process.env.PINATA_GATEWAY_URL || 'https://gateway.pinata.cloud/ipfs/',
-  jwtKey: process.env.PINATA_JWT_KEY || ''
+  jwtKey: process.env.PINATA_JWT_KEY || '',
+  regions: [
+    {
+      id: process.env.PINATA_REGION_FRA || 'FRA1',
+      desiredReplicationCount: parseInt(process.env.PINATA_REPLICATION_COUNT || '1')
+    },
+    {
+      id: process.env.PINATA_REGION_NYC || 'NYC1',
+      desiredReplicationCount: parseInt(process.env.PINATA_REPLICATION_COUNT || '1')
+    }
+  ]
 };
+
+/**
+ * Validate metadata keyvalues
+ */
+function validateMetadataKeyvalues(keyvalues: Record<string, any>): { valid: boolean; error?: string } {
+  for (const [key, value] of Object.entries(keyvalues)) {
+    // Ensure all keys are strings
+    if (typeof key !== 'string') {
+      return { valid: false, error: 'Metadata keys must be strings' };
+    }
+
+    // Ensure all values are strings
+    if (typeof value !== 'string') {
+      return { valid: false, error: `Metadata value for key "${key}" must be a string` };
+    }
+  }
+
+  return { valid: true };
+}
 
 /**
  * Validate Pinata configuration
@@ -48,16 +74,28 @@ export async function uploadToPinata(
     if (file instanceof File) {
       formData.append('file', file);
     } else {
-      formData.append('file', new Blob([file]), 'screenshot.png');
+      // Convert Buffer to Uint8Array for Blob compatibility
+      const uint8Array = new Uint8Array(file);
+      formData.append('file', new Blob([uint8Array]), 'screenshot.png');
     }
 
-    // Add metadata
+    // Prepare metadata with validation
+    const defaultKeyvalues = {
+      purpose: 'payment_verification',
+      timestamp: new Date().toISOString()
+    };
+
+    const providedKeyvalues = options?.keyvalues || defaultKeyvalues;
+
+    // Validate metadata keyvalues
+    const keyValidation = validateMetadataKeyvalues(providedKeyvalues);
+    if (!keyValidation.valid) {
+      return { success: false, error: keyValidation.error };
+    }
+
     const metadata = {
       name: options?.name || `payment-proof-${Date.now()}`,
-      keyvalues: options?.keyvalues || {
-        purpose: 'payment_verification',
-        timestamp: new Date().toISOString()
-      }
+      keyvalues: providedKeyvalues
     };
 
     formData.append('pinataMetadata', JSON.stringify(metadata));
@@ -69,16 +107,7 @@ export async function uploadToPinata(
       pinataOptions: {
         pinToIPFS: true,
         customPinPolicy: {
-          regions: [
-            {
-              id: 'FRA1', // Frankfurt region
-              desiredReplicationCount: 1
-            },
-            {
-              id: 'NYC1', // New York region
-              desiredReplicationCount: 1
-            }
-          ]
+          regions: PINATA_CONFIG.regions
         }
       }
     };
