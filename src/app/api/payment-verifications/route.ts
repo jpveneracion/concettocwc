@@ -10,7 +10,8 @@ import { uploadToPinata, validateScreenshotFile } from '@/lib/pinata';
 import type {
   CreateVerificationRequest,
   CreateVerificationResponse,
-  VerificationListFilters
+  VerificationListFilters,
+  VerificationStatus
 } from '@/types/payment';
 
 /**
@@ -126,8 +127,11 @@ export async function GET(req: Request) {
 
     // 2. Parse query parameters
     const { searchParams } = new URL(req.url);
+    const statusParam = searchParams.get('status');
     const filters: VerificationListFilters = {
-      status: searchParams.get('status') || undefined,
+      status: statusParam && ['pending', 'approved', 'rejected', 'expired'].includes(statusParam)
+        ? statusParam as VerificationStatus
+        : undefined,
       user_id: searchParams.get('user_id') || undefined,
       plan_id: searchParams.get('plan_id') || undefined,
       date_from: searchParams.get('date_from') || undefined,

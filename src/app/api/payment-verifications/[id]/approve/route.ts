@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
-import type { ApproveVerificationRequest, ApproveVerificationResponse } from '@/types/payment';
+import type { ApproveVerificationRequest, ApproveVerificationResponse, VerificationStatus } from '@/types/payment';
+import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
 
 /**
  * POST /api/payment-verifications/[id]/approve
@@ -14,7 +15,7 @@ import type { ApproveVerificationRequest, ApproveVerificationResponse } from '@/
  */
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 1. Authentication Check
@@ -26,6 +27,7 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
     const userId = session.userId;
 
     // 2. Authorization Check - Require admin access
@@ -36,7 +38,7 @@ export async function POST(
     const { admin_notes } = body;
 
     // 4. Get verification record
-    const verification = await getPaymentVerificationById(params.id);
+    const verification = await getPaymentVerificationById(id);
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -45,7 +47,7 @@ export async function POST(
     }
 
     // 5. Check verification status - only pending verifications can be approved
-    if (verification.status !== 'pending') {
+    if (verification.status !== VerificationStatusEnum.PENDING) {
       return NextResponse.json(
         {
           error: `Cannot approve verification with status '${verification.status}'.
@@ -57,8 +59,8 @@ export async function POST(
 
     // 6. Update verification status to approved
     const updatedVerification = await updatePaymentVerificationStatus(
-      params.id,
-      'approved',
+      id,
+      VerificationStatusEnum.APPROVED,
       userId,
       admin_notes
     );
@@ -76,7 +78,7 @@ export async function POST(
     // const subscriptionId = await activateSubscriptionWithVerification(
     //   verification.user_id,
     //   verification.plan_id,
-    //   params.id
+    //   id
     // );
 
     const subscriptionId = undefined; // Placeholder until subscription function is implemented
@@ -87,7 +89,7 @@ export async function POST(
     // await sendPaymentApprovalNotification(
     //   verification.user_id,
     //   verification.plan_id,
-    //   params.id
+    //   id
     // );
 
     const userNotified = false; // Placeholder until notification function is implemented

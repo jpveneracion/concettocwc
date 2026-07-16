@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getPaymentVerificationsByUserId } from '@/lib/db';
 import { getPinataUrl } from '@/lib/pinata';
+import { VerificationStatus } from '@/types/payment';
 
 /**
  * GET /api/payment-verifications/my-verifications
@@ -21,12 +22,26 @@ export async function GET(req: Request) {
 
     // 2. Parse query parameters
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status');
+    const statusParam = searchParams.get('status');
+
+    // Validate status parameter if provided
+    let validStatus: string | undefined;
+    if (statusParam) {
+      const validStatuses = Object.values(VerificationStatus);
+      if (validStatuses.includes(statusParam as VerificationStatus)) {
+        validStatus = statusParam;
+      } else {
+        return NextResponse.json(
+          { error: `Invalid status parameter. Must be one of: ${validStatuses.join(', ')}` },
+          { status: 400 }
+        );
+      }
+    }
 
     // 3. Get user's verifications
     const verifications = await getPaymentVerificationsByUserId(
       session.userId,
-      status || undefined
+      validStatus
     );
 
     // 4. Add gateway URLs and return

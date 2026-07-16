@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
-import type { RejectVerificationRequest, RejectVerificationResponse } from '@/types/payment';
+import type { RejectVerificationRequest, RejectVerificationResponse, VerificationStatus } from '@/types/payment';
+import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
 
 /**
  * POST /api/payment-verifications/[id]/reject
@@ -53,7 +54,7 @@ export async function POST(
     }
 
     // 6. Check verification status - only pending verifications can be rejected
-    if (verification.status !== 'pending') {
+    if (verification.status !== VerificationStatusEnum.PENDING) {
       return NextResponse.json(
         {
           error: `Cannot reject verification with status '${verification.status}'.
@@ -66,7 +67,7 @@ export async function POST(
     // 7. Update verification status to rejected with reason
     const updatedVerification = await updatePaymentVerificationStatus(
       params.id,
-      'rejected',
+      VerificationStatusEnum.REJECTED,
       userId,
       admin_notes ? `${admin_notes}\n\nRejection reason: ${reason}` : `Rejection reason: ${reason}`
     );
