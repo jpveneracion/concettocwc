@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
+import { activateSubscriptionWithVerification } from '@/lib/subscription-activation';
 import type { ApproveVerificationRequest, ApproveVerificationResponse, VerificationStatus } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
 
@@ -73,15 +74,20 @@ export async function POST(
     }
 
     // 7. Activate subscription with verification
-    // TODO: This function will be implemented in later tasks
-    // For now, we'll add a placeholder comment
-    // const subscriptionId = await activateSubscriptionWithVerification(
-    //   verification.user_id,
-    //   verification.plan_id,
-    //   id
-    // );
+    const subscriptionResult = await activateSubscriptionWithVerification(
+      verification.user_id,
+      verification.plan_id,
+      id
+    );
 
-    const subscriptionId = undefined; // Placeholder until subscription function is implemented
+    if (!subscriptionResult.success) {
+      return NextResponse.json(
+        { error: subscriptionResult.error || 'Failed to activate subscription' },
+        { status: 500 }
+      );
+    }
+
+    const subscriptionId = subscriptionResult.subscription_id;
 
     // 8. Send payment approval notification
     // TODO: This function will be implemented in later tasks
