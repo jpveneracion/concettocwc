@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getPaymentVerificationsByUserId } from '@/lib/db';
 import { getPinataUrl } from '@/lib/pinata';
+import type { VerificationStatus } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
 
 /**
@@ -9,7 +10,7 @@ import { VerificationStatus } from '@/types/payment';
  *
  * Gets current user's verification history
  */
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
     // 1. Authentication Check
     const session = await getSession();

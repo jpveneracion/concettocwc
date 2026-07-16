@@ -13,13 +13,14 @@ import type {
   VerificationListFilters,
   VerificationStatus
 } from '@/types/payment';
+import { VerificationStatus } from '@/types/payment';
 
 /**
  * POST /api/payment-verifications
  *
  * Creates a new payment verification with Pinata IPFS storage
  */
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     // 1. Authentication Check
     const session = await getSession();
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Parse request body
-    const body = await req.json();
+    const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string } = await req.json();
 
     if (!body.plan_id || !body.screenshot_base64) {
       return NextResponse.json(
@@ -120,7 +121,7 @@ export async function POST(req: Request) {
  *
  * Lists payment verifications (admin only)
  */
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
     // 1. Admin Authorization Check
     const session = await requireAdmin();
@@ -128,10 +129,18 @@ export async function GET(req: Request) {
     // 2. Parse query parameters
     const { searchParams } = new URL(req.url);
     const statusParam = searchParams.get('status');
+
+    // Validate status parameter if provided
+    let validStatus: VerificationStatus | undefined;
+    if (statusParam) {
+      const validStatuses = Object.values(VerificationStatus);
+      if (validStatuses.includes(statusParam as VerificationStatus)) {
+        validStatus = statusParam as VerificationStatus;
+      }
+    }
+
     const filters: VerificationListFilters = {
-      status: statusParam && ['pending', 'approved', 'rejected', 'expired'].includes(statusParam)
-        ? statusParam as VerificationStatus
-        : undefined,
+      status: validStatus,
       user_id: searchParams.get('user_id') || undefined,
       plan_id: searchParams.get('plan_id') || undefined,
       date_from: searchParams.get('date_from') || undefined,

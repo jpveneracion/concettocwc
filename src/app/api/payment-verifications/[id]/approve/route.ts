@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
 import type { ApproveVerificationRequest, ApproveVerificationResponse, VerificationStatus } from '@/types/payment';
-import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
+import { VerificationStatus } from '@/types/payment';
 
 /**
  * POST /api/payment-verifications/[id]/approve
@@ -16,7 +16,7 @@ import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
     // 1. Authentication Check
     const session = await getSession();
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // 5. Check verification status - only pending verifications can be approved
-    if (verification.status !== VerificationStatusEnum.PENDING) {
+    if (verification.status !== VerificationStatus.PENDING) {
       return NextResponse.json(
         {
           error: `Cannot approve verification with status '${verification.status}'.
@@ -60,7 +60,7 @@ export async function POST(
     // 6. Update verification status to approved
     const updatedVerification = await updatePaymentVerificationStatus(
       id,
-      VerificationStatusEnum.APPROVED,
+      VerificationStatus.APPROVED,
       userId,
       admin_notes
     );

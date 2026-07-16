@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
 import type { RejectVerificationRequest, RejectVerificationResponse, VerificationStatus } from '@/types/payment';
-import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
+import { VerificationStatus } from '@/types/payment';
 
 /**
  * POST /api/payment-verifications/[id]/reject
@@ -15,8 +15,8 @@ import { VerificationStatus as VerificationStatusEnum } from '@/types/payment';
  */
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
     // 1. Authentication Check
     const session = await getSession();
@@ -28,6 +28,7 @@ export async function POST(
     }
 
     const userId = session.userId;
+    const { id } = await params;
 
     // 2. Authorization Check - Require admin access
     await requireAdmin(userId);
@@ -45,7 +46,7 @@ export async function POST(
     }
 
     // 5. Get verification record
-    const verification = await getPaymentVerificationById(params.id);
+    const verification = await getPaymentVerificationById(id);
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -54,7 +55,7 @@ export async function POST(
     }
 
     // 6. Check verification status - only pending verifications can be rejected
-    if (verification.status !== VerificationStatusEnum.PENDING) {
+    if (verification.status !== VerificationStatus.PENDING) {
       return NextResponse.json(
         {
           error: `Cannot reject verification with status '${verification.status}'.
@@ -66,8 +67,8 @@ export async function POST(
 
     // 7. Update verification status to rejected with reason
     const updatedVerification = await updatePaymentVerificationStatus(
-      params.id,
-      VerificationStatusEnum.REJECTED,
+      id,
+      VerificationStatus.REJECTED,
       userId,
       admin_notes ? `${admin_notes}\n\nRejection reason: ${reason}` : `Rejection reason: ${reason}`
     );
@@ -85,7 +86,7 @@ export async function POST(
     // await sendPaymentRejectionNotification(
     //   verification.user_id,
     //   verification.plan_id,
-    //   params.id,
+    //   id,
     //   reason
     // );
 
