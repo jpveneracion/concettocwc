@@ -237,6 +237,62 @@ export async function getPaymentVerificationsByUserId(
 }
 
 /**
+ * Get payment verifications by user ID with plan details
+ * @param userId - The ID of the user to get verifications for
+ * @param status - Optional status filter (pending, approved, rejected, expired)
+ * @returns Promise containing array of payment verification records with plan details
+ * @throws Error if database operation fails
+ * @example
+ * ```typescript
+ * // Get all verifications with plan details for user
+ * const verifications = await getPaymentVerificationsByUserIdWithPlanDetails('user-uuid');
+ *
+ * // Get only pending verifications with plan details
+ * const pending = await getPaymentVerificationsByUserIdWithPlanDetails('user-uuid', 'pending');
+ * ```
+ */
+export async function getPaymentVerificationsByUserIdWithPlanDetails(
+  userId: string,
+  status?: string
+): Promise<any[]> {
+  try {
+    let query: string;
+    let params: (string | number)[];
+
+    if (status) {
+      query = `
+        SELECT
+          pv.*,
+          sp.name as plan_name,
+          sp.amount as plan_amount
+        FROM payment_verifications pv
+        LEFT JOIN subscription_plans sp ON pv.plan_id = sp.id
+        WHERE pv.user_id = $1 AND pv.status = $2
+        ORDER BY pv.submitted_at DESC
+      `;
+      params = [userId, status];
+    } else {
+      query = `
+        SELECT
+          pv.*,
+          sp.name as plan_name,
+          sp.amount as plan_amount
+        FROM payment_verifications pv
+        LEFT JOIN subscription_plans sp ON pv.plan_id = sp.id
+        WHERE pv.user_id = $1
+        ORDER BY pv.submitted_at DESC
+      `;
+      params = [userId];
+    }
+
+    const result = await sql(query, params);
+    return result as any[];
+  } catch (error) {
+    throw new Error(`Failed to get payment verifications with plan details: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Get pending payment verifications for admin review
  * @param limit - Maximum number of records to return (default: 50)
  * @param offset - Number of records to skip for pagination (default: 0)

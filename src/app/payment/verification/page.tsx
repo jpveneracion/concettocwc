@@ -17,6 +17,7 @@ interface Plan {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  [key: string]: any; // Allow additional properties from API response
 }
 
 interface VerificationContentProps {
@@ -43,14 +44,14 @@ function VerificationContent() {
     try {
       setLoading(true);
       const plansData = await getActiveSubscriptionPlansForAPI();
-      const activePlans = plansData.filter((plan: Plan) => plan.is_active);
-      setPlans(activePlans);
+      const activePlans = plansData.filter((plan: any) => plan.is_active);
+      setPlans(activePlans as Plan[]);
 
       // Pre-select plan if provided in URL
       if (planIdFromUrl) {
-        const plan = activePlans.find((p: Plan) => p.id === planIdFromUrl);
+        const plan = activePlans.find((p: any) => p.id === planIdFromUrl);
         if (plan) {
-          setSelectedPlan(plan);
+          setSelectedPlan(plan as Plan);
         }
       }
     } catch (error) {

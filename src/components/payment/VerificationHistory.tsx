@@ -52,8 +52,9 @@ export default function VerificationHistory() {
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: string | Date): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -94,9 +95,9 @@ export default function VerificationHistory() {
 
   const filters: Array<{ value: VerificationStatus | 'all'; label: string }> = [
     { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' }
+    { value: VerificationStatus.PENDING, label: 'Pending' },
+    { value: VerificationStatus.APPROVED, label: 'Approved' },
+    { value: VerificationStatus.REJECTED, label: 'Rejected' }
   ];
 
   return (

@@ -63,6 +63,8 @@ export interface VerificationListFilters {
   date_from?: string;
   date_to?: string;
   search?: string; // Search by reference number or user email
+  limit?: number;
+  offset?: number;
 }
 
 /**
