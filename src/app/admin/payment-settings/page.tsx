@@ -227,16 +227,16 @@ function MobilePaymentSettings({ settings, updateSetting }: any) {
         title="GCash"
         icon="📱"
         enabled={settings.mobile.gcash.enabled}
-        onToggleEnabled={(enabled) => updateSetting('mobile.gcash.enabled', enabled)}
+        onToggleEnabled={(enabled: boolean) => updateSetting('mobile.gcash.enabled', enabled)}
       >
         <QRCodeUploadSection
           method="gcash"
           number={settings.mobile.gcash.number}
           accountName={settings.mobile.gcash.accountName}
           qrCodeUrl={settings.mobile.gcash.qrCodeUrl}
-          onNumberChange={(number) => updateSetting('mobile.gcash.number', number)}
-          onAccountNameChange={(name) => updateSetting('mobile.gcash.accountName', name)}
-          onQrCodeUpload={(url) => updateSetting('mobile.gcash.qrCodeUrl', url)}
+          onNumberChange={(number: string) => updateSetting('mobile.gcash.number', number)}
+          onAccountNameChange={(name: string) => updateSetting('mobile.gcash.accountName', name)}
+          onQrCodeUpload={(url: string) => updateSetting('mobile.gcash.qrCodeUrl', url)}
         />
       </PaymentMethodCard>
 
@@ -245,16 +245,16 @@ function MobilePaymentSettings({ settings, updateSetting }: any) {
         title="GoTyme"
         icon="🏦"
         enabled={settings.mobile.gotyme.enabled}
-        onToggleEnabled={(enabled) => updateSetting('mobile.gotyme.enabled', enabled)}
+        onToggleEnabled={(enabled: boolean) => updateSetting('mobile.gotyme.enabled', enabled)}
       >
         <QRCodeUploadSection
           method="gotyme"
           number={settings.mobile.gotyme.number}
           accountName={settings.mobile.gotyme.accountName}
           qrCodeUrl={settings.mobile.gotyme.qrCodeUrl}
-          onNumberChange={(number) => updateSetting('mobile.gotyme.number', number)}
-          onAccountNameChange={(name) => updateSetting('mobile.gotyme.accountName', name)}
-          onQrCodeUpload={(url) => updateSetting('mobile.gotyme.qrCodeUrl', url)}
+          onNumberChange={(number: string) => updateSetting('mobile.gotyme.number', number)}
+          onAccountNameChange={(name: string) => updateSetting('mobile.gotyme.accountName', name)}
+          onQrCodeUpload={(url: string) => updateSetting('mobile.gotyme.qrCodeUrl', url)}
         />
       </PaymentMethodCard>
     </div>
@@ -271,7 +271,7 @@ function CryptoPaymentSettings({ settings, updateSetting }: any) {
         title="USDC (Polygon)"
         icon="₿"
         enabled={settings.crypto.usdc.enabled}
-        onToggleEnabled={(enabled) => updateSetting('crypto.usdc.enabled', enabled)}
+        onToggleEnabled={(enabled: boolean) => updateSetting('crypto.usdc.enabled', enabled)}
       >
         <div className="space-y-4">
           <div>
@@ -281,7 +281,7 @@ function CryptoPaymentSettings({ settings, updateSetting }: any) {
             <input
               type="text"
               value={settings.crypto.usdc.polygonAddress}
-              onChange={(e) => updateSetting('crypto.usdc.polygonAddress', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('crypto.usdc.polygonAddress', e.target.value)}
               placeholder="0x1234567890123456789012345678901234567890"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             />
@@ -297,7 +297,7 @@ function CryptoPaymentSettings({ settings, updateSetting }: any) {
         title="USDT (Tron)"
         icon="₿"
         enabled={settings.crypto.usdt.enabled}
-        onToggleEnabled={(enabled) => updateSetting('crypto.usdt.enabled', enabled)}
+        onToggleEnabled={(enabled: boolean) => updateSetting('crypto.usdt.enabled', enabled)}
       >
         <div className="space-y-4">
           <div>
@@ -307,7 +307,7 @@ function CryptoPaymentSettings({ settings, updateSetting }: any) {
             <input
               type="text"
               value={settings.crypto.usdt.tronAddress}
-              onChange={(e) => updateSetting('crypto.usdt.tronAddress', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('crypto.usdt.tronAddress', e.target.value)}
               placeholder="TXyz123456789012345678901234567890123"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             />
@@ -348,7 +348,7 @@ function ConversionRateSettings({ settings, updateSetting }: any) {
             type="number"
             step="0.001"
             value={settings.rates.phpToUsd}
-            onChange={(e) => updateSetting('rates.phpToUsd', parseFloat(e.target.value))}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('rates.phpToUsd', parseFloat(e.target.value))}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
           <div className="text-sm text-gray-600">
@@ -385,7 +385,7 @@ function BusinessSettings({ settings, updateSetting }: any) {
         <input
           type="text"
           value={settings.business.name}
-          onChange={(e) => updateSetting('business.name', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('business.name', e.target.value)}
           placeholder="Concetto Inc."
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -398,7 +398,7 @@ function BusinessSettings({ settings, updateSetting }: any) {
         <input
           type="email"
           value={settings.business.supportEmail}
-          onChange={(e) => updateSetting('business.supportEmail', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('business.supportEmail', e.target.value)}
           placeholder="support@concetto.com"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
@@ -411,7 +411,7 @@ function BusinessSettings({ settings, updateSetting }: any) {
         <input
           type="text"
           value={settings.business.verificationTime}
-          onChange={(e) => updateSetting('business.verificationTime', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSetting('business.verificationTime', e.target.value)}
           placeholder="24 hours"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />

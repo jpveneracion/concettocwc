@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { validateActivationCode } from '@/lib/activation';
+import { SubscriptionPlan } from '@/types/subscription';
 
 /**
  * POST /api/validate-promo-code
@@ -28,17 +29,26 @@ export async function POST(req: Request) {
     }
 
     // Validate the promo code using your existing activation system
-    const validationResult = await validateActivationCode(code, {
-      user_id: session.userId,
-      company_id: session.companyId,
-      plan_id: plan_id
-    });
+    // Convert plan_id string to SubscriptionPlan enum
+    const planEnum = plan_id as SubscriptionPlan;
+    const validationResult = await validateActivationCode(code, planEnum);
 
-    if (!validationResult.valid) {
+    if (!validationResult) {
       return NextResponse.json(
         {
           valid: false,
-          error: validationResult.error || 'Invalid promo code'
+          error: 'Invalid or expired promo code'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if the promo code applies to the selected plan
+    if (!validationResult.applicable_plans.includes(planEnum)) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: `Promo code not applicable to ${plan_id} plan`
         },
         { status: 400 }
       );
@@ -48,9 +58,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       valid: true,
       code: code,
-      discount_type: validationResult.discount_type,
+      discount_type: 'percent', // Activation codes use percent discounts
       discount_percent: validationResult.discount_percent,
-      discount_amount: validationResult.discount_amount,
+      discount_amount: null,
       message: 'Promo code applied successfully'
     });
 

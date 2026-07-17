@@ -7,6 +7,7 @@ import QRCodeDisplay from '@/components/payment/QRCodeDisplay';
 import CryptoPaymentInfo from '@/components/payment/CryptoPaymentInfo';
 import PromoCodeInput from '@/components/payment/PromoCodeInput';
 import PaymentProofSection from '@/components/payment/PaymentProofSection';
+import { PaymentMethod } from '@/types/payment';
 
 interface PlanDetails {
   id: string;
@@ -14,8 +15,6 @@ interface PlanDetails {
   price: number;
   description: string;
 }
-
-type PaymentMethod = 'gcash' | 'gotyme' | 'usdc';
 
 function PaymentInstructionsContent() {
   const router = useRouter();
@@ -196,7 +195,7 @@ function PaymentInstructionsContent() {
         {/* Payment Method Selection */}
         <PaymentMethodSelector
           selectedMethod={selectedMethod}
-          onMethodChange={setSelectedMethod}
+          onMethodChange={(method: PaymentMethod) => setSelectedMethod(method)}
         />
 
         {/* Promo Code */}
