@@ -1,4 +1,9 @@
 /**
+ * Payment method enumeration
+ */
+export type PaymentMethod = 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer';
+
+/**
  * Payment verification status enumeration
  */
 export enum VerificationStatus {

@@ -192,9 +192,7 @@ export async function activateSubscriptionWithVerification(
       console.log(`Rolling back subscription activation for user ${userId}`);
       await updateUser(userId, {
         subscription_activated: false,
-        activation_code: null,
-        discount_percent: 0,
-        subscription_plan: null
+        discount_percent: 0
       });
     });
 
@@ -207,7 +205,7 @@ export async function activateSubscriptionWithVerification(
       rollbackActions.push(async () => {
         console.log(`Rolling back trial expiration for user ${userId}`);
         await updateUser(userId, {
-          trial_expires_at: null
+          subscription_activated: false
         });
       });
     }
@@ -349,10 +347,7 @@ export async function rollbackSubscriptionActivation(
     // 2. Revert subscription activation
     await updateUser(userId, {
       subscription_activated: false,
-      activation_code: null,
-      discount_percent: 0,
-      subscription_plan: null,
-      trial_expires_at: null
+      discount_percent: 0
     });
 
     // 3. Log successful rollback

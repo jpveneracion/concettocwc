@@ -68,7 +68,9 @@ function CheckoutContent() {
         },
         body: JSON.stringify({
           plan_id: selectedPlan,
-          payment_method: 'manual' // Indicate manual payment processing
+          payment_method: 'manual', // Indicate manual payment processing
+          success_url: `${window.location.origin}/account/subscription?subscription_created=true`,
+          cancel_url: `${window.location.origin}/subscription/checkout?cancelled=true`
         })
       });
 
@@ -80,8 +82,8 @@ function CheckoutContent() {
 
       const data = await response.json();
 
-      // Redirect to account/subscription with payment instructions
-      router.push('/account/subscription?request_created=true');
+      // Redirect to payment instructions page with plan details
+      router.push(`/subscription/payment-instructions?plan_id=${selectedPlan}`);
 
     } catch (err) {
       console.error('Subscription creation error:', err);
