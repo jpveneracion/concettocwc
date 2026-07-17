@@ -6,6 +6,24 @@ import { cookies } from 'next/headers';
 import { sql } from '@/lib/db';
 import { setTrialExpiration } from '@/lib/subscription';
 
+// Helper function to get the appropriate cookie domain based on environment
+function getCookieDomain(): string | undefined {
+  // For development: don't set domain (browser default for localhost)
+  if (process.env.NODE_ENV === 'development') {
+    return undefined;
+  }
+
+  // For production: use environment variable if set
+  if (process.env.COOKIE_DOMAIN) {
+    const domain = process.env.COOKIE_DOMAIN.trim();
+    // Ensure domain starts with dot for subdomain support
+    return domain.startsWith('.') ? domain : `.${domain}`;
+  }
+
+  // Default: no domain (let browser handle it)
+  return undefined;
+}
+
 // Helper function to set custom session cookie for compatibility with proxy middleware
 async function setCustomSessionCookie(userId: string, companyId: string, email: string) {
   try {
@@ -26,6 +44,7 @@ async function setCustomSessionCookie(userId: string, companyId: string, email: 
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
+      domain: getCookieDomain(),
     });
 
     console.log('✅ Custom session cookie set for user:', userId);

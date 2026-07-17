@@ -4,6 +4,24 @@ import { sql } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
+// Helper function to get the appropriate cookie domain based on environment
+function getCookieDomain(): string | undefined {
+  // For development: don't set domain (browser default for localhost)
+  if (process.env.NODE_ENV === 'development') {
+    return undefined;
+  }
+
+  // For production: use environment variable if set
+  if (process.env.COOKIE_DOMAIN) {
+    const domain = process.env.COOKIE_DOMAIN.trim();
+    // Ensure domain starts with dot for subdomain support
+    return domain.startsWith('.') ? domain : `.${domain}`;
+  }
+
+  // Default: no domain (let browser handle it)
+  return undefined;
+}
+
 // Hash email for searchable authentication
 function hashEmailForSearch(email: string): string {
   return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
@@ -130,6 +148,7 @@ export async function POST(req: Request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
+      domain: getCookieDomain(),
     });
     console.log('✅ Session cookie set successfully');
 
