@@ -573,3 +573,288 @@ export async function getVerificationStats(): Promise<{
     throw new Error(`Failed to get verification statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+/**
+ * GCash webhook data record interface
+ */
+interface GCashWebhookData {
+  id: string;
+  transaction_number: string;
+  amount: number;
+  sender_name?: string;
+  sender_account?: string;
+  receiver_name?: string;
+  receiver_account?: string;
+  transaction_time: Date;
+  notification_text?: string;
+  raw_webhook_payload?: Record<string, any>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Create GCash webhook data record
+ * @param webhook - Object containing webhook notification details
+ * @param webhook.transaction_number - GCash transaction number (unique identifier)
+ * @param webhook.amount - Payment amount
+ * @param webhook.sender_name - Optional sender name
+ * @param webhook.sender_account - Optional sender account number
+ * @param webhook.receiver_name - Optional receiver name
+ * @param webhook.receiver_account - Optional receiver account number
+ * @param webhook.transaction_time - Transaction timestamp
+ * @param webhook.notification_text - Optional notification text content
+ * @param webhook.raw_webhook_payload - Optional raw webhook payload data
+ * @returns Promise containing the created or updated webhook data record
+ * @throws Error if database operation fails
+ * @example
+ * ```typescript
+ * const webhook = await createGCashWebhookData({
+ *   transaction_number: 'GCASH123456',
+ *   amount: 299.00,
+ *   sender_name: 'Juan Dela Cruz',
+ *   sender_account: '09171234567',
+ *   receiver_name: 'Merchant Account',
+ *   transaction_time: new Date('2024-01-15T10:30:00Z'),
+ *   notification_text: 'You received P299.00 from Juan Dela Cruz'
+ * });
+ * ```
+ */
+export async function createGCashWebhookData(webhook: {
+  transaction_number: string;
+  amount: number;
+  sender_name?: string;
+  sender_account?: string;
+  receiver_name?: string;
+  receiver_account?: string;
+  transaction_time: Date;
+  notification_text?: string;
+  raw_webhook_payload?: Record<string, any>;
+}): Promise<GCashWebhookData> {
+  try {
+    const result = await sql(
+      `INSERT INTO gcash_webhook_data (transaction_number, amount, sender_name, sender_account, receiver_name, receiver_account, transaction_time, notification_text, raw_webhook_payload)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (transaction_number) DO UPDATE SET
+         amount = EXCLUDED.amount,
+         sender_name = EXCLUDED.sender_name,
+         sender_account = EXCLUDED.sender_account,
+         receiver_name = EXCLUDED.receiver_name,
+         receiver_account = EXCLUDED.receiver_account,
+         transaction_time = EXCLUDED.transaction_time,
+         notification_text = EXCLUDED.notification_text,
+         raw_webhook_payload = EXCLUDED.raw_webhook_payload,
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        webhook.transaction_number,
+        webhook.amount,
+        webhook.sender_name || null,
+        webhook.sender_account || null,
+        webhook.receiver_name || null,
+        webhook.receiver_account || null,
+        webhook.transaction_time,
+        webhook.notification_text || null,
+        JSON.stringify(webhook.raw_webhook_payload || {})
+      ]
+    );
+
+    if (!result[0]) {
+      throw new Error('Failed to create GCash webhook data record');
+    }
+
+    return result[0] as GCashWebhookData;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Failed to create')) {
+      throw error;
+    }
+    throw new Error(`GCash webhook data creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Get GCash webhook data by transaction number
+ * @param transactionNumber - The GCash transaction number to search for
+ * @returns Promise containing the webhook data record or null if not found
+ * @throws Error if database operation fails
+ * @example
+ * ```typescript
+ * const webhook = await getGCashWebhookByTransactionNumber('GCASH123456');
+ * if (webhook) {
+ *   console.log('Webhook received:', webhook.transaction_time);
+ * }
+ * ```
+ */
+export async function getGCashWebhookByTransactionNumber(transactionNumber: string): Promise<GCashWebhookData | null> {
+  try {
+    const result = await sql(
+      'SELECT * FROM gcash_webhook_data WHERE transaction_number = $1',
+      [transactionNumber]
+    );
+    return (result[0] as GCashWebhookData) || null;
+  } catch (error) {
+    throw new Error(`Failed to get GCash webhook data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Gateway device heartbeat record interface
+ */
+interface GatewayHeartbeat {
+  id: string;
+  device_id: string;
+  last_ping: Date;
+  status?: 'online' | 'offline' | 'degraded';
+  ip_address?: string;
+  battery_level?: number;
+  macrodroid_version?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Create or update gateway heartbeat record
+ * @param heartbeat - Object containing device heartbeat information
+ * @param heartbeat.device_id - Unique device identifier
+ * @param heartbeat.status - Device status ('online', 'offline', 'degraded')
+ * @param heartbeat.ip_address - Optional device IP address
+ * @param heartbeat.battery_level - Optional battery level percentage
+ * @param heartbeat.macrodroid_version - Optional Macrodroid version
+ * @returns Promise containing the created or updated heartbeat record
+ * @throws Error if database operation fails
+ * @example
+ * ```typescript
+ * const heartbeat = await upsertGatewayHeartbeat({
+ *   device_id: 'android-device-001',
+ *   status: 'online',
+ *   ip_address: '192.168.1.100',
+ *   battery_level: 85,
+ *   macrodroid_version: '5.2.3'
+ * });
+ * ```
+ */
+export async function upsertGatewayHeartbeat(heartbeat: {
+  device_id: string;
+  status?: 'online' | 'offline' | 'degraded';
+  ip_address?: string;
+  battery_level?: number;
+  macrodroid_version?: string;
+}): Promise<GatewayHeartbeat> {
+  try {
+    const result = await sql(
+      `INSERT INTO gateway_device_heartbeat (device_id, last_ping, status, ip_address, battery_level, macrodroid_version)
+       VALUES ($1, NOW(), $2, $3, $4, $5)
+       ON CONFLICT (device_id) DO UPDATE SET
+         last_ping = NOW(),
+         status = COALESCE(EXCLUDED.status, gateway_device_heartbeat.status),
+         ip_address = EXCLUDED.ip_address,
+         battery_level = EXCLUDED.battery_level,
+         macrodroid_version = EXCLUDED.macrodroid_version,
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        heartbeat.device_id,
+        heartbeat.status || 'online',
+        heartbeat.ip_address || null,
+        heartbeat.battery_level || null,
+        heartbeat.macrodroid_version || null
+      ]
+    );
+
+    if (!result[0]) {
+      throw new Error('Failed to update gateway heartbeat');
+    }
+
+    return result[0] as GatewayHeartbeat;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Failed to update')) {
+      throw error;
+    }
+    throw new Error(`Gateway heartbeat update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Gateway status response interface
+ */
+interface GatewayStatus {
+  online: boolean;
+  last_ago: number;
+}
+
+/**
+ * Get current gateway status
+ * @returns Promise containing object with gateway online status and seconds since last ping
+ * @throws Error if database operation fails (returns offline status on error)
+ * @example
+ * ```typescript
+ * const status = await getGatewayStatus();
+ * if (status.online) {
+ *   console.log(`Gateway online, last ping ${status.last_ago}s ago`);
+ * } else {
+ *   console.log('Gateway offline or unavailable');
+ * }
+ * ```
+ */
+export async function getGatewayStatus(): Promise<GatewayStatus> {
+  try {
+    const result = await sql(`
+      SELECT
+        status,
+        EXTRACT(EPOCH FROM (NOW() - last_ping)) as seconds_ago
+      FROM gateway_device_heartbeat
+      ORDER BY last_ping DESC
+      LIMIT 1
+    `);
+
+    if (!result[0]) {
+      return { online: false, last_ago: Infinity };
+    }
+
+    const row = result[0] as any;
+    return {
+      online: row.status === 'online' && row.seconds_ago < 1800, // 30 minutes
+      last_ago: Math.floor(row.seconds_ago)
+    };
+  } catch (error) {
+    return { online: false, last_ago: Infinity };
+  }
+}
+
+/**
+ * Payment settings record interface
+ */
+interface PaymentSettings {
+  id: string;
+  payment_method: string;
+  active: boolean;
+  gcash_device_id?: string;
+  gcash_webhook_url?: string;
+  gcash_api_key?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Get payment settings by payment method
+ * @param method - The payment method to retrieve settings for (e.g., 'gcash', 'maya')
+ * @returns Promise containing the payment settings record or null if not found
+ * @throws Error if database operation fails
+ * @example
+ * ```typescript
+ * const gcashSettings = await getPaymentSettings('gcash');
+ * if (gcashSettings) {
+ *   console.log('GCash webhook URL:', gcashSettings.gcash_webhook_url);
+ * }
+ * ```
+ */
+export async function getPaymentSettings(method: string): Promise<PaymentSettings | null> {
+  try {
+    const result = await sql(
+      'SELECT * FROM payment_settings WHERE payment_method = $1 AND active = TRUE',
+      [method]
+    );
+    return (result[0] as PaymentSettings) || null;
+  } catch (error) {
+    throw new Error(`Failed to get payment settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
