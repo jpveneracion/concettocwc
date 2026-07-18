@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import VerificationTable from '@/components/admin/VerificationTable';
 import VerificationStatsCards from '@/components/admin/VerificationStats';
 import VerificationDetail from '@/components/admin/VerificationDetail';
+import VerificationInterface from '@/components/admin/VerificationInterface';
 import type {
   PaymentVerification,
   VerificationStatus,
@@ -19,6 +20,8 @@ export default function AdminVerificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedVerification, setSelectedVerification] = useState<PaymentVerification | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showVerificationInterface, setShowVerificationInterface] = useState(false);
+  const [selectedVerificationId, setSelectedVerificationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<VerificationStatus | 'all'>('all');
   const [pendingCount, setPendingCount] = useState(0);
@@ -161,6 +164,18 @@ export default function AdminVerificationsPage() {
     setActionError(null);
   }
 
+  const handleVerificationComplete = (approved: boolean) => {
+    // Refresh the verification list after action completes
+    fetchVerifications();
+    setShowVerificationInterface(false);
+    setSelectedVerificationId(null);
+  };
+
+  const openVerificationInterface = (verificationId: string) => {
+    setSelectedVerificationId(verificationId);
+    setShowVerificationInterface(true);
+  };
+
   function formatDate(dateString: string | Date): string {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     return date.toLocaleDateString('en-US', {
@@ -268,7 +283,7 @@ export default function AdminVerificationsPage() {
         {/* Verification Table */}
         <VerificationTable
           verifications={verifications}
-          onRowClick={openDetailModal}
+          onRowClick={(verification) => openVerificationInterface(verification.id)}
           loading={loading}
         />
 
@@ -292,6 +307,19 @@ export default function AdminVerificationsPage() {
               setSelectedVerification(null);
             }}
           />
+        )}
+
+        {/* Verification Interface Modal */}
+        {showVerificationInterface && selectedVerificationId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <VerificationInterface
+                verificationId={selectedVerificationId}
+                onVerificationComplete={handleVerificationComplete}
+                onBack={() => setShowVerificationInterface(false)}
+              />
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>
