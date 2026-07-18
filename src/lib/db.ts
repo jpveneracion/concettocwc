@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { VerificationStatus, PaymentVerification } from '@/types/payment';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
@@ -162,13 +163,13 @@ interface PaymentVerificationRecord {
   screenshot_url: string;
   reference_number?: string;
   notes?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: VerificationStatus;
   admin_notes?: string;
   admin_id?: string;
-  submitted_at: string;
-  reviewed_at?: string;
-  created_at: string;
-  updated_at: string;
+  submitted_at: Date;
+  reviewed_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 /**
@@ -248,7 +249,15 @@ export async function createPaymentVerification(verification: {
       true
     );
 
-    return result[0] as PaymentVerificationRecord;
+    // Convert database result to match PaymentVerificationRecord interface
+    const dbRecord = result[0];
+    return {
+      ...dbRecord,
+      submitted_at: new Date(dbRecord.submitted_at),
+      reviewed_at: dbRecord.reviewed_at ? new Date(dbRecord.reviewed_at) : undefined,
+      created_at: new Date(dbRecord.created_at),
+      updated_at: new Date(dbRecord.updated_at)
+    } as PaymentVerificationRecord;
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -347,7 +356,7 @@ export async function getPaymentVerificationsByUserId(
 export async function getPaymentVerificationsByUserIdWithPlanDetails(
   userId: string,
   status?: 'pending' | 'approved' | 'rejected'
-): Promise<any[]> {
+): Promise<PaymentVerification[]> {
   try {
     let query: string;
     let params: (string | number)[];
@@ -379,7 +388,7 @@ export async function getPaymentVerificationsByUserIdWithPlanDetails(
     }
 
     const result = await withQueryTimeout(async () => sql(query, params));
-    return result as any[];
+    return result as PaymentVerification[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications with plan details: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -447,7 +456,7 @@ export async function getPendingVerifications(limit: number = 50, offset: number
  * ```
  */
 export async function getAllPaymentVerifications(filters: {
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: VerificationStatus;
   user_id?: string;
   plan_id?: string;
   date_from?: string;
@@ -718,7 +727,7 @@ interface GCashWebhookData {
   receiver_account?: string;
   transaction_time: Date;
   notification_text?: string;
-  raw_webhook_payload?: Record<string, any>;
+  raw_webhook_payload?: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -759,7 +768,7 @@ export async function createGCashWebhookData(webhook: {
   receiver_account?: string;
   transaction_time: Date;
   notification_text?: string;
-  raw_webhook_payload?: Record<string, any>;
+  raw_webhook_payload?: Record<string, unknown>;
 }): Promise<GCashWebhookData> {
   const startTime = Date.now();
 
@@ -1005,6 +1014,14 @@ interface GatewayStatus {
 }
 
 /**
+ * Gateway status database result interface
+ */
+interface GatewayStatusDbResult {
+  status: string;
+  seconds_ago: number;
+}
+
+/**
  * Get current gateway status
  * @returns Promise containing object with gateway online status and seconds since last ping
  * @throws Error if database operation fails
@@ -1047,7 +1064,7 @@ export async function getGatewayStatus(): Promise<GatewayStatus> {
       return { online: false, last_ago: Infinity };
     }
 
-    const row = result[0] as any;
+    const row = result[0] as GatewayStatusDbResult;
     const status = {
       online: row.status === 'online' && row.seconds_ago < 1800, // 30 minutes
       last_ago: Math.floor(row.seconds_ago)
@@ -1132,7 +1149,7 @@ export async function getPaymentSettings(method: PaymentMethod): Promise<Payment
 function structuredLog(
   event: string,
   functionName: string,
-  details: Record<string, any>,
+  details: Record<string, unknown>,
   duration?: number,
   success: boolean = true
 ): void {
