@@ -47,10 +47,6 @@ export async function GET(req: Request) {
             enabled: gotymeRow?.active ?? true
           }
         },
-        discounts: {
-          quarterly: parseFloat(gcashRow?.quarterly_discount_percent || gotymeRow?.quarterly_discount_percent || '5.00'),
-          annual: parseFloat(gcashRow?.annual_discount_percent || gotymeRow?.annual_discount_percent || '8.00')
-        },
         crypto: {
           usdc: {
             polygonAddress: process.env.USDC_POLYGON_ADDRESS || '0x1234567890123456789012345678901234567890',
@@ -64,18 +60,14 @@ export async function GET(req: Request) {
         rates: {
           phpToUsd: parseFloat(process.env.PHP_TO_USD_RATE || '0.018')
         },
+        discounts: {
+          quarterly: parseFloat(result[0]?.quarterly_discount_percent || '5.00'),
+          annual: parseFloat(result[0]?.annual_discount_percent || '8.00')
+        },
         business: {
           name: process.env.BUSINESS_NAME || 'Concetto Inc.',
           supportEmail: process.env.SUPPORT_EMAIL || 'support@concetto.com',
           verificationTime: '24 hours'
-        },
-        discounts: {
-          quarterly: 5.00,
-          annual: 8.00
-        },
-        discounts: {
-          quarterly: parseFloat(result[0]?.quarterly_discount_percent || '5.00'),
-          annual: parseFloat(result[0]?.annual_discount_percent || '8.00')
         }
       };
 
