@@ -13,9 +13,9 @@ ADD COLUMN IF NOT EXISTS annual_discount_percent DECIMAL(5,2) DEFAULT 8.00;
 -- Add validation constraint to prevent excessive discounts
 ALTER TABLE payment_settings
 ADD CONSTRAINT check_quarterly_discount_valid
-  CHECK (quarterly_discount_percent >= 0 AND quarterly_discount_percent <= 33.33),
+  CHECK (quarterly_discount_percent > 0 AND quarterly_discount_percent <= 33.33),
 ADD CONSTRAINT check_annual_discount_valid
-  CHECK (annual_discount_percent >= 0 AND annual_discount_percent <= 8.33);
+  CHECK (annual_discount_percent > 0 AND annual_discount_percent <= 8.33);
 
 -- Add comments for documentation
 COMMENT ON COLUMN payment_settings.quarterly_discount_percent IS
