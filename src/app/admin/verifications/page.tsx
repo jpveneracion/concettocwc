@@ -46,6 +46,19 @@ export default function AdminVerificationsPage() {
     }
   }, [statusFilter, searchQuery]);
 
+  // Handle escape key for modal closing
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showVerificationInterface) {
+        setShowVerificationInterface(false);
+        setSelectedVerificationId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showVerificationInterface]);
+
   async function fetchStats() {
     try {
       const res = await fetch('/api/payment-verifications/stats');
@@ -311,8 +324,17 @@ export default function AdminVerificationsPage() {
 
         {/* Verification Interface Modal */}
         {showVerificationInterface && selectedVerificationId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verification-title"
+            onClick={() => setShowVerificationInterface(false)}
+          >
+            <div
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <VerificationInterface
                 verificationId={selectedVerificationId}
                 onVerificationComplete={handleVerificationComplete}
