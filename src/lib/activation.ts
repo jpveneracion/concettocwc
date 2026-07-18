@@ -62,6 +62,56 @@ export function generateActivationCode(): string {
 }
 
 /**
+ * Create promo code in database (without payment details)
+ */
+export async function createPromoCode(
+  discountPercent: number,
+  applicablePlans: SubscriptionPlan[],
+  expiresAt: Date | undefined,
+  campaignName: string | undefined,
+  notes: string | undefined,
+  createdBy: string,
+  qrCodes?: { gcash?: string; gotyme?: string },
+  usageLimit?: number
+): Promise<ActivationCode> {
+  const code = generateActivationCode();
+  const now = new Date();
+
+  const status_history: StatusHistoryEntry[] = [{
+    status: 'created',
+    timestamp: now,
+    note: `Promo code created for campaign: ${campaignName || 'general'}`
+  }];
+
+  const result = await sql(
+    `INSERT INTO activation_codes (
+      code, discount_percent, applicable_plans,
+      created_by, expires_at, campaign_name, notes,
+      status_history, gcash_qr_url, gotyme_qr_url, usage_limit, current_usage,
+      payment_currency
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    RETURNING *`,
+    [
+      code,
+      discountPercent,
+      JSON.stringify(applicablePlans),
+      createdBy,
+      expiresAt ? expiresAt.toISOString() : null,
+      campaignName || null,
+      notes || null,
+      JSON.stringify(status_history),
+      qrCodes?.gcash || null,
+      qrCodes?.gotyme || null,
+      usageLimit || 1, // Default to one-time use
+      0, // Start with 0 usage
+      'PHP' // Default currency for promo codes
+    ]
+  );
+
+  return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
+}
+
+/**
  * Create activation code in database
  */
 export async function createActivationCode(
@@ -182,7 +232,8 @@ export async function validateActivationCodeWithDetails(
 
   // Check usage limits
   if (activationCode.usage_limit !== undefined) {
-    if (activationCode.current_usage >= activationCode.usage_limit) {
+    const currentUsage = activationCode.current_usage || 0;
+    if (currentUsage >= activationCode.usage_limit) {
       return { valid: false, error: 'Promo code has reached maximum usage' };
     }
   } else {
@@ -364,11 +415,21 @@ export async function updateActivationCode(
  * Map database row to ActivationCode interface
  */
 function mapActivationCodeFromDb(row: ActivationCodeRecord): ActivationCode {
+  // Handle both JSON array and comma-separated string formats for applicable_plans
+  let applicablePlans: SubscriptionPlan[];
+  try {
+    // Try JSON parse first (correct format)
+    applicablePlans = JSON.parse(row.applicable_plans) as SubscriptionPlan[];
+  } catch {
+    // Fallback: handle comma-separated string (legacy format)
+    applicablePlans = row.applicable_plans.split(',').map((plan: string) => plan.trim() as SubscriptionPlan);
+  }
+
   return {
     id: row.id,
     code: row.code,
     discount_percent: parseFloat(row.discount_percent.toString()),
-    applicable_plans: JSON.parse(row.applicable_plans) as SubscriptionPlan[],
+    applicable_plans: applicablePlans,
     payment_amount: row.payment_amount ? parseFloat(row.payment_amount.toString()) : undefined,
     payment_currency: row.payment_currency,
     payment_amount_usd: row.payment_amount_usd ? parseFloat(row.payment_amount_usd.toString()) : undefined,
