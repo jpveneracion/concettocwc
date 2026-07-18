@@ -2,7 +2,7 @@
 
 import { sql } from './db';
 import { cleanReferenceNumber, validateReferenceNumberFormat } from './reference-cleaning';
-import type { PaymentVerificationRecord, GCashWebhookData } from '@/types/payment';
+import type { PaymentVerification, GCashWebhookData } from '@/types/payment';
 
 /**
  * Automatic verification matching result
@@ -18,7 +18,7 @@ interface VerificationMatchResult {
  * Conservative threshold: auto-approve ONLY when ALL conditions met perfectly
  */
 export async function checkAutomaticVerificationMatch(
-  verification: PaymentVerificationRecord
+  verification: PaymentVerification
 ): Promise<VerificationMatchResult> {
   const cleanedRef = cleanReferenceNumber(verification.reference_number || '');
   const formatCheck = validateReferenceNumberFormat(verification.reference_number || '');
@@ -39,13 +39,13 @@ export async function checkAutomaticVerificationMatch(
   }
 
   // Check for matching webhook data
-  const webhookResult = await sql<GCashWebhookData[]>(`
+  const webhookResult = await sql(`
     SELECT * FROM gcash_webhook_data
     WHERE cleaned_transaction_number = $1
     AND received_at > NOW() - INTERVAL '24 hours'
     ORDER BY received_at DESC
     LIMIT 1
-  `, [cleanedRef]);
+  `, [cleanedRef]) as GCashWebhookData[];
 
   if (!webhookResult[0]) {
     return {
@@ -57,12 +57,12 @@ export async function checkAutomaticVerificationMatch(
   const webhook = webhookResult[0];
 
   // Check for multiple potential matches (ambiguity)
-  const duplicateCheck = await sql<{count: string}[]>(`
+  const duplicateCheck = await sql(`
     SELECT COUNT(*) as count FROM payment_verifications
     WHERE REGEXP_REPLACE(UPPER(reference_number), '[^A-Z0-9]', '', '') = $1
     AND id != $2
     AND status = 'pending'
-  `, [cleanedRef, verification.id]);
+  `, [cleanedRef, verification.id]) as {count: string}[];
 
   if (parseInt(duplicateCheck[0].count) > 0) {
     return {
@@ -72,10 +72,10 @@ export async function checkAutomaticVerificationMatch(
   }
 
   // Get expected amount from subscription plans
-  const planResult = await sql<{amount: string}[]>(`
+  const planResult = await sql(`
     SELECT amount FROM subscription_plans
     WHERE id = $1
-  `, [verification.plan_id]);
+  `, [verification.plan_id]) as {amount: string}[];
 
   if (!planResult[0]) {
     return {

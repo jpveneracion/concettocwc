@@ -125,7 +125,7 @@ export async function PUT(req: NextRequest) {
     const { updateSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
 
     // Build updates object (only include defined fields)
-    const updates: any = {};
+    const updates: { name?: string; description?: string; price?: number; currency?: string; interval?: string; discount_percent?: number; features?: Record<string, unknown>; is_active?: boolean } = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (price !== undefined) updates.price = price;

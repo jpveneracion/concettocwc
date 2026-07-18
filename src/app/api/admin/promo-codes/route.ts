@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import {
-  createActivationCode,
+  createPromoCode,
   listActivationCodes,
   updateActivationCode,
   deactivateActivationCode
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     const is_active = searchParams.get('is_active');
     const campaign_name = searchParams.get('campaign_name');
 
-    const filters: any = {};
+    const filters: { is_active?: boolean; used_by?: number; campaign_name?: string } = {};
     if (is_active === 'true' || is_active === 'false') {
       filters.is_active = is_active === 'true';
     }
@@ -107,15 +107,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create activation code
-    const promoCode = await createActivationCode(
-      {
-        discount_percent,
-        applicable_plans: applicable_plans.map((plan: string) => plan as SubscriptionPlan),
-        expires_at: expires_at ? new Date(expires_at) : undefined,
-        campaign_name,
-        notes
-      },
+    // Create promo code
+    const promoCode = await createPromoCode(
+      discount_percent,
+      applicable_plans.map((plan: string) => plan as SubscriptionPlan),
+      expires_at ? new Date(expires_at) : undefined,
+      campaign_name,
+      notes,
       session.userId,
       {
         gcash: gcash_qr_url,

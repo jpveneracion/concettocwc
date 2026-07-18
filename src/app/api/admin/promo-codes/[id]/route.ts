@@ -11,7 +11,7 @@ import { sql } from '@/lib/db';
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -24,14 +24,15 @@ export async function PATCH(
 
     await requireAdmin(session.userId);
 
-    const promoCodeId = parseInt(params.id);
+    const { id } = await params;
+    const promoCodeId = parseInt(id);
     const body = await req.json();
     const { gcash_qr_url, gotyme_qr_url, usage_limit, ...updates } = body;
 
     // Handle QR code updates separately
     if (gcash_qr_url !== undefined || gotyme_qr_url !== undefined) {
       const updateFields: string[] = [];
-      const updateValues: any[] = [];
+      const updateValues: (string | number | boolean | null)[] = [];
       let paramIndex = 1;
 
       if (gcash_qr_url !== undefined) {
@@ -60,7 +61,7 @@ export async function PATCH(
 
     // Handle other updates using existing function
     if (Object.keys(updates).length > 0) {
-      const updateData: any = {};
+      const updateData: { is_active?: boolean; expires_at?: Date; campaign_name?: string; notes?: string } = {};
       if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
       if (updates.expires_at !== undefined) updateData.expires_at = new Date(updates.expires_at);
       if (updates.campaign_name !== undefined) updateData.campaign_name = updates.campaign_name;
@@ -101,7 +102,7 @@ export async function PATCH(
  */
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession();
@@ -114,7 +115,8 @@ export async function DELETE(
 
     await requireAdmin(session.userId);
 
-    const promoCodeId = parseInt(params.id);
+    const { id } = await params;
+    const promoCodeId = parseInt(id);
     await deactivateActivationCode(promoCodeId);
 
     return NextResponse.json({

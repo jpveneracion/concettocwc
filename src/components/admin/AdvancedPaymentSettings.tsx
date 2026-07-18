@@ -102,7 +102,7 @@ export default function AdvancedPaymentSettings() {
     }
   };
 
-  const savePlanQrCodes = async (planQrCodes: any) => {
+  const savePlanQrCodes = async (planQrCodes: { [key: string]: string | undefined }) => {
     try {
       const response = await fetch('/api/admin/qr-codes', {
         method: 'POST',
