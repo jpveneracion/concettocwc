@@ -28,7 +28,7 @@ export default function PromoCodeManager() {
   // New promo code form state
   const [newPromo, setNewPromo] = useState({
     discount_percent: 10,
-    applicable_plans: ['basic'] as string[],
+    applicable_plans: ['monthly'] as string[],
     usage_limit: 100,
     expires_at: '',
     campaign_name: '',
@@ -70,7 +70,7 @@ export default function PromoCodeManager() {
         setShowCreateModal(false);
         setNewPromo({
           discount_percent: 10,
-          applicable_plans: ['basic'],
+          applicable_plans: ['monthly'],
           usage_limit: 100,
           expires_at: '',
           campaign_name: '',
@@ -327,7 +327,7 @@ export default function PromoCodeManager() {
               <div>
                 <label className="block text-sm font-medium mb-2">Applicable Plans</label>
                 <div className="grid grid-cols-3 gap-2">
-                  {['basic', 'pro', 'premium'].map((plan) => (
+                  {['monthly', 'quarterly', 'annual'].map((plan) => (
                     <label key={plan} className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -394,7 +394,7 @@ export default function PromoCodeManager() {
                   onChange={(e) => setNewPromo({ ...newPromo, notes: e.target.value })}
                   placeholder="Internal notes about this promo..."
                   className="w-full px-3 py-2 border rounded-lg"
-                  rows="2"
+                  rows={2}
                 />
               </div>
 
