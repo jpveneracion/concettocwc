@@ -21,6 +21,12 @@ Stack: **Next.js 14 (App Router) · TypeScript · Tailwind CSS · Neon (PostgreS
   - Access control based on subscription status
   - Mobile-first subscription management UI
   - Real-time webhook processing for payment events
+- **Admin Panel Integration** — Comprehensive admin interface for payment and subscription management
+  - Payment settings configuration with term-specific discount rates
+  - Promo code management with usage tracking and QR code support
+  - Payment verification interface with webhook data comparison
+  - QR code system for payment methods and promo campaigns
+  - Real-time payment proof validation and admin actions
 - **UUID primary keys** throughout — safe for distributed use and future API expansion
 
 ---
@@ -313,6 +319,98 @@ PAYMONGO_WEBHOOK_SECRET=whsec_your_webhook_secret
 PAYMONGO_PUBLIC_KEY=pk_test_your_public_key
 PAYMONGO_API_URL=https://api.paymongo.com/v1
 ```
+
+---
+
+## Admin Panel Integration
+
+The application includes a comprehensive admin panel for managing payment settings, promo codes, and payment verification workflows.
+
+### Admin Panel Features
+
+**Payment Settings Management:**
+- Configurable term discount rates (quarterly/annual subscriptions)
+- Plan-specific pricing and discount configuration
+- Payment method settings and QR code management
+- Real-time payment settings updates
+
+**Promo Code Management:**
+- Create and manage promotional codes with usage limits
+- Set discount percentages and validity periods
+- Upload QR codes for each payment method (GCash, Maya, etc.)
+- Track promo code usage and campaign analytics
+- Enable/disable promo codes instantly
+
+**Payment Verification Interface:**
+- Review detailed payment verification submissions
+- Compare webhook data with uploaded payment proofs
+- View and analyze screenshots of payment confirmations
+- Approve or reject payment verifications with admin notes
+- Real-time verification status updates
+
+**QR Code System:**
+- Generate and manage QR codes for payment methods
+- Attach QR codes to promo campaigns for easy scanning
+- Support for multiple payment methods per promo code
+- Centralized QR code storage and management
+
+### Admin API Endpoints
+
+**Payment Settings:**
+- `GET /api/admin/payment-settings` - Retrieve current payment settings
+- `PUT /api/admin/payment-settings` - Update payment configuration
+
+**Promo Codes:**
+- `GET /api/admin/promo-codes` - List all promo codes
+- `POST /api/admin/promo-codes` - Create new promo code
+- `PUT /api/admin/promo-codes/[id]` - Update promo code
+- `DELETE /api/admin/promo-codes/[id]` - Delete promo code
+
+**QR Codes:**
+- `GET /api/admin/qr-codes` - List all QR codes
+- `POST /api/admin/qr-codes` - Upload new QR code
+- `PUT /api/admin/qr-codes/[id]` - Update QR code
+- `DELETE /api/admin/qr-codes/[id]` - Delete QR code
+
+**Payment Verification:**
+- `GET /api/payment-verifications` - List all verification requests
+- `POST /api/payment-verifications` - Submit payment proof
+- `PUT /api/payment-verifications/[id]` - Update verification status
+
+### Database Schema Updates
+
+**New Tables:**
+- `payment_settings` - Stores payment configuration and discount rates
+- `promo_codes` - Promo code definitions with usage tracking
+- `qr_codes` - QR code storage for payment methods
+- `payment_verifications` - Payment proof submissions and reviews
+
+### Admin Access Control
+
+Admin features require proper authentication and authorization:
+- Admin-only routes and API endpoints
+- Role-based access control for admin functions
+- Secure file upload handling for QR codes and screenshots
+- Audit logging for admin actions
+
+### Development and Testing
+
+**Admin Development:**
+```bash
+# Test admin endpoints locally
+curl http://localhost:3000/api/admin/payment-settings
+curl http://localhost:3000/api/admin/promo-codes
+
+# Test payment verification flow
+curl -X POST http://localhost:3000/api/payment-verifications \
+  -F "payment_id=xxx" \
+  -F "screenshot=@path/to/screenshot.png"
+```
+
+**Browser Testing:**
+- Navigate to `/admin/payment-settings` for payment configuration
+- Navigate to `/admin/promo-codes` for promo code management
+- Navigate to `/admin/verifications` for payment verification review
 
 ---
 
