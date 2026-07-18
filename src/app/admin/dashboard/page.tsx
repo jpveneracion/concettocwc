@@ -46,6 +46,18 @@ export default function AdminDashboardPage() {
             Review and approve merchant-submitted products
           </p>
         </Link>
+
+        <Link
+          href="/admin/promo-codes"
+          className="bg-purple-50 border border-purple-200 rounded-lg p-6 hover:bg-purple-100 transition-colors"
+        >
+          <h3 className="text-lg font-semibold text-purple-900 mb-2">
+            🏷️ Promo Codes
+          </h3>
+          <p className="text-purple-700 text-sm">
+            Manage promo codes and discount campaigns
+          </p>
+        </Link>
       </div>
 
       {loading ? (
