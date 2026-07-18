@@ -6,12 +6,9 @@ import { redirect } from 'next/navigation';
 export default async function PaymentSettingsPage() {
   // Server-side admin authentication check
   const session = await getSession();
-  if (!session) {
+  if (!session || !session.isAdmin) {
     redirect('/login');
   }
-
-  // Verify admin permissions server-side
-  // (Add admin check logic if not already in getSession)
 
   return (
     <AdminLayout title="Payment Settings">
