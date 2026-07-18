@@ -415,14 +415,22 @@ export async function updateActivationCode(
  * Map database row to ActivationCode interface
  */
 function mapActivationCodeFromDb(row: ActivationCodeRecord): ActivationCode {
-  // Handle both JSON array and comma-separated string formats for applicable_plans
+  // Handle applicable_plans - JSONB columns are automatically parsed by database driver
   let applicablePlans: SubscriptionPlan[];
-  try {
-    // Try JSON parse first (correct format)
-    applicablePlans = JSON.parse(row.applicable_plans) as SubscriptionPlan[];
-  } catch {
-    // Fallback: handle comma-separated string (legacy format)
-    applicablePlans = row.applicable_plans.split(',').map((plan: string) => plan.trim() as SubscriptionPlan);
+  if (Array.isArray(row.applicable_plans)) {
+    // Already parsed as array (JSONB column behavior)
+    applicablePlans = row.applicable_plans as SubscriptionPlan[];
+  } else if (typeof row.applicable_plans === 'string') {
+    try {
+      // String that needs JSON parsing
+      applicablePlans = JSON.parse(row.applicable_plans) as SubscriptionPlan[];
+    } catch {
+      // Fallback: comma-separated string (legacy format)
+      applicablePlans = row.applicable_plans.split(',').map((plan: string) => plan.trim() as SubscriptionPlan);
+    }
+  } else {
+    // Unexpected type, use default
+    applicablePlans = ['monthly', 'quarterly', 'annual'] as SubscriptionPlan[];
   }
 
   return {
@@ -448,7 +456,7 @@ function mapActivationCodeFromDb(row: ActivationCodeRecord): ActivationCode {
     is_active: row.is_active,
     campaign_name: row.campaign_name,
     notes: row.notes,
-    status_history: JSON.parse(row.status_history) as StatusHistoryEntry[],
+    status_history: Array.isArray(row.status_history) ? row.status_history as StatusHistoryEntry[] : [],
     // New QR code and usage limiting fields
     gcash_qr_url: row.gcash_qr_url,
     gotyme_qr_url: row.gotyme_qr_url,
