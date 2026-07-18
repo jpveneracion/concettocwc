@@ -7,19 +7,23 @@ interface QRCodeDisplayProps {
   method: 'gcash' | 'gotyme';
   amount: number;
   planName: string;
+  promoCode?: string;
 }
 
-export default function QRCodeDisplay({ method, amount, planName }: QRCodeDisplayProps) {
+export default function QRCodeDisplay({ method, amount, planName, promoCode }: QRCodeDisplayProps) {
   const [showQR, setShowQR] = useState(true);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [qrCodeInfo, setQrCodeInfo] = useState<any>(null);
+  const [loadingQr, setLoadingQr] = useState(true);
 
   useEffect(() => {
     fetchPaymentSettings();
-  }, []);
+    fetchQrCode();
+  }, [method, amount, promoCode]);
 
   const fetchPaymentSettings = async () => {
     try {
-      const response = await fetch('/api/admin/payment-settings');
+      const response = await fetch('/api/payment-settings');
       if (response.ok) {
         const settings = await response.json();
         setPaymentSettings(settings);
@@ -30,6 +34,34 @@ export default function QRCodeDisplay({ method, amount, planName }: QRCodeDispla
     } catch (error) {
       console.error('Failed to fetch payment settings:', error);
       // Silently fall back to default config
+    }
+  };
+
+  const fetchQrCode = async () => {
+    try {
+      setLoadingQr(true);
+      const response = await fetch('/api/payment-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method,
+          amount,
+          plan_name: planName,
+          promo_code: promoCode
+        })
+      });
+
+      if (response.ok) {
+        const qrData = await response.json();
+        setQrCodeInfo(qrData);
+      } else {
+        // Fallback to old method if new API fails
+        console.log('QR API failed, using fallback');
+      }
+    } catch (error) {
+      console.error('Failed to fetch QR code:', error);
+    } finally {
+      setLoadingQr(false);
     }
   };
 
@@ -64,50 +96,60 @@ export default function QRCodeDisplay({ method, amount, planName }: QRCodeDispla
     }).format(amount);
   };
 
-  // Use custom QR code if available, otherwise generate one
-  const qrCodeUrl = customQrCode || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${details.number.replace(/-/g, '')}`;
+  // Use dynamic QR code if available, otherwise fall back to old method
+  const qrCodeUrl = qrCodeInfo?.url || customQrCode || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${details.number.replace(/-/g, '')}`;
+  const qrSource = qrCodeInfo?.source || (customQrCode ? 'plan' : 'fallback');
+  const isOfficial = qrCodeInfo?.is_official || !!customQrCode;
+  const displayAmount = qrCodeInfo?.amount || amount;
 
   return (
     <div className="space-y-6">
       {/* QR Code Display */}
       <div className="flex flex-col items-center">
-        <div className="bg-white p-6 rounded-lg border-2 border-gray-200 mb-4">
-          {showQR ? (
-            <div className="relative">
-              <img
-                src={qrCodeUrl}
-                alt={`${details.name} QR Code`}
-                className="w-48 h-48 object-contain"
-              />
-              {customQrCode && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                  Official
+        {loadingQr ? (
+          <div className="bg-white p-6 rounded-lg border-2 border-gray-200 mb-4 w-64 h-64 flex items-center justify-center">
+            <div className="animate-spin text-4xl mr-3">⏳</div>
+            <p className="text-gray-600">Loading QR code...</p>
+          </div>
+        ) : (
+          <>
+            {isOfficial && (
+              <div className="bg-green-500 text-white text-sm font-medium px-3 py-1 rounded-full mb-3">
+                ✅ Official QR Code - {qrSource === 'promo' ? 'Promo Applied' : 'Fixed Amount'}
+              </div>
+            )}
+            <div className="bg-white p-6 rounded-lg border-2 border-gray-200 mb-4">
+              {showQR ? (
+                <img
+                  src={qrCodeUrl}
+                  alt={`${details.name} QR Code`}
+                  className="w-48 h-48 object-contain"
+                />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center bg-gray-100">
+                  <span className="text-gray-400">QR Hidden</span>
                 </div>
               )}
             </div>
-          ) : (
-            <div className="w-48 h-48 flex items-center justify-center bg-gray-100">
-              <span className="text-gray-400">QR Hidden</span>
+
+            <button
+              onClick={() => setShowQR(!showQR)}
+              className="text-sm text-blue-600 hover:text-blue-700 mb-2"
+            >
+              {showQR ? 'Hide QR Code' : 'Show QR Code'}
+            </button>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-1">Scan or use this number:</p>
+              <p className="text-2xl font-bold text-gray-900 tracking-wider">
+                {details.number}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Account: {details.accountName}
+              </p>
             </div>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowQR(!showQR)}
-          className="text-sm text-blue-600 hover:text-blue-700 mb-2"
-        >
-          {showQR ? 'Hide QR Code' : 'Show QR Code'}
-        </button>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600 mb-1">Scan or use this number:</p>
-          <p className="text-2xl font-bold text-gray-900 tracking-wider">
-            {details.number}
-          </p>
-          <p className="text-sm text-gray-600 mt-1">
-            Account: {details.accountName}
-          </p>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Payment Amount */}
@@ -115,11 +157,16 @@ export default function QRCodeDisplay({ method, amount, planName }: QRCodeDispla
         <div className="text-center">
           <p className="text-sm text-blue-700 mb-1">Amount to Pay:</p>
           <p className="text-3xl font-bold text-blue-900">
-            {formatCurrency(amount)}
+            {formatCurrency(displayAmount)}
           </p>
           <p className="text-xs text-blue-600 mt-2">
             For: {planName}
           </p>
+          {qrSource === 'promo' && (
+            <p className="text-xs text-green-600 mt-1">
+              💰 Promo code applied!
+            </p>
+          )}
         </div>
       </div>
 

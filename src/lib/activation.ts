@@ -36,6 +36,11 @@ interface ActivationCodeRecord {
   campaign_name?: string;
   notes?: string;
   status_history: string;
+  // QR code and usage limiting fields
+  gcash_qr_url?: string;
+  gotyme_qr_url?: string;
+  usage_limit?: number;
+  current_usage?: number;
 }
 
 /**
@@ -61,7 +66,9 @@ export function generateActivationCode(): string {
  */
 export async function createActivationCode(
   request: GenerateActivationCodeRequest,
-  createdBy: string
+  createdBy: string,
+  qrCodes?: { gcash?: string; gotyme?: string },
+  usageLimit?: number
 ): Promise<ActivationCode> {
   const code = generateActivationCode();
   const now = new Date();
@@ -78,8 +85,8 @@ export async function createActivationCode(
       payment_amount, payment_currency, payment_method,
       payment_reference, payment_date,
       created_by, expires_at, campaign_name, notes,
-      status_history
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      status_history, gcash_qr_url, gotyme_qr_url, usage_limit, current_usage
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     RETURNING *`,
     [
       code,
@@ -94,7 +101,11 @@ export async function createActivationCode(
       request.expires_at ? request.expires_at.toISOString() : null,
       request.campaign_name || null,
       request.notes || null,
-      JSON.stringify(status_history)
+      JSON.stringify(status_history),
+      qrCodes?.gcash || null,
+      qrCodes?.gotyme || null,
+      usageLimit || 1, // Default to one-time use
+      0 // Start with 0 usage
     ]
   );
 
@@ -102,7 +113,7 @@ export async function createActivationCode(
 }
 
 /**
- * Validate activation code
+ * Validate activation code with enhanced usage limiting support
  */
 export async function validateActivationCode(
   code: string,
@@ -112,8 +123,13 @@ export async function validateActivationCode(
     `SELECT * FROM activation_codes
      WHERE code = $1
      AND is_active = true
-     AND used_by IS NULL
-     AND (expires_at IS NULL OR expires_at > NOW())`,
+     AND (expires_at IS NULL OR expires_at > NOW())
+     AND (
+       -- One-time use codes (existing system)
+       (usage_limit IS NULL AND used_by IS NULL) OR
+       -- Usage-limited codes (new system)
+       (usage_limit IS NOT NULL AND current_usage < usage_limit)
+     )`,
     [code]
   );
 
@@ -132,7 +148,55 @@ export async function validateActivationCode(
 }
 
 /**
- * Redeem activation code for user
+ * Validate activation code with detailed error messages
+ */
+export async function validateActivationCodeWithDetails(
+  code: string,
+  plan: SubscriptionPlan
+): Promise<{ valid: boolean; activationCode?: ActivationCode; error?: string }> {
+  const result = await sql(
+    `SELECT * FROM activation_codes WHERE code = $1`,
+    [code]
+  );
+
+  if (result.length === 0) {
+    return { valid: false, error: 'Promo code not found' };
+  }
+
+  const activationCode = mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
+
+  // Check if active
+  if (!activationCode.is_active) {
+    return { valid: false, error: 'Promo code is inactive' };
+  }
+
+  // Check expiration
+  if (activationCode.expires_at && new Date(activationCode.expires_at) < new Date()) {
+    return { valid: false, error: 'Promo code has expired' };
+  }
+
+  // Check if code applies to requested plan
+  if (!activationCode.applicable_plans.includes(plan)) {
+    return { valid: false, error: `Promo code not applicable to ${plan} plan` };
+  }
+
+  // Check usage limits
+  if (activationCode.usage_limit !== undefined) {
+    if (activationCode.current_usage >= activationCode.usage_limit) {
+      return { valid: false, error: 'Promo code has reached maximum usage' };
+    }
+  } else {
+    // One-time use codes (existing system)
+    if (activationCode.used_by) {
+      return { valid: false, error: 'Promo code has already been used' };
+    }
+  }
+
+  return { valid: true, activationCode };
+}
+
+/**
+ * Redeem activation code for user (supports both usage systems)
  */
 export async function redeemActivationCode(
   code: string,
@@ -140,12 +204,13 @@ export async function redeemActivationCode(
   ipAddress: string,
   plan: SubscriptionPlan
 ): Promise<ActivationCode> {
-  const activationCode = await validateActivationCode(code, plan);
+  const validation = await validateActivationCodeWithDetails(code, plan);
 
-  if (!activationCode) {
-    throw new Error('Invalid or expired activation code');
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid or expired activation code');
   }
 
+  const activationCode = validation.activationCode!;
   const now = new Date();
   const statusHistory = activationCode.status_history || [];
   statusHistory.push({
@@ -155,13 +220,27 @@ export async function redeemActivationCode(
     ip_address: ipAddress
   });
 
-  const result = await sql(
-    `UPDATE activation_codes
-     SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
-     WHERE code = $5
-     RETURNING *`,
-    [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code]
-  );
+  let result;
+
+  if (activationCode.usage_limit !== undefined) {
+    // Usage-limited codes (new system)
+    result = await sql(
+      `UPDATE activation_codes
+       SET current_usage = current_usage + 1, status_history = $1
+       WHERE code = $2
+       RETURNING *`,
+      [JSON.stringify(statusHistory), code]
+    );
+  } else {
+    // One-time use codes (existing system)
+    result = await sql(
+      `UPDATE activation_codes
+       SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
+       WHERE code = $5
+       RETURNING *`,
+      [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code]
+    );
+  }
 
   return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
 }
@@ -308,6 +387,11 @@ function mapActivationCodeFromDb(row: ActivationCodeRecord): ActivationCode {
     is_active: row.is_active,
     campaign_name: row.campaign_name,
     notes: row.notes,
-    status_history: JSON.parse(row.status_history) as StatusHistoryEntry[]
+    status_history: JSON.parse(row.status_history) as StatusHistoryEntry[],
+    // New QR code and usage limiting fields
+    gcash_qr_url: row.gcash_qr_url,
+    gotyme_qr_url: row.gotyme_qr_url,
+    usage_limit: row.usage_limit,
+    current_usage: row.current_usage
   };
 }

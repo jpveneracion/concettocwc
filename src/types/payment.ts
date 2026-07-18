@@ -39,6 +39,88 @@ export interface PaymentVerification {
 }
 
 /**
+ * GCash webhook data record interface
+ */
+export interface GCashWebhookData {
+  id: string;
+  transaction_number: string;
+  cleaned_transaction_number: string;
+  amount: number;
+  sender_name?: string;
+  sender_account?: string;
+  receiver_name?: string;
+  receiver_account?: string;
+  transaction_time: Date;
+  notification_text?: string;
+  raw_webhook_payload: Record<string, any>;
+  received_at: Date;
+  processed: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Gateway device heartbeat record interface
+ */
+export interface GatewayHeartbeat {
+  id: string;
+  device_id: string;
+  last_ping: Date;
+  status: 'online' | 'offline' | 'degraded';
+  ip_address?: string;
+  battery_level?: number;
+  macrodroid_version?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Payment settings interface
+ */
+export interface PaymentSettings {
+  id: string;
+  payment_method: 'gcash' | 'gotyme' | 'usdc';
+  qr_code_url: string;
+  account_name: string;
+  account_number: string;
+  active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Enhanced payment verification with automatic verification fields
+ */
+export interface EnhancedPaymentVerification extends PaymentVerification {
+  automatic_verification_attempted: boolean;
+  automatic_verification_status?: 'matched' | 'no_webhook_data' | 'amount_mismatch' | 'time_mismatch';
+  webhook_data_id?: string;
+  verification_method: 'automatic' | 'manual';
+  cleaned_reference_number?: string;
+}
+
+/**
+ * Webhook creation request interface
+ */
+export interface CreateWebhookRequest {
+  transaction_number: string;
+  amount: number;
+  sender_name?: string;
+  transaction_time: string; // ISO string
+  notification_text?: string;
+  raw_data?: Record<string, any>;
+}
+
+/**
+ * Gateway heartbeat request interface
+ */
+export interface HeartbeatRequest {
+  device_id: string;
+  battery_level?: number;
+  macrodroid_version?: string;
+}
+
+/**
  * Create verification request interface
  */
 export interface CreateVerificationRequest {
@@ -56,6 +138,7 @@ export interface CreateVerificationResponse {
   verification_id?: string;
   message: string;
   estimated_review_time: string;
+  verification_method?: 'automatic' | 'manual';
 }
 
 /**

@@ -30,6 +30,16 @@ interface CountResult {
 }
 
 /**
+ * Gateway status union type for type safety
+ */
+type GatewayStatusType = 'online' | 'offline' | 'degraded';
+
+/**
+ * Payment method union type for type safety
+ */
+type PaymentMethod = 'gcash' | 'gotyme' | 'usdc';
+
+/**
  * Database user record interface
  */
 interface UserRecord {
@@ -67,6 +77,8 @@ export async function updateUser(userId: string, updates: {
   discount_percent?: number;
   subscription_plan?: string;
 }): Promise<void> {
+  const startTime = Date.now();
+
   try {
     // Build dynamic SET clause based on provided fields
     // Maps object keys to parameterized SQL to prevent SQL injection
@@ -80,9 +92,40 @@ export async function updateUser(userId: string, updates: {
       throw new Error('No updates provided');
     }
 
-    await sql(`UPDATE users SET ${setClause} WHERE id = $1`, values);
+    await withRetry(async () =>
+      withQueryTimeout(async () =>
+        sql(`UPDATE users SET ${setClause} WHERE id = $1`, values)
+      )
+    );
+
+    const duration = Date.now() - startTime;
+
+    structuredLog(
+      'user_updated',
+      'updateUser',
+      {
+        user_id: userId,
+        updated_fields: Object.keys(updates)
+      },
+      duration,
+      true
+    );
   } catch (error) {
-    throw new Error(`Failed to update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'user_update_failed',
+      'updateUser',
+      {
+        user_id: userId,
+        error: errorMessage
+      },
+      duration,
+      false
+    );
+
+    throw new Error(`Failed to update user: ${errorMessage}`);
   }
 }
 
@@ -119,7 +162,7 @@ interface PaymentVerificationRecord {
   screenshot_url: string;
   reference_number?: string;
   notes?: string;
-  status: string;
+  status: 'pending' | 'approved' | 'rejected';
   admin_notes?: string;
   admin_id?: string;
   submitted_at: string;
@@ -156,30 +199,76 @@ export async function createPaymentVerification(verification: {
   reference_number?: string;
   notes?: string;
 }): Promise<PaymentVerificationRecord> {
+  const startTime = Date.now();
+
   try {
-    const result = await sql(
-      `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        verification.user_id,
-        verification.plan_id,
-        verification.screenshot_url,
-        verification.reference_number || null,
-        verification.notes || null
-      ]
+    const result = await withRetry(async () =>
+      withQueryTimeout(async () =>
+        sql(
+          `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [
+            verification.user_id,
+            verification.plan_id,
+            verification.screenshot_url,
+            verification.reference_number || null,
+            verification.notes || null
+          ]
+        )
+      )
     );
 
+    const duration = Date.now() - startTime;
+
     if (!result[0]) {
+      structuredLog(
+        'payment_verification_creation_failed',
+        'createPaymentVerification',
+        {
+          user_id: verification.user_id,
+          plan_id: verification.plan_id,
+          error: 'No data returned from database'
+        },
+        duration,
+        false
+      );
       throw new Error('Failed to create payment verification record');
     }
 
+    structuredLog(
+      'payment_verification_created',
+      'createPaymentVerification',
+      {
+        user_id: verification.user_id,
+        plan_id: verification.plan_id,
+        has_reference_number: !!verification.reference_number
+      },
+      duration,
+      true
+    );
+
     return result[0] as PaymentVerificationRecord;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'payment_verification_creation_failed',
+      'createPaymentVerification',
+      {
+        user_id: verification.user_id,
+        plan_id: verification.plan_id,
+        error: errorMessage
+      },
+      duration,
+      false
+    );
+
     if (error instanceof Error && error.message.includes('Failed to create')) {
       throw error;
     }
-    throw new Error(`Payment verification creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Payment verification creation failed: ${errorMessage}`);
   }
 }
 
@@ -215,20 +304,24 @@ export async function getPaymentVerificationById(id: string): Promise<PaymentVer
  */
 export async function getPaymentVerificationsByUserId(
   userId: string,
-  status?: string
+  status?: 'pending' | 'approved' | 'rejected'
 ): Promise<PaymentVerificationRecord[]> {
   try {
     if (status) {
-      const result = await sql(
-        'SELECT * FROM payment_verifications WHERE user_id = $1 AND status = $2 ORDER BY submitted_at DESC',
-        [userId, status]
+      const result = await withQueryTimeout(async () =>
+        sql(
+          'SELECT * FROM payment_verifications WHERE user_id = $1 AND status = $2 ORDER BY submitted_at DESC',
+          [userId, status]
+        )
       );
       return result as PaymentVerificationRecord[];
     }
 
-    const result = await sql(
-      'SELECT * FROM payment_verifications WHERE user_id = $1 ORDER BY submitted_at DESC',
-      [userId]
+    const result = await withQueryTimeout(async () =>
+      sql(
+        'SELECT * FROM payment_verifications WHERE user_id = $1 ORDER BY submitted_at DESC',
+        [userId]
+      )
     );
     return result as PaymentVerificationRecord[];
   } catch (error) {
@@ -253,7 +346,7 @@ export async function getPaymentVerificationsByUserId(
  */
 export async function getPaymentVerificationsByUserIdWithPlanDetails(
   userId: string,
-  status?: string
+  status?: 'pending' | 'approved' | 'rejected'
 ): Promise<any[]> {
   try {
     let query: string;
@@ -285,7 +378,7 @@ export async function getPaymentVerificationsByUserIdWithPlanDetails(
       params = [userId];
     }
 
-    const result = await sql(query, params);
+    const result = await withQueryTimeout(async () => sql(query, params));
     return result as any[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications with plan details: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -354,7 +447,7 @@ export async function getPendingVerifications(limit: number = 50, offset: number
  * ```
  */
 export async function getAllPaymentVerifications(filters: {
-  status?: string;
+  status?: 'pending' | 'approved' | 'rejected';
   user_id?: string;
   plan_id?: string;
   date_from?: string;
@@ -410,7 +503,7 @@ export async function getAllPaymentVerifications(filters: {
     // Get total count matching the filters (before pagination)
     // This helps frontend calculate total pages
     const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
-    const countResult = await sql(countQuery, params);
+    const countResult = await withQueryTimeout(async () => sql(countQuery, params));
 
     // Use type-safe interface instead of 'any' cast
     const total = parseInt((countResult[0] as CountResult).count);
@@ -429,7 +522,7 @@ export async function getAllPaymentVerifications(filters: {
       params.push(filters.offset);
     }
 
-    const verifications = await sql(query, params);
+    const verifications = await withQueryTimeout(async () => sql(query, params));
 
     return {
       verifications: verifications as PaymentVerificationRecord[],
@@ -471,21 +564,59 @@ export async function getAllPaymentVerifications(filters: {
  */
 export async function updatePaymentVerificationStatus(
   id: string,
-  status: string,
+  status: 'approved' | 'rejected',
   adminId?: string,
   adminNotes?: string
 ): Promise<PaymentVerificationRecord | null> {
+  const startTime = Date.now();
+
   try {
-    const result = await sql(
-      `UPDATE payment_verifications
-       SET status = $1, admin_id = $2, admin_notes = $3, reviewed_at = NOW(), updated_at = NOW()
-       WHERE id = $4
-       RETURNING *`,
-      [status, adminId || null, adminNotes || null, id]
+    const result = await withRetry(async () =>
+      withQueryTimeout(async () =>
+        sql(
+          `UPDATE payment_verifications
+           SET status = $1, admin_id = $2, admin_notes = $3, reviewed_at = NOW(), updated_at = NOW()
+           WHERE id = $4
+           RETURNING *`,
+          [status, adminId || null, adminNotes || null, id]
+        )
+      )
     );
+
+    const duration = Date.now() - startTime;
+
+    structuredLog(
+      'payment_verification_status_updated',
+      'updatePaymentVerificationStatus',
+      {
+        verification_id: id,
+        new_status: status,
+        admin_id: adminId,
+        has_notes: !!adminNotes
+      },
+      duration,
+      true
+    );
+
     return (result[0] as PaymentVerificationRecord) || null;
   } catch (error) {
-    throw new Error(`Failed to update verification status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'payment_verification_status_update_failed',
+      'updatePaymentVerificationStatus',
+      {
+        verification_id: id,
+        status: status,
+        admin_id: adminId,
+        error: errorMessage
+      },
+      duration,
+      false
+    );
+
+    throw new Error(`Failed to update verification status: ${errorMessage}`);
   }
 }
 
@@ -630,44 +761,90 @@ export async function createGCashWebhookData(webhook: {
   notification_text?: string;
   raw_webhook_payload?: Record<string, any>;
 }): Promise<GCashWebhookData> {
+  const startTime = Date.now();
+
   try {
-    const result = await sql(
-      `INSERT INTO gcash_webhook_data (transaction_number, amount, sender_name, sender_account, receiver_name, receiver_account, transaction_time, notification_text, raw_webhook_payload)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (transaction_number) DO UPDATE SET
-         amount = EXCLUDED.amount,
-         sender_name = EXCLUDED.sender_name,
-         sender_account = EXCLUDED.sender_account,
-         receiver_name = EXCLUDED.receiver_name,
-         receiver_account = EXCLUDED.receiver_account,
-         transaction_time = EXCLUDED.transaction_time,
-         notification_text = EXCLUDED.notification_text,
-         raw_webhook_payload = EXCLUDED.raw_webhook_payload,
-         updated_at = NOW()
-       RETURNING *`,
-      [
-        webhook.transaction_number,
-        webhook.amount,
-        webhook.sender_name || null,
-        webhook.sender_account || null,
-        webhook.receiver_name || null,
-        webhook.receiver_account || null,
-        webhook.transaction_time,
-        webhook.notification_text || null,
-        JSON.stringify(webhook.raw_webhook_payload || {})
-      ]
+    const result = await withRetry(async () =>
+      withQueryTimeout(async () =>
+        sql(
+          `INSERT INTO gcash_webhook_data (transaction_number, amount, sender_name, sender_account, receiver_name, receiver_account, transaction_time, notification_text, raw_webhook_payload)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (transaction_number) DO UPDATE SET
+             amount = EXCLUDED.amount,
+             sender_name = EXCLUDED.sender_name,
+             sender_account = EXCLUDED.sender_account,
+             receiver_name = EXCLUDED.receiver_name,
+             receiver_account = EXCLUDED.receiver_account,
+             transaction_time = EXCLUDED.transaction_time,
+             notification_text = EXCLUDED.notification_text,
+             raw_webhook_payload = EXCLUDED.raw_webhook_payload,
+             updated_at = NOW()
+           RETURNING *`,
+          [
+            webhook.transaction_number,
+            webhook.amount,
+            webhook.sender_name || null,
+            webhook.sender_account || null,
+            webhook.receiver_name || null,
+            webhook.receiver_account || null,
+            webhook.transaction_time,
+            webhook.notification_text || null,
+            JSON.stringify(webhook.raw_webhook_payload || {})
+          ]
+        )
+      )
     );
 
+    const duration = Date.now() - startTime;
+
     if (!result[0]) {
+      structuredLog(
+        'gcash_webhook_creation_failed',
+        'createGCashWebhookData',
+        {
+          transaction_number: webhook.transaction_number,
+          amount: webhook.amount,
+          error: 'No data returned from database'
+        },
+        duration,
+        false
+      );
       throw new Error('Failed to create GCash webhook data record');
     }
 
+    structuredLog(
+      'gcash_webhook_created',
+      'createGCashWebhookData',
+      {
+        transaction_number: webhook.transaction_number,
+        amount: webhook.amount,
+        sender_name: webhook.sender_name
+      },
+      duration,
+      true
+    );
+
     return result[0] as GCashWebhookData;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'gcash_webhook_creation_failed',
+      'createGCashWebhookData',
+      {
+        transaction_number: webhook.transaction_number,
+        amount: webhook.amount,
+        error: errorMessage
+      },
+      duration,
+      false
+    );
+
     if (error instanceof Error && error.message.includes('Failed to create')) {
       throw error;
     }
-    throw new Error(`GCash webhook data creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`GCash webhook data creation failed: ${errorMessage}`);
   }
 }
 
@@ -703,7 +880,7 @@ interface GatewayHeartbeat {
   id: string;
   device_id: string;
   last_ping: Date;
-  status?: 'online' | 'offline' | 'degraded';
+  status?: GatewayStatusType;
   ip_address?: string;
   battery_level?: number;
   macrodroid_version?: string;
@@ -734,42 +911,88 @@ interface GatewayHeartbeat {
  */
 export async function upsertGatewayHeartbeat(heartbeat: {
   device_id: string;
-  status?: 'online' | 'offline' | 'degraded';
+  status?: GatewayStatusType;
   ip_address?: string;
   battery_level?: number;
   macrodroid_version?: string;
 }): Promise<GatewayHeartbeat> {
+  const startTime = Date.now();
+
   try {
-    const result = await sql(
-      `INSERT INTO gateway_device_heartbeat (device_id, last_ping, status, ip_address, battery_level, macrodroid_version)
-       VALUES ($1, NOW(), $2, $3, $4, $5)
-       ON CONFLICT (device_id) DO UPDATE SET
-         last_ping = NOW(),
-         status = COALESCE(EXCLUDED.status, gateway_device_heartbeat.status),
-         ip_address = EXCLUDED.ip_address,
-         battery_level = EXCLUDED.battery_level,
-         macrodroid_version = EXCLUDED.macrodroid_version,
-         updated_at = NOW()
-       RETURNING *`,
-      [
-        heartbeat.device_id,
-        heartbeat.status || 'online',
-        heartbeat.ip_address || null,
-        heartbeat.battery_level || null,
-        heartbeat.macrodroid_version || null
-      ]
+    const result = await withRetry(async () =>
+      withQueryTimeout(async () =>
+        sql(
+          `INSERT INTO gateway_device_heartbeat (device_id, last_ping, status, ip_address, battery_level, macrodroid_version)
+           VALUES ($1, NOW(), $2, $3, $4, $5)
+           ON CONFLICT (device_id) DO UPDATE SET
+             last_ping = NOW(),
+             status = COALESCE(EXCLUDED.status, gateway_device_heartbeat.status),
+             ip_address = EXCLUDED.ip_address,
+             battery_level = EXCLUDED.battery_level,
+             macrodroid_version = EXCLUDED.macrodroid_version,
+             updated_at = NOW()
+           RETURNING *`,
+          [
+            heartbeat.device_id,
+            heartbeat.status || 'online',
+            heartbeat.ip_address || null,
+            heartbeat.battery_level || null,
+            heartbeat.macrodroid_version || null
+          ]
+        )
+      )
     );
 
+    const duration = Date.now() - startTime;
+
     if (!result[0]) {
+      structuredLog(
+        'gateway_heartbeat_failed',
+        'upsertGatewayHeartbeat',
+        {
+          device_id: heartbeat.device_id,
+          status: heartbeat.status,
+          error: 'No data returned from database'
+        },
+        duration,
+        false
+      );
       throw new Error('Failed to update gateway heartbeat');
     }
 
+    structuredLog(
+      'gateway_heartbeat_updated',
+      'upsertGatewayHeartbeat',
+      {
+        device_id: heartbeat.device_id,
+        status: heartbeat.status,
+        battery_level: heartbeat.battery_level
+      },
+      duration,
+      true
+    );
+
     return result[0] as GatewayHeartbeat;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'gateway_heartbeat_failed',
+      'upsertGatewayHeartbeat',
+      {
+        device_id: heartbeat.device_id,
+        status: heartbeat.status,
+        error: errorMessage
+      },
+      duration,
+      false
+    );
+
     if (error instanceof Error && error.message.includes('Failed to update')) {
       throw error;
     }
-    throw new Error(`Gateway heartbeat update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Gateway heartbeat update failed: ${errorMessage}`);
   }
 }
 
@@ -784,7 +1007,7 @@ interface GatewayStatus {
 /**
  * Get current gateway status
  * @returns Promise containing object with gateway online status and seconds since last ping
- * @throws Error if database operation fails (returns offline status on error)
+ * @throws Error if database operation fails
  * @example
  * ```typescript
  * const status = await getGatewayStatus();
@@ -796,27 +1019,66 @@ interface GatewayStatus {
  * ```
  */
 export async function getGatewayStatus(): Promise<GatewayStatus> {
+  const startTime = Date.now();
+
   try {
-    const result = await sql(`
-      SELECT
-        status,
-        EXTRACT(EPOCH FROM (NOW() - last_ping)) as seconds_ago
-      FROM gateway_device_heartbeat
-      ORDER BY last_ping DESC
-      LIMIT 1
-    `);
+    const result = await withQueryTimeout(async () =>
+      sql(`
+        SELECT
+          status,
+          EXTRACT(EPOCH FROM (NOW() - last_ping)) as seconds_ago
+        FROM gateway_device_heartbeat
+        ORDER BY last_ping DESC
+        LIMIT 1
+      `)
+    );
+
+    const duration = Date.now() - startTime;
 
     if (!result[0]) {
+      structuredLog(
+        'gateway_status_not_found',
+        'getGatewayStatus',
+        { message: 'No gateway heartbeat records found' },
+        duration,
+        true
+      );
+
       return { online: false, last_ago: Infinity };
     }
 
     const row = result[0] as any;
-    return {
+    const status = {
       online: row.status === 'online' && row.seconds_ago < 1800, // 30 minutes
       last_ago: Math.floor(row.seconds_ago)
     };
+
+    structuredLog(
+      'gateway_status_retrieved',
+      'getGatewayStatus',
+      {
+        online: status.online,
+        last_ago: status.last_ago,
+        db_status: row.status
+      },
+      duration,
+      true
+    );
+
+    return status;
   } catch (error) {
-    return { online: false, last_ago: Infinity };
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'gateway_status_failed',
+      'getGatewayStatus',
+      { error: errorMessage },
+      duration,
+      false
+    );
+
+    throw new Error(`Failed to get gateway status: ${errorMessage}`);
   }
 }
 
@@ -825,7 +1087,7 @@ export async function getGatewayStatus(): Promise<GatewayStatus> {
  */
 interface PaymentSettings {
   id: string;
-  payment_method: string;
+  payment_method: PaymentMethod;
   active: boolean;
   gcash_device_id?: string;
   gcash_webhook_url?: string;
@@ -836,7 +1098,7 @@ interface PaymentSettings {
 
 /**
  * Get payment settings by payment method
- * @param method - The payment method to retrieve settings for (e.g., 'gcash', 'maya')
+ * @param method - The payment method to retrieve settings for (e.g., 'gcash', 'gotyme', 'usdc')
  * @returns Promise containing the payment settings record or null if not found
  * @throws Error if database operation fails
  * @example
@@ -847,7 +1109,7 @@ interface PaymentSettings {
  * }
  * ```
  */
-export async function getPaymentSettings(method: string): Promise<PaymentSettings | null> {
+export async function getPaymentSettings(method: PaymentMethod): Promise<PaymentSettings | null> {
   try {
     const result = await sql(
       'SELECT * FROM payment_settings WHERE payment_method = $1 AND active = TRUE',
@@ -857,4 +1119,106 @@ export async function getPaymentSettings(method: string): Promise<PaymentSetting
   } catch (error) {
     throw new Error(`Failed to get payment settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+/**
+ * Structured logging utility for consistent log format
+ * @param event - Event name for identification
+ * @param functionName - Name of the function generating the log
+ * @param details - Additional details to log
+ * @param duration - Optional duration in milliseconds
+ * @param success - Whether the operation succeeded
+ */
+function structuredLog(
+  event: string,
+  functionName: string,
+  details: Record<string, any>,
+  duration?: number,
+  success: boolean = true
+): void {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    event,
+    function: functionName,
+    success,
+    duration,
+    ...details
+  };
+
+  // In production, this would go to a proper logging system
+  // For now, we'll use console.error for failures and console.log for success
+  if (success) {
+    console.log(JSON.stringify(logEntry));
+  } else {
+    console.error(JSON.stringify(logEntry));
+  }
+}
+
+/**
+ * Retry utility with exponential backoff for transient database failures
+ * @param fn - Function to retry
+ * @param maxRetries - Maximum number of retry attempts (default: 3)
+ * @param baseDelay - Base delay in milliseconds (default: 1000ms)
+ * @returns Promise of the function result with retry logic
+ * @throws Error if all retries fail
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+
+      // Don't retry on the last attempt
+      if (attempt === maxRetries) {
+        break;
+      }
+
+      // Calculate exponential backoff delay
+      const delay = baseDelay * Math.pow(2, attempt);
+
+      structuredLog(
+        'retry_attempt',
+        'withRetry',
+        {
+          attempt: attempt + 1,
+          maxRetries: maxRetries + 1,
+          delayMs: delay,
+          error: lastError.message
+        },
+        delay,
+        false
+      );
+
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new Error(`Operation failed after ${maxRetries + 1} attempts: ${lastError?.message || 'Unknown error'}`);
+}
+
+/**
+ * Query timeout wrapper to prevent long-running queries
+ * @param fn - Function to execute with timeout
+ * @param timeoutMs - Timeout in milliseconds (default: 5000ms)
+ * @returns Promise of the function result with timeout protection
+ * @throws Error if timeout is exceeded
+ */
+async function withQueryTimeout<T>(
+  fn: () => Promise<T>,
+  timeoutMs: number = 5000
+): Promise<T> {
+  return Promise.race([
+    fn(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Query timeout exceeded ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
 }

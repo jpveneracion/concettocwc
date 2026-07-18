@@ -99,6 +99,14 @@ export interface ActivationCode {
   campaign_name?: string;
   notes?: string;
   status_history: StatusHistoryEntry[];
+
+  // QR code integration
+  gcash_qr_url?: string;
+  gotyme_qr_url?: string;
+
+  // Usage limiting (optional - defaults to one-time use via used_by)
+  usage_limit?: number;
+  current_usage?: number;
 }
 
 /**

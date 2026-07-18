@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { validateActivationCode } from '@/lib/activation';
+import { validateActivationCodeWithDetails } from '@/lib/activation';
 import { SubscriptionPlan } from '@/types/subscription';
 
 /**
  * POST /api/validate-promo-code
  *
- * Validates a promo code and returns discount information
+ * Validates a promo code and returns discount information with QR codes
  */
 export async function POST(req: Request) {
   try {
@@ -28,39 +28,40 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate the promo code using your existing activation system
-    // Convert plan_id string to SubscriptionPlan enum
+    // Validate the promo code using enhanced validation
     const planEnum = plan_id as SubscriptionPlan;
-    const validationResult = await validateActivationCode(code, planEnum);
+    const validationResult = await validateActivationCodeWithDetails(code, planEnum);
 
-    if (!validationResult) {
+    if (!validationResult.valid) {
       return NextResponse.json(
         {
           valid: false,
-          error: 'Invalid or expired promo code'
+          error: validationResult.error || 'Invalid or expired promo code'
         },
         { status: 400 }
       );
     }
 
-    // Check if the promo code applies to the selected plan
-    if (!validationResult.applicable_plans.includes(planEnum)) {
-      return NextResponse.json(
-        {
-          valid: false,
-          error: `Promo code not applicable to ${plan_id} plan`
-        },
-        { status: 400 }
-      );
-    }
+    const activationCode = validationResult.activationCode!;
 
-    // Return discount information
+    // Calculate final amount with discount
+    const originalAmount = getPlanPrice(planEnum);
+    const discountedAmount = originalAmount * (1 - activationCode.discount_percent / 100);
+
+    // Return enhanced discount information with QR codes
     return NextResponse.json({
       valid: true,
       code: code,
-      discount_type: 'percent', // Activation codes use percent discounts
-      discount_percent: validationResult.discount_percent,
-      discount_amount: null,
+      discount_type: 'percent',
+      discount_percent: activationCode.discount_percent,
+      discount_amount: originalAmount - discountedAmount,
+      original_amount: originalAmount,
+      final_amount: discountedAmount,
+      gcash_qr_url: activationCode.gcash_qr_url,
+      gotyme_qr_url: activationCode.gotyme_qr_url,
+      usage_limit: activationCode.usage_limit,
+      current_usage: activationCode.current_usage,
+      expires_at: activationCode.expires_at,
       message: 'Promo code applied successfully'
     });
 
@@ -71,4 +72,20 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Helper function to get plan price
+ * You can update this based on your actual plan pricing
+ */
+function getPlanPrice(plan: SubscriptionPlan): number {
+  const planPrices: Record<SubscriptionPlan, number> = {
+    [SubscriptionPlan.BASIC]: 499,
+    [SubscriptionPlan.PRO]: 999,
+    [SubscriptionPlan.PREMIUM]: 1999,
+    [SubscriptionPlan.TRIAL]: 0,
+    [SubscriptionPlan.ENTERPRISE]: 4999,
+  };
+
+  return planPrices[plan] || 499; // Default to BASIC price
 }

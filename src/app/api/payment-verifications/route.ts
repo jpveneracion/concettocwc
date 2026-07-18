@@ -8,6 +8,8 @@ import {
   getAllPaymentVerifications
 } from '@/lib/db';
 import { uploadToPinata, validateScreenshotFile } from '@/lib/pinata';
+import { checkAutomaticVerificationMatch, updateVerificationWithAutomaticResult } from '@/lib/payment-verification';
+import { validateReferenceNumberFormat } from '@/lib/reference-cleaning';
 import type {
   CreateVerificationRequest,
   CreateVerificationResponse,
@@ -53,9 +55,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     // 2. Parse request body
     const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string } = await req.json();
 
-    if (!body.plan_id || !body.screenshot_base64) {
+    if (!body.plan_id || !body.screenshot_base64 || !body.reference_number) {
       return NextResponse.json(
-        { error: 'plan_id and screenshot_base64 are required' },
+        { error: 'plan_id, screenshot_base64, and reference_number are required' },
         { status: 400 }
       );
     }
@@ -68,11 +70,20 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 4. Validate and sanitize optional fields
-    const sanitizedReferenceNumber = body.reference_number ? sanitizeInput(body.reference_number) : undefined;
+    // 4. Validate reference number format
+    const referenceNumberValidation = validateReferenceNumberFormat(body.reference_number);
+    if (!referenceNumberValidation.valid) {
+      return NextResponse.json(
+        { error: referenceNumberValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // 5. Validate and sanitize reference number and notes
+    const sanitizedReferenceNumber = sanitizeInput(body.reference_number);
     const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : undefined;
 
-    // 5. Validate screenshot base64 and convert to File
+    // 6. Validate screenshot base64 and convert to File
     let file: File;
     try {
       const base64Data = body.screenshot_base64.split(',')[1];
@@ -101,7 +112,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 6. Upload to Pinata IPFS
+    // 7. Upload to Pinata IPFS
     const uploadResult = await uploadToPinata(file, {
       name: `payment-proof-${session.userId}-${Date.now()}`,
       keyvalues: {
@@ -118,7 +129,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 7. Create verification record
+    // 8. Create verification record
     const verification = await createPaymentVerification({
       user_id: session.userId,
       plan_id: body.plan_id,
@@ -127,12 +138,30 @@ export async function POST(req: Request): Promise<NextResponse> {
       notes: sanitizedNotes
     });
 
-    // 8. Return success response
+    // 9. Trigger automatic verification (Trigger A)
+    let matchResult;
+    try {
+      matchResult = await checkAutomaticVerificationMatch(verification);
+
+      if (matchResult.shouldAutoApprove) {
+        // Update verification with automatic result
+        await updateVerificationWithAutomaticResult(verification.id, matchResult);
+      }
+    } catch (error) {
+      console.error('Automatic verification check error:', error);
+      // Continue with manual verification if automatic check fails
+      matchResult = { shouldAutoApprove: false };
+    }
+
+    // 10. Return success response based on verification method
     const response: CreateVerificationResponse = {
       success: true,
       verification_id: verification.id,
-      message: 'Payment verification submitted successfully. Our team will review your payment within 24 hours.',
-      estimated_review_time: '24 hours'
+      message: matchResult.shouldAutoApprove
+        ? 'Payment verified automatically via GCash webhook!'
+        : 'Payment verification submitted successfully. Our team will review your payment within 24 hours.',
+      estimated_review_time: matchResult.shouldAutoApprove ? '0 minutes' : '24 hours',
+      verification_method: matchResult.shouldAutoApprove ? 'automatic' : 'manual'
     };
 
     return NextResponse.json(response, { status: 200 });
