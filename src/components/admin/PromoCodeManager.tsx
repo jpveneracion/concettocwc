@@ -27,6 +27,7 @@ export default function PromoCodeManager() {
 
   // New promo code form state
   const [newPromo, setNewPromo] = useState({
+    code: '', // Empty = auto-generate
     discount_percent: 10,
     applicable_plans: ['monthly'] as string[],
     usage_limit: 100,
@@ -59,16 +60,23 @@ export default function PromoCodeManager() {
 
   const createPromoCode = async () => {
     try {
+      // Only send code field if it's provided
+      const payload: any = { ...newPromo };
+      if (!payload.code) {
+        delete payload.code; // Don't send empty code
+      }
+
       const response = await fetch('/api/admin/promo-codes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPromo),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         showMessage('success', 'Promo code created successfully!');
         setShowCreateModal(false);
         setNewPromo({
+          code: '',
           discount_percent: 10,
           applicable_plans: ['monthly'],
           usage_limit: 100,
@@ -313,6 +321,20 @@ export default function PromoCodeManager() {
 
             <div className="space-y-4">
               <div>
+                <label className="block text-sm font-medium mb-2">Promo Code (optional)</label>
+                <input
+                  type="text"
+                  value={newPromo.code}
+                  onChange={(e) => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Leave empty to auto-generate"
+                  pattern="[A-Z0-9]+"
+                  maxLength={20}
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty for auto-generated code, or enter your own (6-20 characters, letters and numbers only)</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium mb-2">Discount Percent</label>
                 <input
                   type="number"
@@ -409,8 +431,9 @@ export default function PromoCodeManager() {
                   onClick={() => {
                     setShowCreateModal(false);
                     setNewPromo({
+                      code: '',
                       discount_percent: 10,
-                      applicable_plans: ['basic'],
+                      applicable_plans: ['monthly'],
                       usage_limit: 100,
                       expires_at: '',
                       campaign_name: '',

@@ -78,6 +78,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const {
+      code,
       discount_percent,
       applicable_plans,
       expires_at,
@@ -96,9 +97,17 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate custom code format if provided
+    if (code && !/^[A-Z0-9]{6,20}$/.test(code)) {
+      return NextResponse.json(
+        { error: 'Custom code must be 6-20 characters, letters and numbers only' },
+        { status: 400 }
+      );
+    }
+
     // Validate applicable plans
-    const validPlans = Object.values(SubscriptionPlan);
-    const invalidPlans = applicable_plans.filter((plan: string) => !validPlans.includes(plan as SubscriptionPlan));
+    const validPlans = ['monthly', 'quarterly', 'annual'];
+    const invalidPlans = applicable_plans.filter((plan: string) => !validPlans.includes(plan));
 
     if (invalidPlans.length > 0) {
       return NextResponse.json(
@@ -110,7 +119,7 @@ export async function POST(req: Request) {
     // Create promo code
     const promoCode = await createPromoCode(
       discount_percent,
-      applicable_plans.map((plan: string) => plan as SubscriptionPlan),
+      applicable_plans,
       expires_at ? new Date(expires_at) : undefined,
       campaign_name,
       notes,
@@ -119,7 +128,8 @@ export async function POST(req: Request) {
         gcash: gcash_qr_url,
         gotyme: gotyme_qr_url
       },
-      usage_limit
+      usage_limit,
+      code // Pass custom code if provided
     );
 
     return NextResponse.json({

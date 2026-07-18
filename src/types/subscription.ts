@@ -73,7 +73,7 @@ export interface ActivationCode {
   id: number;
   code: string;
   discount_percent: number;
-  applicable_plans: SubscriptionPlan[];
+  applicable_plans: string[];
 
   // Payment tracking
   payment_amount?: number;
@@ -139,7 +139,7 @@ export interface TrialStatusResponse {
  */
 export interface GenerateActivationCodeRequest {
   discount_percent: number;
-  applicable_plans: SubscriptionPlan[];
+  applicable_plans: string[];
   payment_amount: number;
   payment_method: PaymentMethod;
   payment_currency: string;

@@ -45,20 +45,19 @@ interface ActivationCodeRecord {
 
 /**
  * Generate unique activation code
+ * Format: Short, memorable codes like "early10", "summer25", etc.
  */
 export function generateActivationCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const segments = [];
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
 
-  for (let i = 0; i < 4; i++) {
-    let segment = '';
-    for (let j = 0; j < 4; j++) {
-      segment += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    segments.push(segment);
+  // Generate 6-8 character short code
+  const length = Math.floor(Math.random() * 3) + 6; // 6-8 characters
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
-  return segments.join('-'); // Format: XXXX-XXXX-XXXX-XXXX
+  return code; // Format: early10, summer25, etc.
 }
 
 /**
@@ -66,15 +65,16 @@ export function generateActivationCode(): string {
  */
 export async function createPromoCode(
   discountPercent: number,
-  applicablePlans: SubscriptionPlan[],
+  applicablePlans: string[],
   expiresAt: Date | undefined,
   campaignName: string | undefined,
   notes: string | undefined,
   createdBy: string,
   qrCodes?: { gcash?: string; gotyme?: string },
-  usageLimit?: number
+  usageLimit?: number,
+  customCode?: string // Optional custom code
 ): Promise<ActivationCode> {
-  const code = generateActivationCode();
+  const code = customCode || generateActivationCode();
   const now = new Date();
 
   const status_history: StatusHistoryEntry[] = [{
