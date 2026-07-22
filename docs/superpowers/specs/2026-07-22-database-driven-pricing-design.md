@@ -38,9 +38,9 @@ Add pricing columns to existing `payment_settings` table:
 
 ```sql
 ALTER TABLE payment_settings 
-ADD COLUMN monthly_base_price DECIMAL(10,2) DEFAULT 499.00,
-ADD COLUMN quarterly_base_price DECIMAL(10,2) DEFAULT 1497.00,
-ADD COLUMN annual_base_price DECIMAL(10,2) DEFAULT 4990.00;
+ADD COLUMN monthly_base_price DECIMAL(10,2) NOT NULL DEFAULT 499.00,
+ADD COLUMN quarterly_base_price DECIMAL(10,2) NOT NULL DEFAULT 1497.00,
+ADD COLUMN annual_base_price DECIMAL(10,2) NOT NULL DEFAULT 4990.00;
 ```
 
 **Rationale**: 
@@ -54,28 +54,61 @@ ADD COLUMN annual_base_price DECIMAL(10,2) DEFAULT 4990.00;
 Update `validate-promo-code/route.ts` to replace hardcoded prices:
 
 ```typescript
+// Plan-aware fallback for safety
+const DEFAULT_PRICES: Record<SubscriptionPlan, number> = {
+  [SubscriptionPlan.MONTHLY]: 499,
+  [SubscriptionPlan.QUARTERLY]: 1497,
+  [SubscriptionPlan.ANNUAL]: 4990,
+};
+
 // Replace hardcoded PLAN_PRICES with:
 async function getPlanPrice(plan: SubscriptionPlan): Promise<number> {
-  const priceColumn = plan === SubscriptionPlan.MONTHLY ? 'monthly_base_price' :
-                      plan === SubscriptionPlan.QUARTERLY ? 'quarterly_base_price' : 
-                      'annual_base_price';
-  
-  const result = await sql`
-    SELECT ${sql(priceColumn)} as price
-    FROM payment_settings
-    WHERE payment_method = 'gcash' OR payment_method = 'gotyme'
-    LIMIT 1
-  `;
-  
-  return parseFloat(result[0]?.price) || 499;
+  try {
+    // Select all pricing columns in single query (no dynamic SQL)
+    const result = await sql`
+      SELECT monthly_base_price, quarterly_base_price, annual_base_price
+      FROM payment_settings
+      WHERE payment_method = 'gcash'
+      LIMIT 1
+    `;
+
+    if (!result[0]) {
+      console.warn('No pricing found in payment_settings, using defaults');
+      return DEFAULT_PRICES[plan];
+    }
+
+    // Extract plan-specific price safely
+    const priceMap = {
+      [SubscriptionPlan.MONTHLY]: result[0].monthly_base_price,
+      [SubscriptionPlan.QUARTERLY]: result[0].quarterly_base_price,
+      [SubscriptionPlan.ANNUAL]: result[0].annual_base_price,
+    };
+
+    // Parse and validate (handles decimal strings from DB)
+    const price = parseFloat(priceMap[plan] as string);
+    
+    if (isNaN(price) || price <= 0) {
+      console.error(`Invalid price for ${plan}: ${priceMap[plan]}, using default`);
+      return DEFAULT_PRICES[plan];
+    }
+
+    // Round to 2 decimal places for currency precision
+    return Math.round(price * 100) / 100;
+    
+  } catch (error) {
+    console.error('Database pricing query failed, using defaults:', error);
+    return DEFAULT_PRICES[plan];
+  }
 }
 ```
 
 **Rationale**:
-- Follows existing database query patterns from `qr-service.ts`
-- Maintains same error handling approach
-- Returns fallback value if database fetch fails
-- Type-safe with TypeScript
+- **Safe SQL**: No dynamic column names, selects all columns at once
+- **Plan-aware fallback**: Each plan type has correct default price
+- **Error handling**: Graceful degradation with logging
+- **Type safety**: Handles decimal strings from database, validates numeric values
+- **Precision**: Rounds to 2 decimal places for currency calculations
+- **Deterministic**: Targets specific payment method (gcash) instead of ambiguous OR query
 
 ### 3. Admin Interface Extension
 
@@ -107,6 +140,25 @@ Extend `PaymentSettingsManager.tsx` to include price management:
 - Clear labeling and grouping
 - Visual feedback on save
 - Same styling as existing QR code section
+
+**Input Validation**:
+- Minimum value validation (> 0)
+- Maximum value validation (prevent unreasonably high prices)
+- Decimal precision enforcement (max 2 decimal places)
+- Real-time validation feedback
+- Prevent negative numbers or multi-decimal typos
+
+```typescript
+// Example validation logic
+const validatePrice = (value: string): { valid: boolean; error?: string } => {
+  const num = parseFloat(value);
+  if (isNaN(num)) return { valid: false, error: 'Must be a number' };
+  if (num <= 0) return { valid: false, error: 'Must be greater than 0' };
+  if (num > 100000) return { valid: false, error: 'Price too high' };
+  if (value.split('.')[1]?.length > 2) return { valid: false, error: 'Max 2 decimal places' };
+  return { valid: true };
+};
+```
 
 ### 4. API Updates
 
@@ -167,15 +219,65 @@ Admin updates prices → payment_settings table → validate-promo-code fetch �
 4. **Database Source of Truth**: Single source for pricing, no code/release dependency
 5. **Maintainable**: Easy to extend with future pricing features (regional, scheduled, etc.)
 
+## Performance & Caching Considerations
+
+Since `validate-promo-code` is hit frequently when users validate promo codes, implement basic caching:
+
+```typescript
+// Simple in-memory cache with 60-second TTL
+let priceCache: { prices: Record<SubscriptionPlan, number>; timestamp: number } | null = null;
+const CACHE_TTL = 60000; // 60 seconds
+
+async function getPlanPrice(plan: SubscriptionPlan, useCache = true): Promise<number> {
+  // Return cached value if available and fresh
+  if (useCache && priceCache && Date.now() - priceCache.timestamp < CACHE_TTL) {
+    return priceCache.prices[plan];
+  }
+
+  // Fetch fresh prices from database
+  const freshPrices = await fetchAllPricesFromDatabase();
+  
+  // Update cache
+  priceCache = {
+    prices: freshPrices,
+    timestamp: Date.now()
+  };
+
+  return freshPrices[plan];
+}
+
+// Cache invalidation when admin updates prices
+async function updatePricesInAdmin(newPrices: Record<SubscriptionPlan, number>) {
+  // ... database update logic ...
+  
+  // Invalidate cache
+  priceCache = null;
+}
+```
+
+**Benefits**:
+- Reduces database load on high-traffic promo validation
+- Sub-minute response time for pricing queries
+- Cache invalidation on admin updates ensures data consistency
+- Simple implementation with no external dependencies
+
 ## Implementation Order
 
-1. Database migration (5 min)
-2. Update validate-promo-code/route.ts (15 min) 
-3. Extend API endpoint (10 min)
-4. Update admin interface (30 min)
-5. Test end-to-end flow (15 min)
+1. Database migration with NOT NULL constraints (5 min)
+2. Update validate-promo-code/route.ts with safe SQL + caching (25 min) 
+3. Extend API endpoint with validation (15 min)
+4. Update admin interface with input validation (30 min)
+5. Test end-to-end flow including edge cases (20 min)
 
-**Total Implementation Time**: ~75 minutes
+**Total Implementation Time**: ~95 minutes
+
+**Security Edge Cases Addressed**:
+- ✅ Plan-aware fallback prevents billing errors
+- ✅ Safe SQL without dynamic column names
+- ✅ Input validation on admin interface
+- ✅ Currency precision handling
+- ✅ Deterministic database queries
+- ✅ Performance caching for high-traffic validation
 
 ## Files Changed
 
