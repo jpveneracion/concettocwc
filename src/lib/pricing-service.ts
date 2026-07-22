@@ -330,7 +330,7 @@ export async function getCurrentPricing(): Promise<PricingConfig | null> {
         updated_at,
         updated_by,
         change_reason
-      FROM pricing_configurations
+      FROM pricing_config
       WHERE is_active = TRUE
         AND valid_from <= NOW()
         AND (valid_until IS NULL OR valid_until > NOW())
@@ -496,4 +496,432 @@ export function calculateFallbackPrice(
 export function invalidatePricingCache(): void {
   cacheManager.invalidate();
   console.log('Pricing cache invalidated');
+}
+
+/**
+ * Create a pricing history entry
+ * @param entry - History entry object with pricing details
+ * @returns Promise with history entry ID
+ */
+async function createPricingHistoryEntry(
+  entry: {
+    pricing_config_id?: string;
+    change_type: 'create' | 'update' | 'expire' | 'reactivate';
+    changed_field?: string;
+    old_value?: string;
+    new_value?: string;
+    change_reason?: string;
+    changed_by?: string;
+    previous_config?: Record<string, unknown>;
+  }
+): Promise<string> {
+  const result = await sql`
+    INSERT INTO pricing_history (
+      pricing_config_id,
+      change_type,
+      changed_field,
+      old_value,
+      new_value,
+      change_reason,
+      changed_by,
+      previous_config
+    ) VALUES (
+      ${entry.pricing_config_id || null},
+      ${entry.change_type},
+      ${entry.changed_field || null},
+      ${entry.old_value || null},
+      ${entry.new_value || null},
+      ${entry.change_reason || null},
+      ${entry.changed_by || null},
+      ${entry.previous_config ? JSON.stringify(entry.previous_config) : null}
+    )
+    RETURNING id
+  `;
+
+  return result[0].id;
+}
+
+/**
+ * Get pricing history entries with pagination and filtering
+ * @param options - Query options for pagination and filtering
+ * @returns Promise with array of pricing history entries
+ */
+export async function getPricingHistory(options: {
+  limit?: number;
+  offset?: number;
+  startDate?: Date;
+  endDate?: Date;
+} = {}): Promise<PricingHistoryEntry[]> {
+  const { limit = 100, offset = 0, startDate, endDate } = options;
+
+  try {
+    let whereClause = '';
+    const params: (string | number | Date)[] = [limit, offset];
+    let paramIndex = 3;
+
+    if (startDate) {
+      whereClause += ` AND changed_at >= $${paramIndex}`;
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      whereClause += ` AND changed_at <= $${paramIndex}`;
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    const query = `
+      SELECT
+        id,
+        pricing_config_id,
+        change_type,
+        changed_field,
+        old_value,
+        new_value,
+        change_reason,
+        changed_by,
+        changed_at,
+        previous_config
+      FROM pricing_history
+      WHERE 1=1${whereClause}
+      ORDER BY changed_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+
+    const result = await sql(query, params);
+
+    return result.map(row => ({
+      id: row.id,
+      pricing_config_id: row.pricing_config_id || undefined,
+      change_type: row.change_type as 'create' | 'update' | 'expire' | 'reactivate',
+      changed_field: row.changed_field || undefined,
+      old_value: row.old_value || undefined,
+      new_value: row.new_value || undefined,
+      change_reason: row.change_reason || undefined,
+      changed_by: row.changed_by || undefined,
+      changed_at: new Date(row.changed_at),
+      previous_config: row.previous_config ? typeof row.previous_config === 'string'
+        ? JSON.parse(row.previous_config)
+        : row.previous_config
+        : undefined
+    }));
+  } catch (error) {
+    console.error('Failed to fetch pricing history:', error);
+    return [];
+  }
+}
+
+/**
+ * Update pricing configuration with audit trail
+ * @param updates - Pricing update request with changes to apply
+ * @param adminUserId - ID of the admin user making the change
+ * @returns Promise with updated pricing configuration
+ */
+export async function updatePricing(
+  updates: PricingUpdateRequest,
+  adminUserId: string
+): Promise<PricingConfig> {
+  // Validate input data
+  const validation = validatePricingData(updates);
+  if (!validation.valid) {
+    throw new Error(`Invalid pricing data: ${validation.errors.join(', ')}`);
+  }
+
+  // Start transaction
+  await sql`BEGIN`;
+
+  try {
+    // Get current pricing configuration
+    const currentResult = await sql`
+      SELECT
+        id,
+        monthly_base_rate,
+        quarterly_discount_percent,
+        annual_discount_percent,
+        monthly_threshold,
+        quarterly_threshold,
+        is_active,
+        valid_from,
+        valid_until,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        change_reason
+      FROM pricing_config
+      WHERE is_active = TRUE
+        AND valid_from <= NOW()
+        AND (valid_until IS NULL OR valid_until > NOW())
+      ORDER BY valid_from DESC
+      LIMIT 1
+    `;
+
+    if (!currentResult || currentResult.length === 0) {
+      await sql`ROLLBACK`;
+      throw new Error('No active pricing configuration found');
+    }
+
+    const currentConfig = currentResult[0];
+    const currentConfigId = currentConfig.id;
+
+    // Create history entry with current config snapshot
+    const previousConfigSnapshot: Record<string, unknown> = {
+      monthly_base_rate: parseFloat(currentConfig.monthly_base_rate),
+      quarterly_discount_percent: parseFloat(currentConfig.quarterly_discount_percent),
+      annual_discount_percent: parseFloat(currentConfig.annual_discount_percent),
+      monthly_threshold: parseFloat(currentConfig.monthly_threshold),
+      quarterly_threshold: parseFloat(currentConfig.quarterly_threshold),
+      is_active: currentConfig.is_active,
+      valid_from: currentConfig.valid_from,
+      valid_until: currentConfig.valid_until
+    };
+
+    await createPricingHistoryEntry({
+      pricing_config_id: currentConfigId,
+      change_type: 'update',
+      change_reason: updates.change_reason,
+      changed_by: adminUserId,
+      previous_config: previousConfigSnapshot,
+      old_value: JSON.stringify(previousConfigSnapshot),
+      new_value: JSON.stringify(updates)
+    });
+
+    // Update pricing configuration
+    const updateResult = await sql`
+      UPDATE pricing_config
+      SET
+        monthly_base_rate = COALESCE(${updates.monthly_base_rate || null}, monthly_base_rate),
+        quarterly_discount_percent = COALESCE(${updates.quarterly_discount_percent || null}, quarterly_discount_percent),
+        annual_discount_percent = COALESCE(${updates.annual_discount_percent || null}, annual_discount_percent),
+        monthly_threshold = COALESCE(${updates.monthly_threshold || null}, monthly_threshold),
+        quarterly_threshold = COALESCE(${updates.quarterly_threshold || null}, quarterly_threshold),
+        updated_at = NOW(),
+        updated_by = ${adminUserId},
+        change_reason = ${updates.change_reason}
+      WHERE id = ${currentConfigId}
+      RETURNING
+        id,
+        monthly_base_rate,
+        quarterly_discount_percent,
+        annual_discount_percent,
+        monthly_threshold,
+        quarterly_threshold,
+        is_active,
+        valid_from,
+        valid_until,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        change_reason
+    `;
+
+    // Commit transaction
+    await sql`COMMIT`;
+
+    // Invalidate cache
+    cacheManager.invalidate();
+
+    const row = updateResult[0];
+    return {
+      id: row.id,
+      monthly_base_rate: parseDatabaseValue(row.monthly_base_rate, 'monthly_base_rate'),
+      quarterly_discount_percent: parseDatabaseValue(row.quarterly_discount_percent, 'quarterly_discount_percent'),
+      annual_discount_percent: parseDatabaseValue(row.annual_discount_percent, 'annual_discount_percent'),
+      monthly_threshold: parseDatabaseValue(row.monthly_threshold, 'monthly_threshold'),
+      quarterly_threshold: parseDatabaseValue(row.quarterly_threshold, 'quarterly_threshold'),
+      is_active: row.is_active,
+      valid_from: new Date(row.valid_from),
+      valid_until: row.valid_until ? new Date(row.valid_until) : null,
+      created_at: new Date(row.created_at),
+      created_by: row.created_by,
+      updated_at: new Date(row.updated_at),
+      updated_by: row.updated_by,
+      change_reason: row.change_reason
+    };
+  } catch (error) {
+    // Rollback on error
+    await sql`ROLLBACK`;
+    throw error;
+  }
+}
+
+/**
+ * Get all pricing configurations (active and scheduled)
+ * @returns Promise with array of all pricing configurations ordered by valid_from DESC
+ */
+export async function getAllPricingConfigs(): Promise<PricingConfig[]> {
+  try {
+    const result = await sql`
+      SELECT
+        id,
+        monthly_base_rate,
+        quarterly_discount_percent,
+        annual_discount_percent,
+        monthly_threshold,
+        quarterly_threshold,
+        is_active,
+        valid_from,
+        valid_until,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        change_reason
+      FROM pricing_config
+      ORDER BY valid_from DESC
+    `;
+
+    return result.map(row => ({
+      id: row.id,
+      monthly_base_rate: parseDatabaseValue(row.monthly_base_rate, 'monthly_base_rate'),
+      quarterly_discount_percent: parseDatabaseValue(row.quarterly_discount_percent, 'quarterly_discount_percent'),
+      annual_discount_percent: parseDatabaseValue(row.annual_discount_percent, 'annual_discount_percent'),
+      monthly_threshold: parseDatabaseValue(row.monthly_threshold, 'monthly_threshold'),
+      quarterly_threshold: parseDatabaseValue(row.quarterly_threshold, 'quarterly_threshold'),
+      is_active: row.is_active,
+      valid_from: new Date(row.valid_from),
+      valid_until: row.valid_until ? new Date(row.valid_until) : null,
+      created_at: new Date(row.created_at),
+      created_by: row.created_by,
+      updated_at: new Date(row.updated_at),
+      updated_by: row.updated_by,
+      change_reason: row.change_reason
+    }));
+  } catch (error) {
+    console.error('Failed to fetch all pricing configs:', error);
+    return [];
+  }
+}
+
+/**
+ * Rollback pricing configuration to a previous state
+ * @param historyId - History entry ID to rollback to
+ * @param adminUserId - ID of the admin user performing the rollback
+ * @param reason - Reason for the rollback
+ * @returns Promise with restored pricing configuration
+ */
+export async function rollbackPricing(
+  historyId: string,
+  adminUserId: string,
+  reason: string
+): Promise<PricingConfig> {
+  // Start transaction
+  await sql`BEGIN`;
+
+  try {
+    // Fetch history entry with previous config
+    const historyResult = await sql`
+      SELECT
+        id,
+        pricing_config_id,
+        change_type,
+        previous_config,
+        change_reason
+      FROM pricing_history
+      WHERE id = ${historyId}
+    `;
+
+    if (!historyResult || historyResult.length === 0) {
+      await sql`ROLLBACK`;
+      throw new Error('History entry not found');
+    }
+
+    const historyEntry = historyResult[0];
+
+    if (!historyEntry.previous_config) {
+      await sql`ROLLBACK`;
+      throw new Error('No previous configuration found in history entry');
+    }
+
+    const previousConfig = typeof historyEntry.previous_config === 'string'
+      ? JSON.parse(historyEntry.previous_config)
+      : historyEntry.previous_config;
+
+    // Get current active config
+    const currentResult = await sql`
+      SELECT id, change_reason
+      FROM pricing_config
+      WHERE is_active = TRUE
+        AND valid_from <= NOW()
+        AND (valid_until IS NULL OR valid_until > NOW())
+      ORDER BY valid_from DESC
+      LIMIT 1
+    `;
+
+    if (!currentResult || currentResult.length === 0) {
+      await sql`ROLLBACK`;
+      throw new Error('No active pricing configuration found');
+    }
+
+    const currentConfigId = currentResult[0].id;
+
+    // Create history entry for current config before rollback
+    await createPricingHistoryEntry({
+      pricing_config_id: currentConfigId,
+      change_type: 'update',
+      change_reason: `Rollback: ${reason}`,
+      changed_by: adminUserId,
+      previous_config: { rollback_from_history_id: historyId }
+    });
+
+    // Restore previous config
+    const updateResult = await sql`
+      UPDATE pricing_config
+      SET
+        monthly_base_rate = ${previousConfig.monthly_base_rate},
+        quarterly_discount_percent = ${previousConfig.quarterly_discount_percent},
+        annual_discount_percent = ${previousConfig.annual_discount_percent},
+        monthly_threshold = ${previousConfig.monthly_threshold},
+        quarterly_threshold = ${previousConfig.quarterly_threshold},
+        updated_at = NOW(),
+        updated_by = ${adminUserId},
+        change_reason = ${`Rollback to ${new Date(historyEntry.changed_at).toISOString()}: ${reason}`}
+      WHERE id = ${currentConfigId}
+      RETURNING
+        id,
+        monthly_base_rate,
+        quarterly_discount_percent,
+        annual_discount_percent,
+        monthly_threshold,
+        quarterly_threshold,
+        is_active,
+        valid_from,
+        valid_until,
+        created_at,
+        created_by,
+        updated_at,
+        updated_by,
+        change_reason
+    `;
+
+    // Commit transaction
+    await sql`COMMIT`;
+
+    // Invalidate cache
+    cacheManager.invalidate();
+
+    const row = updateResult[0];
+    return {
+      id: row.id,
+      monthly_base_rate: parseDatabaseValue(row.monthly_base_rate, 'monthly_base_rate'),
+      quarterly_discount_percent: parseDatabaseValue(row.quarterly_discount_percent, 'quarterly_discount_percent'),
+      annual_discount_percent: parseDatabaseValue(row.annual_discount_percent, 'annual_discount_percent'),
+      monthly_threshold: parseDatabaseValue(row.monthly_threshold, 'monthly_threshold'),
+      quarterly_threshold: parseDatabaseValue(row.quarterly_threshold, 'quarterly_threshold'),
+      is_active: row.is_active,
+      valid_from: new Date(row.valid_from),
+      valid_until: row.valid_until ? new Date(row.valid_until) : null,
+      created_at: new Date(row.created_at),
+      created_by: row.created_by,
+      updated_at: new Date(row.updated_at),
+      updated_by: row.updated_by,
+      change_reason: row.change_reason
+    };
+  } catch (error) {
+    // Rollback on error
+    await sql`ROLLBACK`;
+    throw error;
+  }
 }
