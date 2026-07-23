@@ -102,22 +102,22 @@ export async function POST(req: Request): Promise<NextResponse> {
       transaction_number: cleanedReferenceNumber,
       amount: Number(amount),
       sender_name: body.sender_name,
-      sender_account: body.sender_account,
-      receiver_name: body.receiver_name,
-      receiver_account: body.receiver_account,
+      sender_account: (body as any).sender_account, // Temporary cast until interface is updated
+      receiver_name: (body as any).receiver_name, // Temporary cast until interface is updated
+      receiver_account: (body as any).receiver_account, // Temporary cast until interface is updated
       transaction_time: parsedTransactionTime,
       notification_text: body.notification_text,
       raw_webhook_payload: body.raw_data
     });
 
     // 7. Query for pending verifications matching this transaction number
-    const pendingVerifications = await sql<any[]>(`
+    const pendingVerifications = await sql(`
       SELECT * FROM payment_verifications
       WHERE cleaned_reference_number = $1
       AND status = 'pending'
       AND automatic_verification_attempted = FALSE
       ORDER BY submitted_at ASC
-    `, [cleanedReferenceNumber]);
+    `, [cleanedReferenceNumber]) as any[];
 
     // 8. Process automatic verification for each pending verification (Trigger B)
     let autoApproved = 0;

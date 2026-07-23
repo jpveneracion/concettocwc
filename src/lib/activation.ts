@@ -23,6 +23,22 @@ async function resolvePlanIdentifier(
     return planIdentifier as SubscriptionPlan;
   }
 
+  // Handle legacy plan identifiers (BASIC, PRO, etc.) by mapping to appropriate billing periods
+  const legacyPlanMapping: Record<string, SubscriptionPlan> = {
+    'basic': SubscriptionPlan.MONTHLY,
+    'pro': SubscriptionPlan.MONTHLY,
+    'premium': SubscriptionPlan.MONTHLY,
+    'enterprise': SubscriptionPlan.ANNUAL
+  };
+
+  const lowerIdentifier = typeof planIdentifier === 'string'
+    ? planIdentifier.toLowerCase()
+    : planIdentifier;
+
+  if (lowerIdentifier in legacyPlanMapping) {
+    return legacyPlanMapping[lowerIdentifier];
+  }
+
   // Otherwise, treat as UUID and use the existing mapping function
   try {
     const mapping = await mapPlanIdToSubscriptionPlan(planIdentifier as string);

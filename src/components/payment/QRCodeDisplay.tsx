@@ -176,7 +176,7 @@ export default function QRCodeDisplay({ method, amount, planName, promoCode }: Q
           How to Pay with {details.name}
         </h4>
         <ol className="space-y-2">
-          {instructions.map((instruction, index) => {
+          {instructions.map((instruction: string, index: number) => {
             const formattedInstruction = instruction
               .replace('{amount}', formatCurrency(amount))
               .replace('{number}', details.number);

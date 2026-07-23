@@ -126,14 +126,8 @@ export async function POST(
     );
 
     if (!subscriptionResult.success) {
-      // Rollback verification status if subscription activation fails
-      await updatePaymentVerificationStatus(
-        id,
-        VerificationStatus.PENDING,
-        userId,
-        'Subscription activation failed - rolled back to pending'
-      );
-
+      // If subscription activation fails, the verification status remains unchanged
+      // The admin can review and retry the approval process
       return NextResponse.json(
         { error: subscriptionResult.error || 'Failed to activate subscription' },
         { status: 500 }

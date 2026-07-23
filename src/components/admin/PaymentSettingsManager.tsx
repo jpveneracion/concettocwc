@@ -111,14 +111,19 @@ export default function PaymentSettingsManager() {
     }
   };
 
-  const saveSettings = async (settingsToSave: PaymentSettings = settings) => {
+  const saveSettings = async (settingsToSave?: PaymentSettings) => {
     try {
       setSaving(true);
+
+      const actualSettings = settingsToSave || settings;
+      if (!actualSettings) {
+        throw new Error('No settings to save');
+      }
 
       const response = await fetch('/api/admin/payment-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settingsToSave),
+        body: JSON.stringify(actualSettings),
       });
 
       if (response.ok) {
