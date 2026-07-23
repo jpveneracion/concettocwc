@@ -13,7 +13,7 @@ const navItems = [
   { href: '/products', label: 'Products', icon: '🏷️' },
   { href: '/company-products', label: 'Company Products', icon: '🏢' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
-  { href: '/account/subscription', label: 'Subscription', icon: '💳' },
+  { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳' },
 ];
 
 const adminNavItems = [

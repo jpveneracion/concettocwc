@@ -74,7 +74,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const referenceNumberValidation = validateReferenceNumberFormat(body.reference_number);
     if (!referenceNumberValidation.valid) {
       return NextResponse.json(
-        { error: referenceNumberValidation.error },
+        { error: referenceNumberValidation.message },
         { status: 400 }
       );
     }

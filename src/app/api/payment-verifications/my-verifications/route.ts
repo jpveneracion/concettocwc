@@ -25,11 +25,11 @@ export async function GET(req: Request): Promise<NextResponse> {
     const statusParam = searchParams.get('status');
 
     // Validate status parameter if provided
-    let validStatus: string | undefined;
+    let validStatus: "pending" | "approved" | "rejected" | undefined;
     if (statusParam) {
       const validStatuses = Object.values(VerificationStatus);
       if (validStatuses.includes(statusParam as VerificationStatus)) {
-        validStatus = statusParam;
+        validStatus = statusParam as "pending" | "approved" | "rejected";
       } else {
         return NextResponse.json(
           { error: `Invalid status parameter. Must be one of: ${validStatuses.join(', ')}` },

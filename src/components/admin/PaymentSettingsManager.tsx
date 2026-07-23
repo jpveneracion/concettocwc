@@ -111,9 +111,13 @@ export default function PaymentSettingsManager() {
     }
   };
 
-  const saveSettings = async (settingsToSave: PaymentSettings = settings) => {
+  const saveSettings = async (settingsToSave: PaymentSettings | null = settings) => {
     try {
       setSaving(true);
+
+      if (!settingsToSave) {
+        throw new Error('No settings to save');
+      }
 
       const response = await fetch('/api/admin/payment-settings', {
         method: 'POST',

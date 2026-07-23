@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { createGCashWebhookData, sql } from '@/lib/db';
 import { checkAutomaticVerificationMatch, updateVerificationWithAutomaticResult } from '@/lib/payment-verification';
 import { cleanReferenceNumber } from '@/lib/reference-cleaning';
-import type { CreateWebhookRequest } from '@/types/payment';
+import type { CreateWebhookRequest, PaymentVerification } from '@/types/payment';
 
 /**
  * POST /api/payments/gcash-webhook
@@ -111,7 +111,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     // 7. Query for pending verifications matching this transaction number
-    const pendingVerifications = await sql<any[]>(`
+    const pendingVerifications = await sql(`
       SELECT * FROM payment_verifications
       WHERE cleaned_reference_number = $1
       AND status = 'pending'
@@ -123,8 +123,18 @@ export async function POST(req: Request): Promise<NextResponse> {
     let autoApproved = 0;
     let flaggedForManual = 0;
 
-    for (const verification of pendingVerifications) {
+    // Convert lazily during iteration to avoid unnecessary upfront processing
+    for (const dbRecord of pendingVerifications) {
+      let verification: PaymentVerification | undefined;
       try {
+        verification = {
+          ...dbRecord,
+          submitted_at: new Date(dbRecord.submitted_at as string),
+          reviewed_at: dbRecord.reviewed_at ? new Date(dbRecord.reviewed_at as string) : undefined,
+          created_at: new Date(dbRecord.created_at as string),
+          updated_at: new Date(dbRecord.updated_at as string)
+        } as PaymentVerification;
+
         // Check if this verification matches the webhook data
         const matchResult = await checkAutomaticVerificationMatch(verification);
 
@@ -140,7 +150,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         console.log(`Processed verification ${verification.id}: ${matchResult.reason}`);
       } catch (processingError) {
-        console.error(`Error processing verification ${verification.id}:`, processingError);
+        console.error(`Error processing verification ${verification?.id || 'unknown'}:`, processingError);
         // Continue processing other verifications even if one fails
       }
     }

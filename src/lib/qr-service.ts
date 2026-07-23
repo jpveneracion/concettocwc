@@ -1,6 +1,7 @@
 // src/lib/qr-service.ts
 
 import { sql } from './db';
+import { getPricingThresholds } from './pricing-service';
 
 // ============================================================================
 // TYPES
@@ -172,12 +173,26 @@ export async function validatePromoCode(
     // Import the enhanced validation function
     const { validateActivationCodeWithDetails } = await import('./activation');
 
-    // Determine plan from price (simplified - you might want to pass plan explicitly)
+    // Determine plan from price using dynamic pricing thresholds
     let plan: 'basic' | 'pro' | 'premium' | 'trial' | 'enterprise' = 'basic';
-    if (planPrice < 600) plan = 'basic';
-    else if (planPrice < 1500) plan = 'pro';
-    else if (planPrice < 3000) plan = 'premium';
-    else plan = 'enterprise';
+
+    try {
+      // Get dynamic thresholds from pricing service
+      const thresholds = await getPricingThresholds();
+
+      if (planPrice < thresholds.monthly_threshold) plan = 'basic';
+      else if (planPrice < thresholds.quarterly_threshold) plan = 'pro';
+      else if (planPrice < 3000) plan = 'premium'; // This threshold is still static as it's not in pricing service yet
+      else plan = 'enterprise';
+    } catch (error) {
+      console.error('Failed to get pricing thresholds for plan determination, using fallback values:', error);
+
+      // Fallback to hardcoded values if pricing service fails
+      if (planPrice < 600) plan = 'basic';
+      else if (planPrice < 1500) plan = 'pro';
+      else if (planPrice < 3000) plan = 'premium';
+      else plan = 'enterprise';
+    }
 
     const validationResult = await validateActivationCodeWithDetails(
       promoCode,
@@ -243,24 +258,40 @@ export async function incrementPromoUsage(promoCode: string): Promise<boolean> {
 
 /**
  * Get QR code URL for a specific plan price
+ * Maps price ranges to billing periods using dynamic thresholds from pricing service
+ * Monthly: < monthly_threshold, Quarterly: < quarterly_threshold, Annual: >= quarterly_threshold
+ * Falls back to hardcoded values (600, 1500) if pricing service is unavailable
  */
 async function getPlanQrCode(
   planPrice: number,
   paymentMethod: 'gcash' | 'gotyme'
 ): Promise<string | null> {
   try {
-    // Determine plan tier based on price
-    let planTier = '';
-    if (planPrice < 600) planTier = 'basic';
-    else if (planPrice < 1500) planTier = 'pro';
-    else planTier = 'premium';
+    // Determine billing period based on dynamic pricing thresholds
+    let billingPeriod = '';
 
-    const column = `${paymentMethod}_${planTier}_qr_url`;
+    try {
+      // Get dynamic thresholds from pricing service
+      const thresholds = await getPricingThresholds();
+
+      if (planPrice < thresholds.monthly_threshold) billingPeriod = 'monthly';
+      else if (planPrice < thresholds.quarterly_threshold) billingPeriod = 'quarterly';
+      else billingPeriod = 'annual';
+    } catch (error) {
+      console.error('Failed to get pricing thresholds, using fallback values:', error);
+
+      // Fallback to hardcoded values if pricing service fails
+      if (planPrice < 600) billingPeriod = 'monthly';
+      else if (planPrice < 1500) billingPeriod = 'quarterly';
+      else billingPeriod = 'annual';
+    }
+
+    const column = `${paymentMethod}_${billingPeriod}_qr_url`;
 
     const result = await sql`
       SELECT ${sql(column)} as qr_url
       FROM payment_settings
-      WHERE id = 'default'
+      WHERE payment_method = ${paymentMethod}
       LIMIT 1
     `;
 
@@ -381,28 +412,39 @@ export async function getPaymentQrCode(
 
 /**
  * Update plan QR codes
+ * Uses monthly/quarterly/annual naming convention matching current business logic
  */
 export async function updatePlanQrCodes(settings: {
-  gcash_basic?: string;
-  gcash_pro?: string;
-  gcash_premium?: string;
-  gotyme_basic?: string;
-  gotyme_pro?: string;
-  gotyme_premium?: string;
+  gcash_monthly?: string;
+  gcash_quarterly?: string;
+  gcash_annual?: string;
+  gotyme_monthly?: string;
+  gotyme_quarterly?: string;
+  gotyme_annual?: string;
 }): Promise<boolean> {
   try {
-    await sql`
-      UPDATE payment_settings
-      SET
-        gcash_basic_qr_url = ${settings.gcash_basic || null},
-        gcash_pro_qr_url = ${settings.gcash_pro || null},
-        gcash_premium_qr_url = ${settings.gcash_premium || null},
-        gotyme_basic_qr_url = ${settings.gotyme_basic || null},
-        gotyme_pro_qr_url = ${settings.gotyme_pro || null},
-        gotyme_premium_qr_url = ${settings.gotyme_premium || null},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = 'default'
-    `;
+    // Update both payment methods in parallel
+    await Promise.all([
+      sql`
+        UPDATE payment_settings
+        SET
+          gcash_monthly_qr_url = ${settings.gcash_monthly ?? null},
+          gcash_quarterly_qr_url = ${settings.gcash_quarterly ?? null},
+          gcash_annual_qr_url = ${settings.gcash_annual ?? null},
+          updated_at = CURRENT_TIMESTAMP
+        WHERE payment_method = 'gcash'
+      `,
+      sql`
+        UPDATE payment_settings
+        SET
+          gotyme_monthly_qr_url = ${settings.gotyme_monthly ?? null},
+          gotyme_quarterly_qr_url = ${settings.gotyme_quarterly ?? null},
+          gotyme_annual_qr_url = ${settings.gotyme_annual ?? null},
+          updated_at = CURRENT_TIMESTAMP
+        WHERE payment_method = 'gotyme'
+      `
+    ]);
+
     return true;
   } catch (error) {
     console.error('Error updating plan QR codes:', error);

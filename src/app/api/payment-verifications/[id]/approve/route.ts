@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
-import { activateSubscriptionWithVerification } from '@/lib/subscription-activation';
+import { activateSubscriptionWithVerification, mapPlanIdToSubscriptionPlan } from '@/lib/subscription-activation';
+import { redeemActivationCode } from '@/lib/activation';
+import { SubscriptionPlan } from '@/types/subscription';
 import type { ApproveVerificationRequest, ApproveVerificationResponse } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
 
@@ -126,14 +128,6 @@ export async function POST(
     );
 
     if (!subscriptionResult.success) {
-      // Rollback verification status if subscription activation fails
-      await updatePaymentVerificationStatus(
-        id,
-        VerificationStatus.PENDING,
-        userId,
-        'Subscription activation failed - rolled back to pending'
-      );
-
       return NextResponse.json(
         { error: subscriptionResult.error || 'Failed to activate subscription' },
         { status: 500 }
@@ -142,7 +136,52 @@ export async function POST(
 
     const subscriptionId = subscriptionResult.subscription_id;
 
-    // 9. Send payment approval notification
+    // 9. Redeem promo code if present in verification
+    if (verification.promo_code) {
+      console.log(`🎟️  Promo code found in verification: ${verification.promo_code}`);
+      console.log(`👤 User ID: ${verification.user_id}`);
+      console.log(`📋 Plan ID: ${verification.plan_id}`);
+
+      try {
+        // Map plan_id to SubscriptionPlan enum using the mapping function
+        const planMapping = await mapPlanIdToSubscriptionPlan(verification.plan_id);
+
+        if (!planMapping) {
+          console.warn(`⚠️  Could not map plan_id ${verification.plan_id} to SubscriptionPlan, using default MONTHLY`);
+          throw new Error(`Invalid plan_id: ${verification.plan_id}`);
+        }
+
+        const planEnum = planMapping.subscriptionPlan;
+
+        // Call redeem activation code to increment usage
+        console.log(`🔄 Attempting to redeem promo code: ${verification.promo_code}`);
+        console.log(`🔧 Using plan enum: ${planEnum}`);
+        console.log(`📊 Plan mapping: ${JSON.stringify(planMapping)}`);
+
+        await redeemActivationCode(
+          verification.promo_code,
+          verification.user_id,
+          '127.0.0.1', // Admin approval IP (can be enhanced later)
+          planEnum
+        );
+
+        console.log(`✅ Promo code ${verification.promo_code} redeemed successfully for user ${verification.user_id}`);
+        console.log(`📈 Usage counter incremented in database`);
+
+      } catch (promoError) {
+        // Log error but don't fail the entire payment approval
+        console.error(`⚠️  Failed to redeem promo code ${verification.promo_code}:`, promoError);
+        console.error(`🔧 Promo code redemption failed, but payment approval will continue`);
+        console.error(`💡 Error details: ${promoError instanceof Error ? promoError.message : 'Unknown error'}`);
+
+        // The payment should still be approved even if promo usage increment fails
+        // This ensures that payment approval is not blocked by promo code issues
+      }
+    } else {
+      console.log(`ℹ️  No promo code found in verification ${id}`);
+    }
+
+    // 10. Send payment approval notification
     // TODO: This function will be implemented in later tasks
     // For now, we'll add a placeholder comment
     // await sendPaymentApprovalNotification(
@@ -153,7 +192,7 @@ export async function POST(
 
     const userNotified = false; // Placeholder until notification function is implemented
 
-    // 10. Build success response
+    // 11. Build success response
     const response: ApproveVerificationResponse = {
       success: true,
       subscription_id: subscriptionId,

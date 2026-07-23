@@ -6,6 +6,21 @@ import AppLayout from '@/components/AppLayout';
 import type { SubscriptionDetails } from '@/types/subscription';
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+type BillingPeriod = 'monthly' | 'quarterly' | 'annual';
+
+interface PricingData {
+  base_price: number;
+  period_months: number;
+  base_total: number;
+  period_discount_percent: number;
+  period_discount_amount: number;
+  price_after_period_discount: number;
+  promo_discount_percent?: number;
+  promo_discount_amount?: number;
+  final_price: number;
+  billing_period: BillingPeriod;
+  calculated_at: string;
+}
 
 type WarningBanner = {
   type: 'trial-ending' | 'payment-failed' | 'cancelled-grace' | 'payment-expiring';
@@ -21,6 +36,16 @@ export default function SubscriptionPage() {
   const [warningBanners, setWarningBanners] = useState<WarningBanner[]>([]);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // New pricing system state
+  const [pricingData, setPricingData] = useState<PricingData | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [allPricingOptions, setAllPricingOptions] = useState<Record<BillingPeriod, PricingData | null>>({
+    monthly: null,
+    quarterly: null,
+    annual: null
+  });
 
   useEffect(() => {
     fetchSubscriptionDetails();

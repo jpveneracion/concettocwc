@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react';
 
-interface Plan {
-  id: string;
+interface BillingPeriod {
+  id: 'monthly' | 'quarterly' | 'annual';
   name: string;
+  months: number;
   price: number;
-  currency: string;
-  interval: string;
-  description: string;
-  discount_percent: number;
+  periodDiscount: number;
+  finalPrice: number;
   features: string[];
-  is_active: boolean;
+  popular?: boolean;
 }
 
 interface PlanComparisonProps {
@@ -22,17 +21,16 @@ interface PlanComparisonProps {
 /**
  * PlanComparison Component
  *
- * Fetches and displays actual subscription plans from the database
- * with feature comparison and selection interaction
+ * Displays billing periods using the new dynamic pricing system
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<BillingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
   const [touchedPlan, setTouchedPlan] = useState<string | null>(null);
 
-  // Fetch actual subscription plans from database
+  // Fetch subscription plans from database
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -45,7 +43,20 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
         }
 
         const data = await response.json();
-        setPlans(data.plans || []);
+
+        // Transform subscription plans to billing periods format
+        const billingPeriods: BillingPeriod[] = (data.plans || []).map((plan: any) => ({
+          id: plan.id, // Use the plan ID from database
+          name: plan.name,
+          months: plan.interval === 'month' ? 1 : plan.interval === 'quarter' ? 3 : 12,
+          price: plan.price,
+          periodDiscount: plan.discount_percent || 0,
+          finalPrice: plan.price * (1 - (plan.discount_percent || 0) / 100),
+          features: Array.isArray(plan.features) ? plan.features : [],
+          popular: plan.name.toLowerCase().includes('pro') || plan.name.toLowerCase().includes('quarterly')
+        }));
+
+        setPlans(billingPeriods);
       } catch (err) {
         console.error('Error fetching plans:', err);
         setError('Failed to load subscription plans');
@@ -80,7 +91,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin text-4xl mb-4">⏳</div>
-          <p className="text-gray-600">Loading subscription plans...</p>
+          <p className="text-gray-600">Loading pricing options...</p>
         </div>
       </div>
     );
@@ -103,13 +114,21 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   if (plans.length === 0) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <p className="text-yellow-800">No active subscription plans available. Please contact support.</p>
+        <p className="text-yellow-800">No pricing options available. Please contact support.</p>
       </div>
     );
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
   return (
-    <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : ''}`}>
+    <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
       {plans.map((plan) => (
         <div
           key={plan.id}
@@ -124,12 +143,12 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           onTouchEnd={handleTouchEnd}
           onClick={() => handlePlanClick(plan.id)}
         >
-          {/* Popular Badge - Highlight middle plan if 3 plans, or second if 2 plans */}
-          {(plans.length === 3 && plan === plans[1]) || (plans.length === 2 && plan === plans[1]) ? (
+          {/* Popular Badge */}
+          {plan.popular && (
             <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-1 text-sm font-semibold rounded-bl-xl">
               Most Popular
             </div>
-          ) : null}
+          )}
 
           {/* Plan Header */}
           <div className="p-4 sm:p-6 pb-3 sm:pb-6">
@@ -147,18 +166,19 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
 
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-4xl font-bold text-gray-900">
-                {plan.currency === 'PHP' ? '₱' : plan.currency === 'USD' ? '$' : '€'}
-                {plan.price.toLocaleString()}
+                {formatCurrency(plan.finalPrice)}
               </span>
-              <span className="text-gray-600">/{plan.interval}</span>
-              {plan.discount_percent > 0 && (
+              <span className="text-gray-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
+              {plan.periodDiscount > 0 && (
                 <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                  Save {plan.discount_percent}%
+                  Save {plan.periodDiscount}%
                 </span>
               )}
             </div>
 
-            <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
+            <p className="text-gray-600 text-sm mb-6">
+              {plan.months === 1 ? 'Flexible monthly billing' : `Billed every ${plan.months} months`}
+            </p>
 
             {/* CTA Button */}
             <button
@@ -181,18 +201,14 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                 What's included:
               </h4>
               <ul className="space-y-3">
-                {plan.features && plan.features.length > 0 ? (
-                  plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-green-600 text-xs">✓</span>
-                      </div>
-                      <span className="text-gray-700 text-sm">{feature}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-500 text-sm">No features listed</li>
-                )}
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700 text-sm">{feature}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

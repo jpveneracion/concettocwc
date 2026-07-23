@@ -16,6 +16,14 @@ interface PlanDetails {
   description: string;
 }
 
+interface PaymentProofData {
+  screenshot_base64: string;
+  reference_number: string;
+  notes?: string;
+  payment_method: string;
+  promo_code?: string;
+}
+
 function PaymentInstructionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,17 +72,34 @@ function PaymentInstructionsContent() {
   const fetchPlanDetails = async (id: string) => {
     try {
       setLoading(true);
-      // In a real implementation, fetch from your API
-      // For now, using mock data
-      const mockPlans: Record<string, PlanDetails> = {
-        'basic': { id: 'basic', name: 'Basic Plan', price: 499, description: 'Perfect for small businesses' },
-        'pro': { id: 'pro', name: 'Pro Plan', price: 999, description: 'For growing companies' }
+
+      // Fetch plan details from the new public API endpoint
+      const response = await fetch(`/api/subscription-plans/${id}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch plan details');
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.plan) {
+        throw new Error('Invalid response format from plan API');
+      }
+
+      // Transform API response to match our PlanDetails interface
+      const planDetails: PlanDetails = {
+        id: data.plan.id,
+        name: data.plan.name,
+        price: data.plan.price,
+        description: data.plan.description || ''
       };
 
-      const planDetails = mockPlans[id] || mockPlans['basic'];
       setPlan(planDetails);
     } catch (error) {
       console.error('Error fetching plan:', error);
+      // Set plan to null to trigger the "Plan Not Found" UI
+      setPlan(null);
     } finally {
       setLoading(false);
     }
@@ -113,7 +138,7 @@ function PaymentInstructionsContent() {
     setPromoError(null);
   };
 
-  const handlePaymentProofSubmit = async (proofData: any) => {
+  const handlePaymentProofSubmit = async (proofData: PaymentProofData) => {
     try {
       // Step 1: Set verification status to 'checking' immediately
       setVerificationStatus('checking');
@@ -124,8 +149,6 @@ function PaymentInstructionsContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan_id: plan?.id,
-          payment_method: selectedMethod,
-          promo_code: promoCode,
           final_amount: finalAmount,
           ...proofData
         })

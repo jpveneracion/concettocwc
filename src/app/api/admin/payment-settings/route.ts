@@ -24,7 +24,20 @@ export async function GET(req: Request) {
     // Fetch from database using the existing row-based schema
     try {
       const result = await sql`
-        SELECT payment_method, account_number, account_name, qr_code_url, active
+        SELECT
+          payment_method,
+          account_number,
+          account_name,
+          qr_code_url,
+          active,
+          gcash_monthly_qr_url,
+          gcash_quarterly_qr_url,
+          gcash_annual_qr_url,
+          gotyme_monthly_qr_url,
+          gotyme_quarterly_qr_url,
+          gotyme_annual_qr_url,
+          quarterly_discount_percent,
+          annual_discount_percent
         FROM payment_settings
       `;
 
@@ -46,6 +59,14 @@ export async function GET(req: Request) {
             qrCodeUrl: gotymeRow?.qr_code_url || process.env.GOTYME_QR_CODE_URL || '',
             enabled: gotymeRow?.active ?? true
           }
+        },
+        planQrCodes: {
+          gcash_monthly: gcashRow?.gcash_monthly_qr_url || '',
+          gcash_quarterly: gcashRow?.gcash_quarterly_qr_url || '',
+          gcash_annual: gcashRow?.gcash_annual_qr_url || '',
+          gotyme_monthly: gotymeRow?.gotyme_monthly_qr_url || '',
+          gotyme_quarterly: gotymeRow?.gotyme_quarterly_qr_url || '',
+          gotyme_annual: gotymeRow?.gotyme_annual_qr_url || ''
         },
         crypto: {
           usdc: {

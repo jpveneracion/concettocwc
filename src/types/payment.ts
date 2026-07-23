@@ -30,6 +30,7 @@ export interface PaymentVerification {
   reviewed_at?: Date;
   created_at: Date;
   updated_at: Date;
+  promo_code?: string; // Promo code used for this payment verification, if any
 
   // Joined fields for API responses
   user_email?: string;
@@ -106,6 +107,9 @@ export interface CreateWebhookRequest {
   transaction_number: string;
   amount: number;
   sender_name?: string;
+  sender_account?: string;
+  receiver_name?: string;
+  receiver_account?: string;
   transaction_time: string; // ISO string
   notification_text?: string;
   raw_data?: Record<string, any>;
