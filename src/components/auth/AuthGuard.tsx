@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/hooks/useCustomSession';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -26,7 +26,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     // Check if user has completed account setup
-    if (session && !(session as any).companyId) {
+    if (session && !session.companyId) {
       router.replace('/auth/account-choice');
     }
   }, [session, status, router, pathname, isMounted]);

@@ -5,7 +5,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/hooks/useCustomSession';
 import { useRouteOnboarding } from '@/lib/onboarding/simple-route-triggers';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
 import CreateOrdersOnboardingModal from '@/components/onboarding/CreateOrdersOnboardingModal';
@@ -33,7 +33,7 @@ export function OnboardingTriggerProvider({ children }: { children: React.ReactN
   const [manualShowType, setManualShowType] = useState<string | null>(null);
 
   // Check if user is admin
-  const isAdmin = session?.user?.id === '1'; // Based on existing auth logic
+  const isAdmin = session?.isAdmin || session?.userId === '1'; // Based on existing auth logic
 
   const showOnboarding = (type: string) => {
     setManualShowType(type);
