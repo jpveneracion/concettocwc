@@ -8,6 +8,33 @@ import {
   StatusHistoryEntry
 } from '@/types/subscription';
 import { sql } from './db';
+import { mapPlanIdToSubscriptionPlan } from './subscription-activation';
+
+/**
+ * Convert plan identifier (UUID or SubscriptionPlan enum) to SubscriptionPlan enum
+ * Handles both UUID-based plan identifiers and direct enum values
+ */
+async function resolvePlanIdentifier(
+  planIdentifier: string | SubscriptionPlan
+): Promise<SubscriptionPlan> {
+  // If already a SubscriptionPlan enum value, return as-is
+  if (typeof planIdentifier === 'string' &&
+      ['monthly', 'quarterly', 'annual'].includes(planIdentifier)) {
+    return planIdentifier as SubscriptionPlan;
+  }
+
+  // Otherwise, treat as UUID and use the existing mapping function
+  try {
+    const mapping = await mapPlanIdToSubscriptionPlan(planIdentifier as string);
+    if (!mapping) {
+      throw new Error(`Subscription plan not found: ${planIdentifier}`);
+    }
+    return mapping.subscriptionPlan;
+  } catch (error) {
+    console.error('Error resolving plan identifier:', error);
+    throw new Error(`Failed to resolve plan identifier: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
 
 /**
  * Database activation code record interface
@@ -167,8 +194,11 @@ export async function createActivationCode(
  */
 export async function validateActivationCode(
   code: string,
-  plan: SubscriptionPlan
+  plan: string | SubscriptionPlan
 ): Promise<ActivationCode | null> {
+  // Resolve plan identifier to SubscriptionPlan enum
+  const resolvedPlan = await resolvePlanIdentifier(plan);
+
   const result = await sql(
     `SELECT * FROM activation_codes
      WHERE code = $1
@@ -190,7 +220,7 @@ export async function validateActivationCode(
   const activationCode = mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
 
   // Check if code applies to requested plan
-  if (!activationCode.applicable_plans.includes(plan)) {
+  if (!activationCode.applicable_plans.includes(resolvedPlan)) {
     return null;
   }
 
@@ -202,8 +232,11 @@ export async function validateActivationCode(
  */
 export async function validateActivationCodeWithDetails(
   code: string,
-  plan: SubscriptionPlan
+  plan: string | SubscriptionPlan
 ): Promise<{ valid: boolean; activationCode?: ActivationCode; error?: string }> {
+  // Resolve plan identifier to SubscriptionPlan enum
+  const resolvedPlan = await resolvePlanIdentifier(plan);
+
   const result = await sql(
     `SELECT * FROM activation_codes WHERE code = $1`,
     [code]
@@ -226,8 +259,8 @@ export async function validateActivationCodeWithDetails(
   }
 
   // Check if code applies to requested plan
-  if (!activationCode.applicable_plans.includes(plan)) {
-    return { valid: false, error: `Promo code not applicable to ${plan} plan` };
+  if (!activationCode.applicable_plans.includes(resolvedPlan)) {
+    return { valid: false, error: `Promo code not applicable to ${resolvedPlan} plan` };
   }
 
   // Check usage limits
@@ -253,7 +286,7 @@ export async function redeemActivationCode(
   code: string,
   userId: string,
   ipAddress: string,
-  plan: SubscriptionPlan
+  plan: string | SubscriptionPlan
 ): Promise<ActivationCode> {
   const validation = await validateActivationCodeWithDetails(code, plan);
 

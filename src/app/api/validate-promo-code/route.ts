@@ -29,8 +29,8 @@ export async function POST(req: Request) {
     }
 
     // Validate the promo code using enhanced validation
-    const planEnum = plan_id as SubscriptionPlan;
-    const validationResult = await validateActivationCodeWithDetails(code, planEnum);
+    // The validation function now handles both UUID and enum values
+    const validationResult = await validateActivationCodeWithDetails(code, plan_id);
 
     if (!validationResult.valid) {
       return NextResponse.json(
@@ -45,18 +45,16 @@ export async function POST(req: Request) {
     const activationCode = validationResult.activationCode!;
 
     // Calculate final amount with discount
-    const originalAmount = getPlanPrice(planEnum);
-    const discountedAmount = originalAmount * (1 - activationCode.discount_percent / 100);
+    // Note: The pricing should ideally come from the subscription plan in the database
+    // For now, we'll return the discount info without specific pricing
+    const discountedPercent = activationCode.discount_percent;
 
     // Return enhanced discount information with QR codes
     return NextResponse.json({
       valid: true,
       code: code,
       discount_type: 'percent',
-      discount_percent: activationCode.discount_percent,
-      discount_amount: originalAmount - discountedAmount,
-      original_amount: originalAmount,
-      final_amount: discountedAmount,
+      discount_percent: discountedPercent,
       gcash_qr_url: activationCode.gcash_qr_url,
       gotyme_qr_url: activationCode.gotyme_qr_url,
       usage_limit: activationCode.usage_limit,
@@ -72,20 +70,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Helper function to get plan price
- * You can update this based on your actual plan pricing
- */
-function getPlanPrice(plan: SubscriptionPlan): number {
-  const planPrices: Record<SubscriptionPlan, number> = {
-    [SubscriptionPlan.BASIC]: 499,
-    [SubscriptionPlan.PRO]: 999,
-    [SubscriptionPlan.PREMIUM]: 1999,
-    [SubscriptionPlan.TRIAL]: 0,
-    [SubscriptionPlan.ENTERPRISE]: 4999,
-  };
-
-  return planPrices[plan] || 499; // Default to BASIC price
 }
