@@ -64,17 +64,27 @@ function PaymentInstructionsContent() {
   const fetchPlanDetails = async (id: string) => {
     try {
       setLoading(true);
-      // In a real implementation, fetch from your API
-      // For now, using mock data
-      const mockPlans: Record<string, PlanDetails> = {
-        'basic': { id: 'basic', name: 'Basic Plan', price: 499, description: 'Perfect for small businesses' },
-        'pro': { id: 'pro', name: 'Pro Plan', price: 999, description: 'For growing companies' }
-      };
 
-      const planDetails = mockPlans[id] || mockPlans['basic'];
+      // Fetch from API
+      const response = await fetch('/api/subscription-plans');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription plans');
+      }
+
+      const data = await response.json();
+
+      // Find the specific plan by UUID
+      const planDetails = data.plans?.find((plan: PlanDetails) => plan.id === id);
+
+      if (!planDetails) {
+        throw new Error(`Plan with ID ${id} not found`);
+      }
+
       setPlan(planDetails);
     } catch (error) {
       console.error('Error fetching plan:', error);
+      // Plan will remain null, triggering the "Plan Not Found" UI
     } finally {
       setLoading(false);
     }
