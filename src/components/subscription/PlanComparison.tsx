@@ -6,7 +6,7 @@ interface BillingPeriod {
   id: 'monthly' | 'quarterly' | 'annual';
   name: string;
   months: number;
-  price: number;
+  basePrice: number;
   periodDiscount: number;
   finalPrice: number;
   features: string[];
@@ -49,7 +49,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           id: plan.id, // Use the plan ID from database
           name: plan.name,
           months: plan.interval === 'month' ? 1 : plan.interval === 'quarter' ? 3 : 12,
-          price: plan.price,
+          basePrice: plan.price,
           periodDiscount: plan.discount_percent || 0,
           finalPrice: plan.price * (1 - (plan.discount_percent || 0) / 100),
           features: Array.isArray(plan.features) ? plan.features : [],
