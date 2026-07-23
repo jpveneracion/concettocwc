@@ -260,7 +260,7 @@ async function getPlanQrCode(
     const result = await sql`
       SELECT ${sql(column)} as qr_url
       FROM payment_settings
-      WHERE id = 'default'
+      WHERE payment_method = ${paymentMethod}
       LIMIT 1
     `;
 
@@ -391,17 +391,26 @@ export async function updatePlanQrCodes(settings: {
   gotyme_premium?: string;
 }): Promise<boolean> {
   try {
+    // Update GCash payment settings row
     await sql`
       UPDATE payment_settings
       SET
         gcash_basic_qr_url = ${settings.gcash_basic || null},
         gcash_pro_qr_url = ${settings.gcash_pro || null},
         gcash_premium_qr_url = ${settings.gcash_premium || null},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE payment_method = 'gcash'
+    `;
+
+    // Update GoTyme payment settings row
+    await sql`
+      UPDATE payment_settings
+      SET
         gotyme_basic_qr_url = ${settings.gotyme_basic || null},
         gotyme_pro_qr_url = ${settings.gotyme_pro || null},
         gotyme_premium_qr_url = ${settings.gotyme_premium || null},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = 'default'
+      WHERE payment_method = 'gotyme'
     `;
     return true;
   } catch (error) {
