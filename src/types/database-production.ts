@@ -275,7 +275,6 @@ export interface Subscription {
   trial_end: TimestampWithTimezone | null;
   current_period_end: TimestampWithTimezone | null;
   cancel_at_period_end: boolean;
-  paymongo_subscription_id: string | null;
   created_at: TimestampWithTimezone;
   updated_at: TimestampWithTimezone;
 }
@@ -309,7 +308,6 @@ export interface Invoice {
   status: InvoiceStatus;
   paid_at: TimestampWithTimezone | null;
   attempt_count: number; // integer
-  paymongo_invoice_id: string | null;
   created_at: TimestampWithTimezone;
   updated_at: TimestampWithTimezone;
 }
@@ -321,7 +319,6 @@ export interface Invoice {
 export interface PaymentMethod {
   id: UUID;
   company_id: UUID;
-  paymongo_payment_method_id: string;
   type: PaymentMethodType;
   card_last4: string | null;
   expiry_date: string | null;
@@ -337,7 +334,6 @@ export interface PaymentMethod {
 export interface WebhookEvent {
   id: UUID;
   event_type: string;
-  paymongo_event_id: string;
   payload: JsonB;
   processed: boolean;
   processing_error: string | null;
@@ -574,7 +570,6 @@ export interface SubscriptionCreateInput {
   trial_end?: Date;
   current_period_end?: Date;
   cancel_at_period_end?: boolean;
-  paymongo_subscription_id?: string;
 }
 
 // ============================================================

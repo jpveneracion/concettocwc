@@ -32,39 +32,6 @@ export enum AccountStatus {
   LOCKED = 'locked'
 }
 
-// ============================================================================
-// LEGACY PAYMONGO SUBSCRIPTION TYPES (For backward compatibility)
-// ============================================================================
-
-/**
- * Legacy subscription plan interface (PayMongo system)
- */
-export interface LegacySubscriptionPlan {
-  id: string;
-  name: string;
-  amount: number;
-  currency: string;
-  interval: string;
-  features: Record<string, number | boolean | string>;
-  created_at: Date;
-  updated_at: Date;
-}
-
-/**
- * Legacy subscription interface (PayMongo system)
- */
-export interface LegacySubscription {
-  id: string;
-  company_id: string;
-  status: 'trialing' | 'active' | 'past_due' | 'cancelled' | 'suspended';
-  plan_id: string;
-  trial_end: Date | null;
-  current_period_end: Date | null;
-  cancel_at_period_end: boolean;
-  paymongo_subscription_id: string | null;
-  created_at: Date;
-  updated_at: Date;
-}
 
 /**
  * Activation code interface
@@ -257,7 +224,7 @@ export interface SubscriptionAccess {
  * Subscription details interface
  */
 export interface SubscriptionDetails {
-  plan: LegacySubscriptionPlan; // Legacy subscription plan details
+  plan: SubscriptionPlanDetails; // Current subscription plan details
   status: string;
   trial_end: Date | null;
   current_period_end: Date | null;
@@ -268,70 +235,9 @@ export interface SubscriptionDetails {
   };
 }
 
-/**
- * PayMongo checkout request interface
- */
-export interface PayMongoCheckoutRequest {
-  plan_id: string;
-  success_url: string;
-  cancel_url: string;
-}
 
-/**
- * PayMongo checkout response interface
- */
-export interface PayMongoCheckoutResponse {
-  checkout_url: string;
-  session_id: string;
-}
 
-/**
- * Payment method type for legacy system
- */
-export interface LegacyPaymentMethod {
-  id: string;
-  company_id: string;
-  paymongo_payment_method_id: string;
-  type: 'gcash' | 'maya' | 'card';
-  card_last4: string | null;
-  expiry_date: Date | null;
-  is_default: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
 
-/**
- * Webhook event interface
- */
-export interface WebhookEvent {
-  id: string;
-  event_type: string;
-  paymongo_event_id: string;
-  payload: Record<string, unknown>;
-  processed: boolean;
-  processing_error: string | null;
-  created_at: Date;
-  updated_at: Date;
-}
-
-/**
- * Invoice interface
- */
-export interface Invoice {
-  id: string;
-  subscription_id: string;
-  company_id: string;
-  number: string;
-  amount_due: number;
-  amount_paid: number;
-  currency: string;
-  status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
-  paid_at: Date | null;
-  attempt_count: number;
-  paymongo_invoice_id: string | null;
-  created_at: Date;
-  updated_at: Date;
-}
 
 // ============================================================================
 // ADMIN SUBSCRIPTION PLAN MANAGEMENT TYPES
