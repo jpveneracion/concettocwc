@@ -93,7 +93,12 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   }
 
   return (
-    <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-5xl mx-auto ${plans.length === 2 ? 'md:grid-cols-2' : ''}`}>
+    <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-6xl mx-auto ${
+      plans.length === 1 ? '' :
+      plans.length === 2 ? 'md:grid-cols-2' :
+      plans.length === 3 ? 'md:grid-cols-2 lg:grid-cols-3' :
+      'md:grid-cols-2 lg:grid-cols-' + Math.min(plans.length, 4)
+    }`}>
       {plans.map((plan) => (
         <div
           key={plan.id}
