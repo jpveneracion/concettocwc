@@ -13,13 +13,18 @@ const navItems = [
   { href: '/quotes', label: 'Orders', icon: '📄', requiresFutureOrders: false },
   { href: '/quotes/new', label: 'New quote', icon: '➕', requiresFutureOrders: true },
   { href: '/products', label: 'Products', icon: '🏷️', requiresFutureOrders: false },
+  { href: '/company-products', label: 'Company Products', icon: '🏢', requiresFutureOrders: false },
   { href: '/settings', label: 'Settings', icon: '⚙️', requiresFutureOrders: false },
+  { href: '/account/subscription', label: 'Subscription', icon: '💳', requiresFutureOrders: false },
 ];
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: '🛡️' },
   { href: '/admin/pending-products', label: 'Pending Products', icon: '📋' },
+  { href: '/admin/company-products', label: 'Company Products', icon: '🏢' },
   { href: '/admin/activation-codes', label: 'Activation Codes', icon: '🔑' },
+  { href: '/admin/plans', label: 'Subscription Plans', icon: '💳' },
+  { href: '/admin/revenue', label: 'Revenue Analytics', icon: '📊' },
 ];
 
 function MobileNav({ isOpen, onClose }: MobileNavProps) {

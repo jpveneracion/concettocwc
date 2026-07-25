@@ -6,11 +6,6 @@ import type { TrustSignalProps } from '@/types/landing';
 
 const trustSignals: TrustSignalProps[] = [
   {
-    icon: 'gift',
-    title: 'Risk-Free Trial',
-    description: 'Experience the platform before committing'
-  },
-  {
     icon: 'setup',
     title: 'Quick Setup',
     description: 'Get started fast with streamlined onboarding'
@@ -19,6 +14,11 @@ const trustSignals: TrustSignalProps[] = [
     icon: 'support',
     title: 'Ongoing Support',
     description: 'Dedicated support and guidance when you need it'
+  },
+  {
+    icon: 'gift',
+    title: 'Flexible Plans',
+    description: 'Choose the plan that works best for your business'
   }
 ];
 

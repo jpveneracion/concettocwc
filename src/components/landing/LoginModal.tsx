@@ -82,10 +82,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             id="login-modal-title"
             className="text-2xl font-bold text-gray-900 mb-2"
           >
-            Start Your Free Trial
+            Get Started with Concetto
           </h2>
           <p className="text-gray-600 text-sm">
-            Get 3 days of full access to Concetto - no credit card required
+            Join now and experience streamlined business management
           </p>
         </div>
 

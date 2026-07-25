@@ -29,7 +29,7 @@ export default function Home() {
           { text: 'Features', href: '#features' },
           { text: 'How It Works', href: '#solution' }
         ]}
-        ctaText="Start Trial"
+        ctaText="Get Started"
         ctaLink="/signup"
       />
       <HeroSection {...heroContent} />
@@ -41,15 +41,15 @@ export default function Home() {
       <CtaSection
         headline="Ready to Transform Your Blinds Business?"
         subtext="Join manufacturers and retailers who've modernized their quotation workflow"
-        primaryCtaText="Start Your Free Trial"
+        primaryCtaText="Get Started Today"
         primaryCtaLink="/signup"
         secondaryCtaText="Learn More About Features"
         secondaryCtaLink="#features"
         benefits={[
-          'No credit card required for trial',
           'OAuth authentication for secure setup',
           'Mobile-first design for on-the-go access',
-          'Instant company setup and dashboard access'
+          'Instant company setup and dashboard access',
+          'Flexible plans to match your needs'
         ]}
       />
       <LandingFooter

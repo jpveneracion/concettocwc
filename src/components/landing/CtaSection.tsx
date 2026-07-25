@@ -13,10 +13,10 @@ const defaultCtaProps: CtaSectionProps = {
   secondaryCtaText: 'Learn More About Features',
   secondaryCtaLink: '#features',
   benefits: [
-    'Risk-free trial to experience the platform',
     'Quick setup with streamlined onboarding',
     'Mobile-ready for on-the-go access',
-    'Instant dashboard and business insights'
+    'Instant dashboard and business insights',
+    'Flexible plans to match your needs'
   ]
 };
 
