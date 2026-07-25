@@ -269,7 +269,7 @@ async function getPlanQrCode(
     const column = `${paymentMethod}_${billingPeriod}_qr_url`;
 
     const result = await sql`
-      SELECT ${sql(column)} as qr_url
+      SELECT ${sql.unsafe(column)} as qr_url
       FROM payment_settings
       WHERE payment_method = ${paymentMethod}
       LIMIT 1
