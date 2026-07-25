@@ -11,47 +11,29 @@ The system allows users to create quotes with past dates (date < now), even afte
 
 ## User Requirements
 
-1. **Past-dated quotes**: Users can enter quotes with dates in the past
-2. **Manual price entry**: Users manually enter prices for each window when creating past-dated orders
-3. **Flexible pricing**: Different windows can have different fabrics/collections with different pricing
-4. **Both prices editable**: Users can manually enter both supplier cost and retail price independently
-5. **Past-dated only**: Manual price entry only available when quote date < today
-6. **Dashboard accuracy**: Dashboard uses actual stored prices from quotes for income calculations
+**Core Requirement:** If users enter an order date at a past date, allow them to input the price for that blinds order at the price they were actually sold.
+
+1. **Past-dated quotes**: Users can enter quotes with dates in the past  
+2. **Editable prices when date < now**: Make price fields editable only when quote date is in the past
+3. **No other changes**: Keep existing database, API, and dashboard functionality unchanged
 
 ## Solution Overview
 
-**Approach:** Manual price entry for past-dated quotes with price override tracking
+**Approach:** Make existing price fields conditionally editable based on quote date
 
 **Key Design Decisions:**
-- No historical pricing database (users enter prices manually)
-- Manual price entry only enabled for past-dated quotes (date < today)
-- Both supplier cost and retail price independently editable
-- Track which prices were manually overridden vs auto-filled
-- Dashboard uses manual prices when available, falls back to auto-filled prices
+- No database schema changes (use existing `retail_price_sqft` and `supplier_cost_sqft` fields)
+- No API changes (existing endpoints already handle price values)  
+- No dashboard changes (already uses stored prices from quotes)
+- Simple frontend-only change: make price fields editable when `date < now`
 
-## Architecture
-
-### Database Schema Changes
-
-**Table: `quote_items` (ALTER TABLE)**
-
-```sql
-ALTER TABLE quote_items 
-ADD COLUMN price_manually_overridden BOOLEAN DEFAULT FALSE,
-ADD COLUMN manual_retail_price DECIMAL(10,2),
-ADD COLUMN manual_supplier_cost DECIMAL(10,2);
-```
-
-**Field Descriptions:**
-- `price_manually_overridden`: Flags whether prices were manually entered
-- `manual_retail_price`: Manually entered retail price per sq.ft.
-- `manual_supplier_cost`: Manually entered supplier cost per sq.ft.
+## Implementation
 
 ### Frontend Changes
 
 **Component: `QuoteForm.tsx`**
 
-**1. Date-Based Conditional Rendering**
+**1. Date Detection Logic**
 ```typescript
 const isPastDatedQuote = new Date(date) < new Date();
 ```
@@ -59,99 +41,60 @@ const isPastDatedQuote = new Date(date) < new Date();
 **2. Editable Price Fields**
 - Make `retail_price_sqft` and `supplier_cost_sqft` conditionally editable
 - Editable only when `isPastDatedQuote === true`
-- Add visual indicators for manually overridden prices
+- Read-only when quote date is today or in the future (current behavior)
 
-**3. UI Enhancements**
-- "💰 Manual Pricing Enabled" badge when quote date is past
-- Highlight manually overridden prices with different styling
-- Show original auto-filled price for comparison when editing
-- Clear visual distinction between auto-filled and manual prices
+**3. Implementation Approach**
+- Change price display from read-only to editable inputs when past date detected
+- Keep all existing logic for price calculations and updates
+- No data structure changes needed
+- Minimal UI changes to indicate editability
 
-**4. Data Structure Changes**
-```typescript
-interface ItemRow {
-  // ... existing fields
-  retail_price_sqft: number;        // Auto-filled or manual
-  supplier_cost_sqft: number;       // Auto-filled or manual
-  price_manually_overridden: boolean; // Track manual override
-  original_retail_price?: number;    // Store auto-filled for comparison
-  original_supplier_cost?: number;  // Store auto-filled for comparison
-}
-```
+### How It Works
 
-### API Changes
+**Current Behavior (date >= today):**
+- Product lookup → auto-fills prices → prices remain read-only → saved to database
 
-**Endpoint: `POST /api/quotes` and `PUT /api/quotes/{id}`**
+**New Behavior (date < today):**  
+- Product lookup → auto-fills prices → prices become editable → user can override → saved to database
 
-**Request Body Updates:**
-```typescript
-{
-  // ... existing fields
-  items: [{
-    // ... existing item fields
-    price_manually_overridden: boolean,
-    manual_retail_price?: number,
-    manual_supplier_cost?: number
-  }]
-}
-```
-
-**Backend Logic:**
-1. Accept manual prices in request payload
-2. Store in `quote_items` table
-3. If `price_manually_overridden = true`, use manual prices for calculations
-4. Dashboard queries use manual prices when available
+**Dashboard (no changes):**
+- Already uses stored `retail_price_sqft` and `supplier_cost_sqft` values
+- Works correctly with both auto-filled and manually entered prices
+- No changes needed
 
 ## Data Flow
 
 ### Creating Past-Dated Quote
-
-1. **User enters past date** → Form detects `date < today`
-2. **Manual pricing badge appears** → "💰 Manual Pricing Enabled"
-3. **Product lookup works normally** → Auto-fills initial prices
-4. **Price fields become editable** → Both supplier cost and retail price
-5. **User can override prices** → Enter manual values per window
-6. **Visual feedback** → Highlighted manual prices, show original values
-7. **Save with manual flags** → `price_manually_overridden = true`
-8. **Dashboard uses manual prices** → Accurate historical income tracking
+1. User enters past date → Form detects `date < now()`
+2. Product lookup works normally → Auto-fills initial prices  
+3. Price fields become editable (not read-only)
+4. User can override prices as needed
+5. Save quote → Manual prices stored in existing database columns
+6. Dashboard → Uses stored prices for accurate income tracking
 
 ### Creating Current-Dated Quote
-
 - **Behavior unchanged** → Prices remain read-only after product lookup
-- **No manual pricing** → Standard workflow maintained
-
-### Dashboard Calculations
-
-**Query Logic:**
-```sql
-SELECT 
-  COALESCE(manual_retail_price, retail_price_sqft) as effective_retail_price,
-  COALESCE(manual_supplier_cost, supplier_cost_sqft) as effective_supplier_cost
-FROM quote_items
-```
-
-**Priority:** Manual prices > Auto-filled prices
 
 ## Testing Strategy
 
 ### Unit Tests
 1. **Date detection logic**
-   - Test past date recognition
-   - Test today date handling
-   - Test future date handling
+   - Test past date recognition (< today)
+   - Test today date handling (= today, no edit)
+   - Test future date handling (> today, no edit)
 
-2. **Price override logic**
-   - Test manual price storage
-   - Test fallback to auto-filled prices
-   - Test COALESCE behavior
+2. **Price field behavior**
+   - Verify editable when past date
+   - Verify read-only when current/future date
+   - Test price updates work correctly
 
-### Integration Tests
+### Integration Tests  
 1. **Quote creation flow**
    - Create past-dated quote with manual prices
-   - Create current-dated quote (no manual prices)
-   - Verify both workflows work correctly
+   - Create current-dated quote (no manual pricing)
+   - Verify both save correctly
 
-2. **Dashboard accuracy**
+2. **Dashboard verification**
    - Verify dashboard uses manual prices for past quotes
    - Verify dashboard uses auto-filled prices for current quotes
    - Test income calculation accuracy
@@ -160,126 +103,89 @@ FROM quote_items
 1. **User workflow**
    - Navigate to quote creation
    - Enter past date
-   - Verify manual pricing appears
+   - Verify price fields become editable
    - Enter manual prices
    - Save and verify dashboard reflects correct amounts
 
 ## Implementation Phases
 
-### Phase 1: Database Schema
-1. Add new columns to `quote_items` table
-2. Create migration script
-3. Verify schema changes
-
-### Phase 2: Backend API
-1. Update quote creation/update endpoints
-2. Handle manual price fields
-3. Implement COALESCE logic for queries
-4. Add validation for manual prices
-
-### Phase 3: Frontend - QuoteForm
-1. Add date detection logic
+### Phase 1: Frontend Implementation
+1. Add date detection logic to QuoteForm
 2. Make price fields conditionally editable
-3. Add UI indicators and badges
-4. Implement price comparison display
-5. Test user interactions
+3. Add visual indicator (optional) for past-dated quotes
+4. Test user interactions
 
-### Phase 4: Dashboard Integration
-1. Update dashboard queries to use manual prices
-2. Verify income calculations
-3. Test with mixed manual/auto-filled data
-
-### Phase 5: Testing & Validation
+### Phase 2: Testing & Validation  
 1. Run all test suites
 2. Manual testing workflows
 3. Edge case validation
-4. Performance testing
+4. Verify dashboard calculations
 
 ## Error Handling
 
 **Validation:**
-- Manual prices must be positive numbers
-- Manual retail price should be >= manual supplier cost (warning)
-- Prevent negative manual prices
-- Handle missing manual price fields gracefully
+- Manual prices must be positive numbers (existing validation)
+- Manual retail price should be >= manual supplier cost (warning, existing)
+- Prevent negative prices (existing validation)
 
 **Edge Cases:**
-- Quote date exactly today → treated as current (no manual pricing)
-- Empty manual price fields → fall back to auto-filled
-- Partial manual prices → allow independent supplier/retail entry
+- Quote date exactly today → treated as current (no edit, read-only)
+- Quote date in future → treated as current (no edit, read-only)
+- Empty price fields → use auto-filled values from product lookup
 - Product lookup failure → manual entry still available
 
 ## Performance Considerations
 
-**Database Impact:**
-- Additional columns add minimal storage overhead
-- COALESCE operation has negligible performance impact
-- Indexes remain unchanged
-
 **Frontend Performance:**
 - Date comparison is client-side, negligible impact
-- Additional state management for price tracking
-- No significant rendering overhead
+- Additional conditional rendering, minimal overhead  
+- No additional API calls or database queries
 
 ## Security Considerations
 
 **Access Control:**
-- Manual pricing available to all users (per requirements)
+- Manual pricing available to all users who can create quotes
 - No special permissions required
-- Audit trail maintained via `price_manually_overridden` flag
+- Existing authorization and validation still apply
 
 **Data Integrity:**
-- Manual prices stored alongside auto-filled prices
-- Clear distinction between manual and auto-filled data
-- Prevents accidental overwriting of historical data
+- Manual prices stored in existing columns with existing validation
+- No additional security concerns beyond current system
 
 ## Mobile Optimization
 
 **Touch Targets:**
-- All price input fields maintain 44px minimum height
-- Editable fields have clear tap targets
-- Manual pricing badge clearly visible on mobile
-
-**Responsive Design:**
-- Price fields stack vertically on mobile
-- Manual pricing indicators visible at all screen sizes
-- Comparison view adapts to mobile layout
+- Editable price input fields maintain 44px minimum height (existing)
+- Clear tap targets for price editing
+- Responsive design maintained (existing)
 
 ## Success Criteria
 
 1. ✅ Past-dated quotes show editable price fields
-2. ✅ Current-dated quotes maintain read-only prices
-3. ✅ Both supplier cost and retail price independently editable
-4. ✅ Manual prices stored and tracked correctly
-5. ✅ Dashboard uses manual prices for accurate income tracking
-6. ✅ Clear visual distinction between manual and auto-filled prices
-7. ✅ All tests pass (unit, integration, E2E)
-8. ✅ Mobile experience remains optimal
-9. ✅ No regression in existing quote creation workflow
+2. ✅ Current/future-dated quotes maintain read-only prices  
+3. ✅ Both supplier cost and retail price editable when past date
+4. ✅ Manual prices stored correctly in existing database columns
+5. ✅ Dashboard uses stored prices for accurate income tracking
+6. ✅ All tests pass (unit, integration, E2E)
+7. ✅ Mobile experience remains optimal
+8. ✅ No regression in existing quote creation workflow
 
-## Future Enhancements (Out of Scope)
+## Technical Notes
 
-- Historical pricing database with auto-detection
-- Bulk price updates for multiple windows
-- Price change notifications
-- Historical pricing analytics
-- Price approval workflows
-
-## Implementation Notes
-
-**Technical Stack:**
-- Next.js frontend with TypeScript
-- PostgreSQL database
-- Existing quote management system
+**Scope:**
+- Frontend-only implementation
+- No database migrations required
+- No API endpoint changes required
+- No dashboard code changes required
 
 **Dependencies:**
 - Existing QuoteForm component
-- Existing quote API endpoints
-- Existing dashboard queries
+- Existing quote creation/update logic
+- Existing price calculation utilities
 - No new external dependencies required
 
-**Migration Strategy:**
-- Forward-only approach (no existing quote migration needed)
-- Schema changes are additive (no breaking changes)
-- Existing functionality preserved
-- Progressive enhancement for past-dated quotes
+**Complexity:**
+- Low complexity implementation
+- Minimal code changes required
+- Low risk of breaking existing functionality
+- Easy to test and validate
