@@ -1,6 +1,7 @@
 // src/lib/qr-service.ts
 
 import { sql } from './db';
+import { getPricingThresholds } from './pricing-service';
 
 // ============================================================================
 // TYPES
@@ -172,12 +173,26 @@ export async function validatePromoCode(
     // Import the enhanced validation function
     const { validateActivationCodeWithDetails } = await import('./activation');
 
-    // Determine plan from price (simplified - you might want to pass plan explicitly)
+    // Determine plan from price using dynamic pricing thresholds
     let plan: 'basic' | 'pro' | 'premium' | 'trial' | 'enterprise' = 'basic';
-    if (planPrice < 600) plan = 'basic';
-    else if (planPrice < 1500) plan = 'pro';
-    else if (planPrice < 3000) plan = 'premium';
-    else plan = 'enterprise';
+
+    try {
+      // Get dynamic thresholds from pricing service
+      const thresholds = await getPricingThresholds();
+
+      if (planPrice < thresholds.monthly_threshold) plan = 'basic';
+      else if (planPrice < thresholds.quarterly_threshold) plan = 'pro';
+      else if (planPrice < 3000) plan = 'premium'; // This threshold is still static as it's not in pricing service yet
+      else plan = 'enterprise';
+    } catch (error) {
+      console.error('Failed to get pricing thresholds for plan determination, using fallback values:', error);
+
+      // Fallback to hardcoded values if pricing service fails
+      if (planPrice < 600) plan = 'basic';
+      else if (planPrice < 1500) plan = 'pro';
+      else if (planPrice < 3000) plan = 'premium';
+      else plan = 'enterprise';
+    }
 
     const validationResult = await validateActivationCodeWithDetails(
       promoCode,
@@ -390,6 +405,7 @@ export async function getPaymentQrCode(
 
 /**
  * Update plan QR codes
+ * Uses monthly/quarterly/annual naming convention matching current business logic
  */
 export async function updatePlanQrCodes(settings: {
   gcash_monthly?: string;
@@ -421,6 +437,7 @@ export async function updatePlanQrCodes(settings: {
         updated_at = CURRENT_TIMESTAMP
       WHERE payment_method = 'gotyme'
     `;
+
     return true;
   } catch (error) {
     console.error('Error updating plan QR codes:', error);

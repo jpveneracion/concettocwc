@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import PlanComparison from '@/components/subscription/PlanComparison';
+import AppLayout from '@/components/AppLayout';
 
 interface CheckoutError {
   type: 'validation' | 'api' | 'network';
@@ -44,7 +45,7 @@ function CheckoutContent() {
     if (!selectedPlan) {
       setError({
         type: 'validation',
-        message: 'Please select a subscription plan to continue.'
+        message: 'Please select a billing period to continue.'
       });
       return false;
     }
@@ -125,6 +126,17 @@ function CheckoutContent() {
         <h1 className="text-xl font-semibold mb-2">Choose Your Plan</h1>
         <p className="text-gray-500 text-sm">Select a subscription plan that fits your needs. Cancel anytime.</p>
       </div>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
+            <span className="text-3xl">🛡️</span>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Choose Your Plan
+          </h1>
+          <p className="text-xl text-gray-600 mb-6">
+            Select the perfect plan for your business needs.
+          </p>
+        </div>
+>>>>>>> bfbe891720c58db002470c5f39aae1d2b64589fc
 
       {/* Error Display */}
       {error && (
@@ -148,6 +160,49 @@ function CheckoutContent() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Action Section */}
+        <div className="flex flex-col items-center gap-6">
+          <button
+            onClick={handleSubscribe}
+            disabled={isButtonDisabled}
+            className={`
+              px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200
+              ${isButtonDisabled
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+              }
+              ${isLoading ? 'cursor-wait' : ''}
+            `}
+            style={{ minHeight: '56px', minWidth: '280px' }}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-xl animate-spin">⏳</span>
+                <span>Processing payment...</span>
+              </div>
+            ) : (
+              'Proceed to Payment'
+            )}
+          </button>
+
+          {/* Trust Elements */}
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <span className="text-green-600">🛡️</span>
+              <span>SSL Secured</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-600">✓</span>
+              <span>No hidden fees</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-600">✓</span>
+              <span>Secure payment</span>
+>>>>>>> bfbe891720c58db002470c5f39aae1d2b64589fc
+            </div>
+          </div>
         </div>
       )}
 
@@ -166,6 +221,13 @@ function CheckoutContent() {
             <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm">✓</span>
             </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900">Selected Plan</p>
+              <p className="text-xs text-blue-700 capitalize">{selectedPlan} subscription</p>
+            </div>
+          </div>
+        </div>
+      )}
             <div>
               <p className="text-sm font-medium text-blue-900">Plan Selected</p>
               <p className="text-xs text-blue-700">Ready to proceed with subscription</p>

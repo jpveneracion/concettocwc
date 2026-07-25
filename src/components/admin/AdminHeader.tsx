@@ -41,6 +41,11 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
       href: '/admin/promo-codes',
     },
     {
+      label: 'Pricing',
+      icon: '💰',
+      href: '/admin/pricing',
+    },
+    {
       label: 'Pending Products',
       icon: '📋',
       href: '/admin/pending-products',

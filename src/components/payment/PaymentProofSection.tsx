@@ -3,13 +3,21 @@
 import { useState } from 'react';
 import ScreenshotUpload from './ScreenshotUpload';
 
+interface PaymentProofData {
+  screenshot_base64: string;
+  reference_number: string;
+  notes?: string;
+  payment_method: string;
+  promo_code?: string;
+}
+
 interface PaymentProofSectionProps {
   planId: string;
   planName: string;
   finalAmount: number;
   paymentMethod: string;
   promoCode?: string;
-  onSubmit: (proofData: any) => void;
+  onSubmit: (proofData: PaymentProofData) => void;
 }
 
 export default function PaymentProofSection({

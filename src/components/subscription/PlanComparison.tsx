@@ -2,6 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { PublicSubscriptionPlan } from '@/types/subscription';
+    base_total: number;
+    period_discount_percent: number;
+    period_discount_amount: number;
+    price_after_period_discount: number;
+    promo_discount_percent?: number;
+    promo_discount_amount?: number;
+    final_price: number;
+    billing_period: 'monthly' | 'quarterly' | 'annual';
+    calculated_at: string;
+  };
+  fallback?: boolean;
+}
+
+interface BillingPeriod {
+  id: 'monthly' | 'quarterly' | 'annual';
+  name: string;
+  months: number;
+  basePrice: number;
+  periodDiscount: number;
+  finalPrice: number;
+  features: string[];
+  popular?: boolean;
+}
+>>>>>>> bfbe891720c58db002470c5f39aae1d2b64589fc
 
 interface PlanComparisonProps {
   onPlanSelect?: (planId: string) => void;
@@ -11,37 +35,89 @@ interface PlanComparisonProps {
 /**
  * PlanComparison Component
  *
- * Fetches and displays actual subscription plans from the database
- * with feature comparison and selection interaction
+ * Displays billing periods using the new dynamic pricing system
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
   const [plans, setPlans] = useState<PublicSubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch actual subscription plans from database
+  // Fetch pricing data from the new pricing service
   useEffect(() => {
-    const fetchPlans = async () => {
+    const fetchPricingData = async () => {
       try {
         setLoading(true);
-        // Use public API endpoint that doesn't require admin access
-        const response = await fetch('/api/subscription-plans?include_inactive=false');
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch subscription plans');
+        // Fetch pricing for all plan types in parallel
+        const planTypes: ('monthly' | 'quarterly' | 'annual')[] = ['monthly', 'quarterly', 'annual'];
+        const pricingPromises = planTypes.map(planType =>
+          fetch(`/api/pricing?plan=${planType}`)
+        );
+
+        const responses = await Promise.all(pricingPromises);
+
+        // Check if all responses are successful
+        const allSuccessful = responses.every(response => response.ok);
+        if (!allSuccessful) {
+          throw new Error('Failed to fetch pricing data');
         }
 
-        const data = await response.json();
-        setPlans(data.plans || []);
+        const pricingData = await Promise.all(
+          responses.map(response => response.json() as Promise<PricingServiceResponse>)
+        );
+
+        // Define standard features for each billing period
+        const standardFeatures: Record<string, string[]> = {
+          monthly: [
+            'Flexible monthly billing',
+            'Full access to all features',
+            'Cancel anytime',
+            '24/7 customer support',
+            'Regular updates & improvements'
+          ],
+          quarterly: [
+            'Save with quarterly billing',
+            'Full access to all features',
+            'Priority customer support',
+            'Regular updates & improvements',
+            'Best value for regular users'
+          ],
+          annual: [
+            'Maximum savings with annual billing',
+            'Full access to all features',
+            'Premium customer support',
+            'Early access to new features',
+            'Best long-term value'
+          ]
+        };
+
+        // Transform pricing data to billing periods format
+        const billingPeriods: BillingPeriod[] = pricingData.map((data, index) => {
+          const planType = planTypes[index];
+          const pricing = data.pricing;
+
+          return {
+            id: pricing.billing_period,
+            name: planType === 'monthly' ? 'Monthly' : planType === 'quarterly' ? 'Quarterly' : 'Annual',
+            months: pricing.period_months,
+            basePrice: pricing.base_price,
+            periodDiscount: pricing.period_discount_percent,
+            finalPrice: pricing.final_price,
+            features: standardFeatures[planType] || [],
+            popular: planType === 'quarterly' // Quarterly is marked as most popular
+          };
+        });
+
+        setPlans(billingPeriods);
       } catch (err) {
-        console.error('Error fetching plans:', err);
-        setError('Failed to load subscription plans');
+        console.error('Error fetching pricing data:', err);
+        setError('Failed to load pricing options');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPlans();
+    fetchPricingData();
   }, []);
 
   const handlePlanClick = (planId: string) => {
@@ -92,6 +168,14 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
     );
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
   return (
     <div className={`grid grid-cols-1 gap-4 sm:gap-6 max-w-6xl mx-auto ${
       plans.length === 1 ? '' :
@@ -141,15 +225,17 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                 {plan.currency === 'PHP' ? '₱' : plan.currency === 'USD' ? '$' : '€'}
                 {plan.price.toLocaleString()}
               </span>
-              <span className="text-gray-600">/{plan.interval}</span>
-              {plan.discount_percent > 0 && (
+              <span className="text-gray-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
+              {plan.periodDiscount > 0 && (
                 <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                  Save {plan.discount_percent}%
+                  Save {plan.periodDiscount}%
                 </span>
               )}
             </div>
 
-            <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
+            <p className="text-gray-600 text-sm mb-6">
+              {plan.months === 1 ? 'Flexible monthly billing' : `Billed every ${plan.months} months`}
+            </p>
 
             {/* CTA Button */}
             <button
