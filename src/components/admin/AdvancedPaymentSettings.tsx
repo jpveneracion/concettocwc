@@ -36,12 +36,14 @@ export default function AdvancedPaymentSettings() {
   const [settings, setSettings] = useState<PaymentSettings | null>(null);
   const [activeTab, setActiveTab] = useState<'payment-methods' | 'plan-qrcodes' | 'promo-qrcodes'>('payment-methods');
   const [loading, setLoading] = useState(true);
+  const [qrCodesLoading, setQrCodesLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchSettings();
+    fetchQrCodes();
   }, []);
 
   const fetchSettings = async () => {
@@ -57,6 +59,26 @@ export default function AdvancedPaymentSettings() {
       showMessage('error', 'Failed to load payment settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQrCodes = async () => {
+    try {
+      setQrCodesLoading(true);
+      const response = await fetch('/api/admin/qr-codes');
+      if (response.ok) {
+        const qrCodesData = await response.json();
+        // Merge QR codes into existing settings
+        setSettings(prev => prev ? {
+          ...prev,
+          planQrCodes: qrCodesData
+        } : null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch QR codes:', error);
+      showMessage('error', 'Failed to load QR codes');
+    } finally {
+      setQrCodesLoading(false);
     }
   };
 
@@ -152,6 +174,15 @@ export default function AdvancedPaymentSettings() {
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
         <p className="text-gray-600">Loading payment settings...</p>
+      </div>
+    );
+  }
+
+  if (qrCodesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin text-4xl mr-3">⏳</div>
+        <p className="text-gray-600">Loading QR codes...</p>
       </div>
     );
   }
@@ -412,9 +443,9 @@ export default function AdvancedPaymentSettings() {
       <div className="flex justify-end pt-4 border-t">
         <button
           onClick={saveSettings}
-          disabled={saving || uploading}
+          disabled={saving || uploading || qrCodesLoading}
           className={`px-6 py-3 rounded-lg font-medium ${
-            saving || uploading
+            saving || uploading || qrCodesLoading
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
