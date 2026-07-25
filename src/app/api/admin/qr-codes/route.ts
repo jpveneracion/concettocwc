@@ -2,6 +2,63 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { updatePlanQrCodes, updatePromoQrCode } from '@/lib/qr-service';
+import { sql } from '@/lib/db';
+
+/**
+ * GET /api/admin/qr-codes
+ *
+ * Retrieve plan QR codes (admin only)
+ */
+export async function GET(req: Request) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await requireAdmin(session.userId);
+
+    // Fetch plan QR codes from both gcash and gotyme payment settings rows
+    const result = await sql`
+      SELECT payment_method, gcash_basic_qr_url, gcash_pro_qr_url, gcash_premium_qr_url,
+             gotyme_basic_qr_url, gotyme_pro_qr_url, gotyme_premium_qr_url
+      FROM payment_settings
+      WHERE payment_method IN ('gcash', 'gotyme')
+    `;
+
+    const gcashRow = result.find(r => r.payment_method === 'gcash');
+    const gotymeRow = result.find(r => r.payment_method === 'gotyme');
+
+    const planQrCodes = {
+      gcash_basic: gcashRow?.gcash_basic_qr_url || null,
+      gcash_pro: gcashRow?.gcash_pro_qr_url || null,
+      gcash_premium: gcashRow?.gcash_premium_qr_url || null,
+      gotyme_basic: gotymeRow?.gotyme_basic_qr_url || null,
+      gotyme_pro: gotymeRow?.gotyme_pro_qr_url || null,
+      gotyme_premium: gotymeRow?.gotyme_premium_qr_url || null
+    };
+
+    return NextResponse.json(planQrCodes);
+
+  } catch (error) {
+    console.error('Get QR codes error:', error);
+
+    if (error instanceof Error && error.message.includes('Forbidden')) {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to retrieve QR codes' },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/admin/qr-codes
