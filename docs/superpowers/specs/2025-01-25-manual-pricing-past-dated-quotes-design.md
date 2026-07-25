@@ -13,9 +13,11 @@ The system allows users to create quotes with past dates (date < now), even afte
 
 **Core Requirement:** If users enter an order date at a past date, allow them to input the price for that blinds order at the price they were actually sold.
 
-1. **Past-dated quotes**: Users can enter quotes with dates in the past  
-2. **Editable prices when date < now**: Make price fields editable only when quote date is in the past
-3. **No other changes**: Keep existing database, API, and dashboard functionality unchanged
+1. **Past-dated quotes**: Users can enter quotes with dates in the past
+2. **Both forms affected**: Changes needed in both QuoteForm.tsx and MeasurementsStep.tsx (wizard)
+3. **Editable prices when date < now**: Add price input fields that only appear/editable when quote date is in the past
+4. **Both prices**: Show both supplier cost and retail price as editable inputs
+5. **No other changes**: Keep existing database, API, and dashboard functionality unchanged
 
 ## Solution Overview
 
@@ -31,23 +33,44 @@ The system allows users to create quotes with past dates (date < now), even afte
 
 ### Frontend Changes
 
-**Component: `QuoteForm.tsx`**
+**Two Components to Update:**
+
+#### 1. `QuoteForm.tsx`
 
 **1. Date Detection Logic**
 ```typescript
 const isPastDatedQuote = new Date(date) < new Date();
 ```
 
-**2. Editable Price Fields**
-- Make `retail_price_sqft` and `supplier_cost_sqft` conditionally editable
-- Editable only when `isPastDatedQuote === true`
-- Read-only when quote date is today or in the future (current behavior)
+**2. Add Price Input Fields**
+- Add new input fields for `retail_price_sqft` and `supplier_cost_sqft` in each window item
+- Only show these fields when `isPastDatedQuote === true`
+- Keep them hidden when quote date is today or in the future
+- Place them near the existing product details fields
 
-**3. Implementation Approach**
-- Change price display from read-only to editable inputs when past date detected
-- Keep all existing logic for price calculations and updates
+**3. Integration**
+- Manual price inputs update the same state as auto-filled prices
+- Keep existing calculation logic (area × price = amount)
 - No data structure changes needed
-- Minimal UI changes to indicate editability
+
+#### 2. `MeasurementsStep.tsx` (Wizard)
+
+**1. Date Detection Logic**
+```typescript
+// Need to access quote date from wizard context
+const isPastDatedQuote = getQuoteDate() < new Date();
+```
+
+**2. Add Price Input Fields**
+- Add editable price inputs in the product details section
+- Only show when `isPastDatedQuote === true`
+- Replace or supplement the read-only price display (line 533-536)
+- Maintain the existing visual layout and styling
+
+**3. Integration**
+- Manual prices integrate with existing autocomplete and lookup workflow
+- Update same state structure as auto-filled prices
+- Preserve existing recomputeRow logic
 
 ### How It Works
 
