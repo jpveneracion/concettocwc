@@ -18,7 +18,7 @@ This guide will help you get started with the subscription system in 15 minutes 
 
 - [ ] Node.js 18+ installed
 - [ ] PostgreSQL database access
-- [ ] PayMongo test account
+- [ ] File storage service (AWS S3, Cloudinary, or local storage)
 - [ ] Basic knowledge of TypeScript/Next.js
 
 ### Step 1: Environment Setup (5 minutes)
@@ -32,11 +32,15 @@ npm install
 **1.2 Configure Environment Variables**
 Add to your `.env.local` file:
 ```bash
-# PayMongo Configuration (use test keys for development)
-PAYMONGO_SECRET_KEY=sk_test_your_test_key_here
-PAYMONGO_WEBHOOK_SECRET=whsec_test_your_webhook_secret
-PAYMONGO_PUBLIC_KEY=pk_test_your_public_key
-PAYMONGO_API_URL=https://api.paymongo.com/v1
+# File Storage Configuration
+FILE_STORAGE_SERVICE=local
+FILE_STORAGE_PATH=./public/uploads
+# For AWS S3:
+# FILE_STORAGE_SERVICE=s3
+# FILE_STORAGE_ACCESS_KEY=your_access_key
+# FILE_STORAGE_SECRET_KEY=your_secret_key
+# FILE_STORAGE_BUCKET=your_bucket_name
+# FILE_STORAGE_REGION=us-east-1
 
 # Database Configuration
 DATABASE_URL=postgresql://user:password@localhost:5432/your_database
@@ -65,7 +69,7 @@ node -e "const {sql} = require('./src/lib/db.js'); const fs = require('fs'); con
 node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name LIKE 'subscription%'\`.then(result => console.log('✅ Tables:', result.map(r => r.table_name))).catch(err => console.error('❌ Verification failed:', err));"
 ```
 
-Expected output: `['subscription_plans', 'subscriptions', 'subscription_items', 'invoices', 'payment_methods', 'webhook_events']`
+Expected output: `['subscription_plans', 'subscriptions', 'subscription_items', 'invoices', 'payment_methods', 'payment_verifications']`
 
 ### Step 3: Run Tests (2 minutes)
 
@@ -92,6 +96,7 @@ npm run dev
 # Create a test company and user
 # Navigate to: http://localhost:3000/subscription/checkout
 # Select a plan and complete the checkout flow
+# You'll receive QR codes for payment (GCash, GoTyme, USDC)
 ```
 
 **5.2 Verify Subscription Creation**
@@ -100,11 +105,12 @@ npm run dev
 node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT * FROM subscriptions ORDER BY created_at DESC LIMIT 1\`.then(result => console.log('✅ Latest subscription:', result[0])).catch(err => console.error('❌ Query failed:', err));"
 ```
 
-**5.3 Test Webhook Processing**
+**5.3 Test Payment Verification**
 ```bash
-# Use PayMongo dashboard to send test webhooks
-# Check webhook_events table
-node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT * FROM webhook_events ORDER BY created_at DESC LIMIT 3\`.then(result => console.log('✅ Recent webhooks:', result)).catch(err => console.error('❌ Query failed:', err));"
+# Navigate to: http://localhost:3000/account/subscription
+# Submit a payment verification with screenshot
+# Check payment_verifications table
+node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT * FROM payment_verifications ORDER BY created_at DESC LIMIT 3\`.then(result => console.log('✅ Recent verifications:', result)).catch(err => console.error('❌ Query failed:', err));"
 ```
 
 ---
@@ -124,13 +130,16 @@ node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT * FROM webhook_ev
 
 **Step 3: Start Your Trial**
 1. Click "Start Free Trial" on your preferred plan
-2. Complete the checkout process
-3. Begin using all features immediately
+2. You'll receive QR codes for payment methods (GCash, GoTyme, USDC)
+3. Scan a QR code and make your payment
+4. Upload a screenshot of your payment confirmation
+5. Begin using all features immediately (3-day trial period)
 
 **Step 4: Manage Your Subscription**
 1. Visit `/account/subscription`
 2. View your current plan and usage
-3. Upgrade, cancel, or update payment methods
+3. Submit payment verification screenshots
+4. Upgrade, cancel, or view payment history
 
 ---
 
@@ -155,11 +164,11 @@ curl -X POST http://localhost:3000/api/quotes \
 # Expected: 403 Forbidden with read-only access message
 ```
 
-### Monitoring Webhook Processing
+### Monitoring Payment Verification
 
 ```bash
-# Monitor recent webhook activity
-node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT event_type, processed, processing_error, created_at FROM webhook_events ORDER BY created_at DESC LIMIT 10\`.then(result => console.table(result)).catch(err => console.error('❌ Query failed:', err));"
+# Monitor recent payment verification activity
+node -e "const {sql} = require('./src/lib/db.js'); sql\`SELECT payment_method, status, amount, created_at FROM payment_verifications ORDER BY created_at DESC LIMIT 10\`.then(result => console.table(result)).catch(err => console.error('❌ Query failed:', err));"
 ```
 
 ### Debugging Subscription Issues
@@ -177,43 +186,54 @@ console.log('Access check result:', await checkSubscriptionAccess(session));
 
 ---
 
-## 🌐 PayMongo Integration
+## 🌐 Payment Verification System
 
-### Setting Up PayMongo Test Mode
+### Setting Up Payment Methods
 
-**1. Create PayMongo Test Account**
-- Visit https://dashboard.paymongo.com/
-- Sign up for a test account
-- Navigate to Developers → API Keys
+**1. Configure Payment Methods**
+- Generate QR codes for each payment method (GCash, GoTyme, USDC)
+- Upload QR codes to your file storage service
+- Insert payment method records in database:
+  ```sql
+  INSERT INTO payment_methods (type, account_name, account_number, qr_code_url, is_active) VALUES
+  ('gcash', 'Your Business Name', '09171234567', 'https://your-storage.com/qr/gcash.png', true),
+  ('gotyme', 'Your Business Name', '1234567890', 'https://your-storage.com/qr/gotyme.png', true),
+  ('usdc', 'Your Business Name', '0x123456789abcdef', 'https://your-storage.com/qr/usdc.png', true);
+  ```
 
-**2. Get Test API Keys**
-- Copy the Public Key: `pk_test_...`
-- Copy the Secret Key: `sk_test_...`
-- Add to your `.env.local` file
+**2. Configure File Upload**
+- Set up file storage service (S3, Cloudinary, or local storage)
+- Configure file upload limits and security settings
+- Test screenshot upload functionality
 
-**3. Configure Test Webhook**
-- In PayMongo dashboard, go to Developers → Webhooks
-- Add webhook URL: `https://your-domain.com/api/webhooks/paymongo`
-- For local testing, use ngrok: `https://your-ngrok-url.ngrok.io/api/webhooks/paymongo`
-- Subscribe to test events
-
-### Testing PayMongo Integration
+### Testing Payment Verification
 
 **1. Test Checkout Creation**
 ```bash
 curl -X POST http://localhost:3000/api/subscriptions/create \
   -H "Content-Type: application/json" \
   -H "Cookie: session=your_session" \
+  -d '{"plan_id": "your-plan-id"}'
+```
+
+**2. Test Payment Verification Submission**
+```bash
+curl -X POST http://localhost:3000/api/payment-verifications \
+  -H "Content-Type: application/json" \
+  -H "Cookie: session=your_session" \
   -d '{
-    "plan_id": "your-plan-id",
-    "success_url": "http://localhost:3000/success",
-    "cancel_url": "http://localhost:3000/cancel"
+    "payment_method": "gcash",
+    "amount": 499,
+    "reference_number": "1234567890",
+    "payment_date": "2026-07-10T10:30:00Z",
+    "screenshot_url": "https://your-storage.com/screenshots/payment1.png"
   }'
 ```
 
-**2. Test Webhook Processing**
-- Use PayMongo dashboard to send test webhooks
-- Verify events appear in `webhook_events` table
+**3. Test Admin Verification**
+- Navigate to admin verification interface
+- Review submitted payment proofs
+- Approve or reject verifications
 - Check subscription status updates
 
 ---
@@ -248,18 +268,22 @@ psql $DATABASE_URL -c "\d subscriptions"
 psql $DATABASE_URL -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 ```
 
-### Issue: "Webhook signature verification failed"
+### Issue: "File upload failed"
 
 **Solution:**
 ```bash
-# 1. Verify PAYMONGO_WEBHOOK_SECRET is set
-echo $PAYMONGO_WEBHOOK_SECRET
+# 1. Verify file storage service is configured
+echo $FILE_STORAGE_SERVICE
 
-# 2. Check webhook secret matches PayMongo dashboard
-# (They should be identical, including any prefix)
+# 2. Check file storage credentials
+echo $FILE_STORAGE_ACCESS_KEY
+echo $FILE_STORAGE_BUCKET
 
-# 3. Test webhook signature verification manually
-# Use the webhook testing script in scripts/test-webhook.js
+# 3. Test file upload manually
+curl -X POST http://localhost:3000/api/test-upload \
+  -F "file=@test-screenshot.png"
+
+# 4. Check file size limits and permissions
 ```
 
 ### Issue: "Tests failing"
@@ -288,9 +312,7 @@ POST /api/subscriptions/create
 Content-Type: application/json
 
 {
-  "plan_id": "plan-uuid",
-  "success_url": "https://example.com/success",
-  "cancel_url": "https://example.com/cancel"
+  "plan_id": "plan-uuid"
 }
 ```
 
@@ -306,15 +328,28 @@ POST /api/account/subscription/cancel
 Cookie: session=your_session
 ```
 
-**Webhook Endpoint**
+**Submit Payment Verification**
 ```http
-POST /api/webhooks/paymongo
-paymongo-signature: t=timestamp,v1=digest
+POST /api/payment-verifications
 Content-Type: application/json
 
 {
-  "data": {...},
-  "events": [{"type": "subscription.activated"}]
+  "payment_method": "gcash|gotyme|usdc",
+  "amount": 499,
+  "reference_number": "1234567890",
+  "payment_date": "2026-07-10T10:30:00Z",
+  "screenshot_url": "https://storage.com/screenshots/payment1.png"
+}
+```
+
+**Admin Verification Update**
+```http
+PUT /api/payment-verifications/[id]
+Content-Type: application/json
+
+{
+  "status": "approved|rejected",
+  "admin_notes": "Payment verified successfully"
 }
 ```
 
@@ -363,20 +398,21 @@ Content-Type: application/json
 ### Documentation
 
 - **Implementation Complete**: `docs/subscription/IMPLEMENTATION_COMPLETE.md`
-- **PayMongo Webhooks**: `docs/subscription/PAYMONGO_WEBHOOK_SETUP.md`
-- **Webhook Verification**: `docs/subscription/WEBHOOK_VERIFICATION.md`
+- **Payment Verification Setup**: `docs/subscription/PAYMENT_VERIFICATION_SETUP.md`
 - **Design Document**: `docs/superpowers/specs/2026-07-10-subscription-system-design.md`
+- **PayMongo Removal Design**: `docs/superpowers/specs/2026-07-24-paymongo-removal-design.md`
 
 ### External Resources
 
-- **PayMongo Documentation**: https://developers.paymongo.com/
 - **Next.js Documentation**: https://nextjs.org/docs
 - **PostgreSQL Documentation**: https://www.postgresql.org/docs/
+- **AWS S3 Documentation**: https://docs.aws.amazon.com/s3/
+- **Cloudinary Documentation**: https://cloudinary.com/documentation
 
 ### Support Channels
 
 - **Technical Issues**: Check implementation documentation first
-- **PayMongo Support**: support@paymongo.com
+- **File Storage Support**: Contact your storage provider support
 - **Internal Support**: Contact infrastructure team
 
 ---
@@ -388,20 +424,21 @@ Content-Type: application/json
 - [ ] Database migration completed
 - [ ] All tests passing
 - [ ] Development server running
-- [ ] PayMongo test account configured
+- [ ] Payment verification system configured
 
 ### User Setup
 - [ ] User account created
 - [ ] Subscription plan selected
 - [ ] Trial period started
 - [ ] Basic features tested
-- [ ] Payment method configured
+- [ ] Payment method chosen (GCash/GoTyme/USDC)
 
 ### Production Readiness
 - [ ] Production environment variables set
 - [ ] Database migrated in production
-- [ ] PayMongo production keys configured
-- [ ] Webhooks configured and tested
+- [ ] File storage service configured
+- [ ] Payment QR codes generated and tested
+- [ ] Admin verification interface tested
 - [ ] Monitoring and alerting setup
 
 ---

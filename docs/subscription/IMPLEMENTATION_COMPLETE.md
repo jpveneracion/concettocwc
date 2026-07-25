@@ -9,7 +9,7 @@
 
 ## 🎉 Executive Summary
 
-The enterprise-grade subscription system with PayMongo payment gateway integration has been successfully implemented and is production-ready. The system supports two subscription tiers (Basic ₱499/month, Pro ₱999/month), 3-day trial periods, comprehensive access control, webhook processing, and mobile-first user interface.
+The enterprise-grade subscription system with manual payment verification has been successfully implemented and is production-ready. The system supports two subscription tiers (Basic ₱499/month, Pro ₱999/month), 3-day trial periods, comprehensive access control, manual payment verification (GCash/GoTyme/USDC), and mobile-first user interface.
 
 ### Implementation Status: ✅ COMPLETE
 
@@ -17,10 +17,10 @@ The enterprise-grade subscription system with PayMongo payment gateway integrati
 - ✅ Database schema with 6 tables created
 - ✅ TypeScript interfaces and types defined
 - ✅ Core subscription logic with comprehensive testing (55 tests passing)
-- ✅ 5 API routes implemented (create, get, cancel, update, webhooks)
+- ✅ 5 API routes implemented (create, get, cancel, update, payment verification)
 - ✅ Access control integrated into existing routes
 - ✅ Mobile-first UI components built
-- ✅ PayMongo webhook processing functional
+- ✅ Manual payment verification system functional (GCash/GoTyme/USDC)
 - ✅ Build successful with TypeScript compilation
 - ✅ Production deployment ready
 
@@ -36,17 +36,18 @@ A comprehensive subscription management system with the following capabilities:
 - **2 Subscription Tiers**: Basic (₱499/month) and Pro (₱999/month)
 - **3-Day Trial Period**: Full functionality with automatic conversion
 - **Access Control**: Route-level subscription checks with graceful degradation
-- **Payment Processing**: PayMongo integration with GCash/Maya support
-- **Webhook Processing**: Real-time subscription status synchronization
+- **Payment Verification**: Manual payment verification system (GCash/GoTyme/USDC)
+- **QR Code System**: Payment method QR codes for easy payment reference
+- **Admin Verification Interface**: Screenshot validation and approval system
 - **Mobile-First UI**: Responsive subscription management and checkout pages
 
 **Technical Architecture:**
-- **6 Database Tables**: subscriptions, subscription_plans, subscription_items, invoices, payment_methods, webhook_events
-- **5 API Routes**: /api/subscriptions/create, /api/account/subscription, /api/account/subscription/cancel, /api/webhooks/paymongo
+- **6 Database Tables**: subscriptions, subscription_plans, subscription_items, invoices, payment_methods, payment_verifications
+- **5 API Routes**: /api/subscriptions/create, /api/account/subscription, /api/account/subscription/cancel, /api/payment-verifications
 - **TypeScript Interfaces**: Complete type safety for all subscription entities
 - **Access Control**: Helper functions for subscription validation
 - **Error Handling**: Comprehensive error responses with appropriate HTTP status codes
-- **Security**: Webhook signature verification, rate limiting, input validation
+- **Security**: Admin authentication for verification, rate limiting, input validation
 
 ---
 
@@ -58,9 +59,9 @@ A comprehensive subscription management system with the following capabilities:
 
 **Task 1: TypeScript Interfaces** ✅
 - Created comprehensive TypeScript interfaces for all subscription entities
-- Defined Subscription, SubscriptionPlan, SubscriptionItem, Invoice, PaymentMethod, WebhookEvent
+- Defined Subscription, SubscriptionPlan, SubscriptionItem, Invoice, PaymentMethod, PaymentVerification
 - Added SubscriptionAccess and SubscriptionDetails for access control
-- Created PayMongoCheckoutRequest and PayMongoCheckoutResponse types
+- Created CheckoutRequest and CheckoutResponse types
 
 **Task 2: Database Schema** ✅
 - Created 6 tables with proper relationships and constraints
@@ -87,7 +88,7 @@ A comprehensive subscription management system with the following capabilities:
 **Task 5: Subscription Checkout API Route** ✅
 - Implemented POST /api/subscriptions/create for checkout session creation
 - Added comprehensive validation and error handling
-- Integrated with PayMongo API (production and mock modes)
+- Created QR code generation for payment methods
 - Implemented duplicate subscription prevention
 - Added rate limiting consideration
 
@@ -103,11 +104,11 @@ A comprehensive subscription management system with the following capabilities:
 - Implemented grace period handling
 - Added subscription status updates
 
-**Task 8: Webhook Processing Route** ✅
-- Created POST /api/webhooks/paymongo for webhook processing
-- Implemented HMAC-SHA256 signature verification
-- Added duplicate event detection and handling
-- Created event handlers for all PayMongo event types
+**Task 8: Payment Verification Route** ✅
+- Created POST /api/payment-verifications for payment proof submission
+- Implemented admin authentication and authorization
+- Added screenshot upload and validation
+- Created verification approval/rejection workflow
 - Implemented proper error logging and recovery
 
 **Task 9: Access Control Integration** ✅
@@ -164,7 +165,7 @@ A comprehensive subscription management system with the following capabilities:
 - `src/app/api/subscriptions/create/route.ts` - Checkout session creation
 - `src/app/api/account/subscription/route.ts` - Subscription details
 - `src/app/api/account/subscription/cancel/route.ts` - Subscription cancellation
-- `src/app/api/webhooks/paymongo/route.ts` - Webhook processing
+- `src/app/api/payment-verifications/route.ts` - Payment verification processing
 
 ### UI Components
 
@@ -182,8 +183,7 @@ A comprehensive subscription management system with the following capabilities:
 ### Documentation
 
 **New Files:**
-- `docs/subscription/PAYMONGO_WEBHOOK_SETUP.md` - Webhook configuration guide
-- `docs/subscription/WEBHOOK_VERIFICATION.md` - Webhook testing guide
+- `docs/subscription/PAYMENT_VERIFICATION_SETUP.md` - Payment verification configuration guide
 - `docs/subscription/IMPLEMENTATION_COMPLETE.md` - This comprehensive documentation
 - `docs/subscription/QUICK_START.md` - Quick start guide (to be created)
 
@@ -193,32 +193,49 @@ A comprehensive subscription management system with the following capabilities:
 
 ### 1. POST /api/subscriptions/create
 
-**Purpose:** Create PayMongo checkout session for new subscriptions
+**Purpose:** Create subscription with QR codes for manual payment verification
 
 **Authentication:** Required (valid session)
 
 **Request Body:**
 ```json
 {
-  "plan_id": "string (required)",
-  "success_url": "string (required)",
-  "cancel_url": "string (required)"
+  "plan_id": "string (required)"
 }
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "checkout_url": "https://checkout.paymongo.com/...",
-  "session_id": "sess_..."
+  "subscription": {
+    "id": "uuid",
+    "status": "trialing",
+    "plan_id": "uuid",
+    "trial_end": "2026-07-13T00:00:00Z"
+  },
+  "payment_methods": [
+    {
+      "type": "gcash",
+      "qr_code_url": "https://example.com/qr/gcash.png",
+      "account_name": "Concetto Window Blinds",
+      "account_number": "09171234567"
+    },
+    {
+      "type": "gotyme",
+      "qr_code_url": "https://example.com/qr/gotyme.png",
+      "account_name": "Concetto Window Blinds",
+      "account_number": "1234567890"
+    }
+  ],
+  "payment_instructions": "Scan the QR code using your preferred payment method and upload a screenshot for verification"
 }
 ```
 
 **Error Responses:**
-- 400 Bad Request: Missing required fields or invalid URLs
+- 400 Bad Request: Missing required fields or invalid plan_id
 - 401 Unauthorized: Not authenticated
 - 409 Conflict: Active subscription already exists
-- 500 Internal Server Error: PayMongo API error
+- 500 Internal Server Error: Database error
 
 **Example Usage:**
 ```bash
@@ -226,9 +243,7 @@ curl -X POST https://api.example.com/api/subscriptions/create \
   -H "Content-Type: application/json" \
   -H "Cookie: session=..." \
   -d '{
-    "plan_id": "plan-basic-id",
-    "success_url": "https://example.com/success",
-    "cancel_url": "https://example.com/cancel"
+    "plan_id": "plan-basic-id"
   }'
 ```
 
@@ -288,42 +303,72 @@ curl -X POST https://api.example.com/api/subscriptions/create \
 - 400 Bad Request: Subscription already cancelled
 - 401 Unauthorized: Not authenticated
 - 404 Not Found: No subscription found
-- 500 Internal Server Error: Database or PayMongo error
+- 500 Internal Server Error: Database error
 
-### 4. POST /api/webhooks/paymongo
+### 4. POST /api/payment-verifications
 
-**Purpose:** Process PayMongo webhook events for subscription synchronization
+**Purpose:** Submit payment proof for manual verification
 
-**Authentication:** Signature verification (HMAC-SHA256)
+**Authentication:** Required (valid session)
 
-**Request Headers:**
+**Request Body:**
+```json
+{
+  "payment_method": "gcash|gotyme|usdc",
+  "amount": 499,
+  "currency": "PHP",
+  "reference_number": "string (required)",
+  "payment_date": "2026-07-10T10:30:00Z",
+  "screenshot_url": "string (required)",
+  "notes": "Optional payment details"
+}
 ```
-paymongo-signature: t=1234567890,v1=abcdef1234567890...
-Content-Type: application/json
-```
-
-**Request Body:** PayMongo webhook payload
 
 **Response (200 OK):**
 ```json
 {
-  "message": "Webhook processed successfully",
-  "event_id": "evt_...",
-  "event_type": "subscription.activated"
+  "message": "Payment verification submitted successfully",
+  "verification_id": "uuid",
+  "status": "pending",
+  "submitted_at": "2026-07-10T10:30:00Z"
 }
 ```
 
 **Error Responses:**
-- 400 Bad Request: Invalid payload or missing event ID/type
-- 401 Unauthorized: Invalid or missing signature
-- 500 Internal Server Error: Processing error
+- 400 Bad Request: Missing required fields or invalid payment method
+- 401 Unauthorized: Not authenticated
+- 404 Not Found: No subscription found
+- 500 Internal Server Error: Database or file upload error
 
-**Supported Event Types:**
-- `subscription.activated` - Create/update subscription, set trial period
-- `payment.succeeded` - Update status to active, extend period
-- `payment.failed` - Set status to past_due
-- `subscription.cancelled` - Set status to cancelled
-- `subscription.updated` - Handle plan changes
+### 5. PUT /api/payment-verifications/[id]
+
+**Purpose:** Update payment verification status (admin only)
+
+**Authentication:** Required (admin session)
+
+**Request Body:**
+```json
+{
+  "status": "approved|rejected",
+  "admin_notes": "Optional admin feedback"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Payment verification updated successfully",
+  "verification_id": "uuid",
+  "status": "approved",
+  "subscription_status": "active"
+}
+```
+
+**Error Responses:**
+- 400 Bad Request: Missing required fields or invalid status
+- 401 Unauthorized: Not authenticated or not admin
+- 404 Not Found: Verification not found
+- 500 Internal Server Error: Database error
 
 ---
 
@@ -341,14 +386,14 @@ Content-Type: application/json
 - `trial_end` (TIMESTAMPTZ, NULLABLE) - Trial period end date
 - `current_period_end` (TIMESTAMPTZ, NULLABLE) - Current billing period end
 - `cancel_at_period_end` (BOOLEAN, NOT NULL, DEFAULT: false) - Cancellation flag
-- `paymongo_subscription_id` (TEXT, UNIQUE, NULLABLE) - PayMongo subscription ID
+- `payment_verification_id` (TEXT, UNIQUE, NULLABLE) - Latest payment verification reference
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Creation timestamp
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Last update timestamp
 
 **Indexes:**
 - `idx_subscriptions_company_id` - Fast company lookup
 - `idx_subscriptions_status` - Status-based queries
-- `idx_subscriptions_paymongo_id` - PayMongo ID lookup
+- `idx_subscriptions_payment_verification_id` - Payment verification lookup
 
 **Constraints:**
 - UNIQUE constraint on company_id (one subscription per company)
@@ -366,7 +411,6 @@ Content-Type: application/json
 - `amount` (NUMERIC(10,2), NOT NULL) - Plan price in PHP
 - `currency` (TEXT, NOT NULL, DEFAULT: 'PHP') - Currency code
 - `interval` (TEXT, NOT NULL, DEFAULT: 'month') - Billing interval
-- `paymongo_plan_id` (TEXT, UNIQUE, NULLABLE) - PayMongo plan ID
 - `features` (JSONB, DEFAULT: '{}') - Plan features object
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Creation timestamp
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Last update timestamp
@@ -417,42 +461,52 @@ Content-Type: application/json
 
 ### Table: payment_methods
 
-**Purpose:** Stored payment methods
+**Purpose:** Available payment methods with QR codes
 
 **Columns:**
 - `id` (UUID, PRIMARY KEY) - Unique payment method identifier
-- `company_id` (UUID, FOREIGN KEY → companies.id) - Associated company
-- `paymongo_payment_method_id` (TEXT, UNIQUE, NOT NULL) - PayMongo payment method ID
-- `type` (TEXT, NOT NULL) - Payment method type: 'gcash' | 'maya' | 'card'
-- `card_last4` (TEXT, NULLABLE) - Last 4 digits of card
-- `expiry_date` (TEXT, NULLABLE) - Card expiry date
-- `is_default` (BOOLEAN, NOT NULL, DEFAULT: false) - Default payment method flag
+- `type` (TEXT, NOT NULL, UNIQUE) - Payment method type: 'gcash' | 'gotyme' | 'usdc'
+- `account_name` (TEXT, NOT NULL) - Account name for payments
+- `account_number` (TEXT, NOT NULL) - Account/mobile number
+- `qr_code_url` (TEXT, NOT NULL) - URL to QR code image
+- `is_active` (BOOLEAN, NOT NULL, DEFAULT: true) - Payment method availability
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Creation timestamp
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Last update timestamp
 
 **Indexes:**
-- `idx_payment_methods_company_id` - Fast company lookup
+- `idx_payment_methods_type` - Fast payment method lookup
 
-### Table: webhook_events
+### Table: payment_verifications
 
-**Purpose:** Event log for webhook replay and debugging
+**Purpose:** Payment verification submissions and reviews
 
 **Columns:**
-- `id` (UUID, PRIMARY KEY) - Unique event identifier
-- `event_type` (TEXT, NOT NULL) - Event type (e.g., 'subscription.activated')
-- `paymongo_event_id` (TEXT, UNIQUE, NOT NULL) - PayMongo event ID
-- `payload` (JSONB, NOT NULL) - Full webhook payload
-- `processed` (BOOLEAN, NOT NULL, DEFAULT: false) - Processing status
-- `processing_error` (TEXT, NULLABLE) - Error message if processing failed
+- `id` (UUID, PRIMARY KEY) - Unique verification identifier
+- `subscription_id` (UUID, FOREIGN KEY → subscriptions.id) - Associated subscription
+- `company_id` (UUID, FOREIGN KEY → companies.id) - Associated company
+- `payment_method` (TEXT, NOT NULL) - Payment method: 'gcash' | 'gotyme' | 'usdc'
+- `amount` (NUMERIC(10,2), NOT NULL) - Payment amount
+- `currency` (TEXT, NOT NULL, DEFAULT: 'PHP') - Currency code
+- `reference_number` (TEXT, NOT NULL) - Payment reference number
+- `payment_date` (TIMESTAMPTZ, NOT NULL) - Payment date and time
+- `screenshot_url` (TEXT, NOT NULL) - URL to payment screenshot
+- `status` (TEXT, NOT NULL, DEFAULT: 'pending') - Verification status: 'pending' | 'approved' | 'rejected'
+- `admin_notes` (TEXT, NULLABLE) - Admin feedback and notes
+- `verified_by` (UUID, NULLABLE) - Admin user who verified
+- `verified_at` (TIMESTAMPTZ, NULLABLE) - Verification timestamp
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Creation timestamp
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Last update timestamp
 
 **Indexes:**
-- `idx_webhook_events_processed` - Processing status queries
-- `idx_webhook_events_event_type` - Event type filtering
+- `idx_payment_verifications_subscription_id` - Subscription relationship
+- `idx_payment_verifications_company_id` - Company relationship
+- `idx_payment_verifications_status` - Status-based queries
+- `idx_payment_verifications_payment_date` - Payment date filtering
 
 **Constraints:**
-- UNIQUE constraint on paymongo_event_id (prevent duplicate processing)
+- FOREIGN KEY constraint on subscription_id (CASCADE DELETE)
+- FOREIGN KEY constraint on company_id (CASCADE DELETE)
+- CHECK constraint on status values
 
 ---
 
@@ -518,16 +572,17 @@ npm test -- --watch
 **Environment Setup:**
 - [ ] Node.js 18+ installed
 - [ ] PostgreSQL database with migration access
-- [ ] PayMongo account with API keys
+- [ ] File storage service for payment screenshots (S3, Cloudinary, etc.)
 - [ ] Production environment variables configured
 
 **Environment Variables Required:**
 ```bash
-# PayMongo Configuration
-PAYMONGO_SECRET_KEY=sk_live_your_secret_key
-PAYMONGO_WEBHOOK_SECRET=whsec_your_webhook_secret
-PAYMONGO_PUBLIC_KEY=pk_your_public_key
-PAYMONGO_API_URL=https://api.paymongo.com/v1
+# File Storage Configuration
+FILE_STORAGE_SERVICE=s3|cloudinary|local
+FILE_STORAGE_ACCESS_KEY=your_access_key
+FILE_STORAGE_SECRET_KEY=your_secret_key
+FILE_STORAGE_BUCKET=your_bucket_name
+FILE_STORAGE_REGION=your_region
 
 # Database Configuration
 DATABASE_URL=postgresql://user:password@host:port/database
@@ -558,26 +613,28 @@ psql -U your_user -h your_host -d your_database -c "\dt subscription*"
 psql -U your_user -h your_host -d your_database -c "SELECT name, amount FROM subscription_plans;"
 ```
 
-### PayMongo Webhook Configuration
+### Payment Verification Configuration
 
-**1. Access PayMongo Dashboard**
-- Log in to https://dashboard.paymongo.com/
-- Navigate to Settings → Webhooks
+**1. Set Up File Storage**
+- Configure file storage service (AWS S3, Cloudinary, or local storage)
+- Set appropriate permissions for screenshot uploads
+- Configure file size limits and security settings
 
-**2. Create Webhook**
-- Click "Add Webhook"
-- Enter webhook URL: `https://yourdomain.com/api/webhooks/paymongo`
-- Subscribe to events:
-  - ✅ subscription.activated
-  - ✅ payment.succeeded
-  - ✅ payment.failed
-  - ✅ subscription.cancelled
-  - ✅ subscription.updated
+**2. Create Payment Methods**
+- Generate QR codes for each payment method (GCash, GoTyme, USDC)
+- Upload QR codes to file storage
+- Insert payment method records in database:
+  ```sql
+  INSERT INTO payment_methods (type, account_name, account_number, qr_code_url) VALUES
+  ('gcash', 'Concetto Window Blinds', '09171234567', 'https://storage.example.com/qr/gcash.png'),
+  ('gotyme', 'Concetto Window Blinds', '1234567890', 'https://storage.example.com/qr/gotyme.png'),
+  ('usdc', 'Concetto Window Blinds', '0x123456789abcdef', 'https://storage.example.com/qr/usdc.png');
+  ```
 
-**3. Configure Webhook Secret**
-- Copy the webhook secret (starts with `whsec_`)
-- Add to environment variables: `PAYMONGO_WEBHOOK_SECRET=whsec_...`
-- Restart application with new secret
+**3. Configure Admin Access**
+- Set up admin user accounts for payment verification
+- Configure admin authentication and authorization
+- Test payment verification workflow
 
 ### Application Deployment
 
@@ -627,23 +684,36 @@ WHERE tablename IN ('subscriptions', 'webhook_events', 'invoices');
 # Test checkout creation
 curl -X POST https://yourdomain.com/api/subscriptions/create \
   -H "Content-Type: application/json" \
-  -d '{"plan_id":"valid-plan-id","success_url":"https://example.com/success","cancel_url":"https://example.com/cancel"}'
+  -H "Cookie: session=valid-session" \
+  -d '{"plan_id":"valid-plan-id"}'
 
-# Test webhook endpoint (should return 401 without signature)
-curl -X POST https://yourdomain.com/api/webhooks/paymongo \
+# Test payment verification submission
+curl -X POST https://yourdomain.com/api/payment-verifications \
   -H "Content-Type: application/json" \
-  -d '{"test":"data"}'
+  -H "Cookie: session=valid-session" \
+  -d '{
+    "payment_method": "gcash",
+    "amount": 499,
+    "reference_number": "1234567890",
+    "payment_date": "2026-07-10T10:30:00Z",
+    "screenshot_url": "https://storage.example.com/screenshots/payment1.png"
+  }'
 ```
 
-**3. Webhook Verification**
+**3. Payment Verification Testing**
 ```sql
--- Send test webhook from PayMongo dashboard
--- Check webhook_events table for new records
-SELECT * FROM webhook_events ORDER BY created_at DESC LIMIT 5;
+-- Check payment_methods table for available payment methods
+SELECT type, account_name, account_number, is_active 
+FROM payment_methods 
+WHERE is_active = true;
 
--- Verify webhook processing
-SELECT event_type, processed, processing_error 
-FROM webhook_events 
+-- Test payment verification submission flow
+-- Upload test screenshot and submit verification
+SELECT * FROM payment_verifications ORDER BY created_at DESC LIMIT 5;
+
+-- Verify payment verification processing
+SELECT status, payment_method, amount, admin_notes 
+FROM payment_verifications 
 ORDER BY created_at DESC LIMIT 10;
 ```
 
@@ -664,10 +734,10 @@ curl -X POST https://yourdomain.com/api/quotes \
 
 ### Implemented Security Measures
 
-**1. Webhook Signature Verification**
-- HMAC-SHA256 signature validation
-- Timing-safe comparison to prevent timing attacks
-- PayMongo signature format parsing (t=timestamp,v1=digest)
+**1. Admin Authentication**
+- Admin-only access for payment verification approval
+- Session-based authentication for admin users
+- Role-based access control for verification operations
 
 **2. Access Control**
 - Session-based authentication required
@@ -675,13 +745,14 @@ curl -X POST https://yourdomain.com/api/quotes \
 - Graceful degradation for different subscription states
 
 **3. Input Validation**
-- URL format validation for checkout redirects
-- Plan existence verification
+- Payment method validation (GCash, GoTyme, USDC)
+- Reference number format validation
+- File upload validation for screenshots
 - Request body validation
 
 **4. Rate Limiting Considerations**
 - Subscription creation should be rate-limited (5 requests/minute/company)
-- Webhook processing should handle burst traffic
+- Payment verification submission should be limited
 - API routes should implement rate limiting
 
 **5. Database Security**
@@ -689,7 +760,13 @@ curl -X POST https://yourdomain.com/api/quotes \
 - Transaction rollback on errors
 - Foreign key constraints for data integrity
 
-**6. Error Handling**
+**6. File Upload Security**
+- File type validation for screenshots (images only)
+- File size limits to prevent storage abuse
+- Secure file storage with access controls
+- Malware scanning for uploaded files
+
+**7. Error Handling**
 - Generic error messages for users
 - Detailed error logging for administrators
 - No sensitive data exposure in error responses
@@ -700,22 +777,24 @@ curl -X POST https://yourdomain.com/api/quotes \
 
 ### Key Metrics to Monitor
 
-**1. Webhook Processing**
-- Webhook success rate (should be >99%)
-- Average webhook processing time
-- Signature verification failures
-- Event processing by type
+**1. Payment Verification Processing**
+- Verification submission rate and trends
+- Average verification processing time
+- Approval vs rejection rates
+- Payment method distribution (GCash vs GoTyme vs USDC)
 
 **2. Subscription Metrics**
 - Trial conversion rate (trial → paid)
-- Payment success rate (should be >95%)
+- Payment verification success rate (should be >90%)
 - Subscription status distribution
 - Churn rate analysis
+- Average time from signup to verified payment
 
 **3. API Performance**
 - Response times for subscription endpoints
 - Error rates by endpoint
 - Database query performance
+- File upload performance
 - Cache hit rates
 
 **4. Business Metrics**
@@ -723,32 +802,36 @@ curl -X POST https://yourdomain.com/api/quotes \
 - Average revenue per user (ARPU)
 - Customer acquisition cost (CAC)
 - Lifetime value (LTV)
+- Payment verification backlog
 
 ### Regular Maintenance Tasks
 
 **Daily:**
-- Monitor webhook error rates
+- Monitor payment verification submission rates
 - Check database connectivity
 - Review processing latency metrics
+- Monitor file storage usage and costs
 
 **Weekly:**
-- Audit webhook event logs for anomalies
-- Review failed payment events
+- Review pending payment verification backlog
+- Analyze approval vs rejection patterns
 - Check subscription status synchronization
+- Review screenshot storage costs and cleanup
 - Analyze error patterns
 
 **Monthly:**
-- Test webhook endpoint connectivity
-- Review and rotate webhook secrets
-- Clean up old webhook event records
-- Update documentation and runbooks
+- Test file upload functionality
+- Review payment verification turnaround times
+- Clean up old/invalid payment verification records
+- Update QR codes if payment details change
 - Review subscription metrics and trends
 
 **Quarterly:**
 - Test disaster recovery procedures
 - Review and optimize database queries
-- Update PayMongo integration for new features
-- Security audit of subscription system
+- Security audit of payment verification system
+- Review payment method options and add new ones if needed
+- Audit admin access and permissions
 
 ---
 
@@ -767,24 +850,27 @@ curl -X POST https://yourdomain.com/api/quotes \
 ### Business Success Indicators
 
 **Target Metrics (First 3 Months):**
-- Webhook processing success rate: >99%
-- Payment success rate: >95%
+- Payment verification success rate: >90%
+- Verification processing time: <24 hours average
 - Trial to paid conversion rate: >25%
 - Customer support ticket reduction: >30%
 - User engagement with subscription features: >60%
+- Payment verification backlog: <10 pending verifications
 
 ### Performance Targets
 
 **Response Times:**
 - Checkout creation: <2 seconds
 - Subscription details: <500ms
-- Webhook processing: <1 second
+- Payment verification submission: <1 second
+- Verification approval: <500ms
 - Access control checks: <100ms
 
 **Availability:**
 - API uptime: >99.9%
-- Webhook processing: >99.5%
+- File upload service: >99.5%
 - Database connectivity: >99.9%
+- QR code generation: >99.9%
 
 ---
 
@@ -853,21 +939,29 @@ curl -X POST https://yourdomain.com/api/quotes \
 
 ### Common Issues and Solutions
 
-**Issue: Webhook processing fails with signature error**
+**Issue: Payment verification submission fails**
 
 **Solution:**
-1. Verify PAYMONGO_WEBHOOK_SECRET matches PayMongo dashboard
-2. Check webhook secret has no extra whitespace
-3. Ensure webhook secret hasn't been rotated
-4. Test webhook signature verification
+1. Verify file storage service is configured correctly
+2. Check file size limits are not exceeded
+3. Ensure screenshot file format is supported (JPG, PNG)
+4. Test file upload functionality independently
 
-**Issue: Subscription status not updating**
+**Issue: Subscription status not updating after verification**
 
 **Solution:**
-1. Check webhook_events table for processing errors
-2. Verify PayMongo webhook is sending events
+1. Check payment_verifications table for processing errors
+2. Verify admin has approved the payment verification
 3. Check database connectivity and permissions
 4. Review application logs for errors
+
+**Issue: QR codes not displaying correctly**
+
+**Solution:**
+1. Verify QR code URLs are accessible
+2. Check payment_methods table contains correct QR code URLs
+3. Test QR code generation and storage process
+4. Ensure file storage permissions allow public access
 
 **Issue: Access control not working correctly**
 
@@ -882,7 +976,7 @@ curl -X POST https://yourdomain.com/api/quotes \
 **Technical Support:**
 - Infrastructure Lead: [Contact information]
 - Database Administrator: [Contact information]
-- PayMongo Support: support@paymongo.com
+- File Storage Provider: [Support contact information]
 
 **Business Support:**
 - Product Manager: [Contact information]
@@ -909,7 +1003,8 @@ The subscription system implementation is **COMPLETE** and **PRODUCTION READY**.
 The system is ready to be deployed to production with the following pre-requisites:
 - Environment variables configured
 - Database migration completed
-- PayMongo webhooks configured
+- Payment verification system configured (QR codes, file storage)
+- Admin users set up for verification approval
 - Monitoring systems in place
 
 ---
