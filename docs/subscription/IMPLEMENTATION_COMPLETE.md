@@ -450,7 +450,6 @@ curl -X POST https://api.example.com/api/subscriptions/create \
 - `status` (TEXT, NOT NULL, DEFAULT: 'draft') - Invoice status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible'
 - `paid_at` (TIMESTAMPTZ, NULLABLE) - Payment timestamp
 - `attempt_count` (INTEGER, NOT NULL, DEFAULT: 0) - Payment attempt count
-- `paymongo_invoice_id` (TEXT, UNIQUE, NULLABLE) - PayMongo invoice ID
 - `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Creation timestamp
 - `updated_at` (TIMESTAMPTZ, NOT NULL, DEFAULT: NOW()) - Last update timestamp
 

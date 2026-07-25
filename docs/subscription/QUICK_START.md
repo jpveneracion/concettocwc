@@ -400,7 +400,6 @@ Content-Type: application/json
 - **Implementation Complete**: `docs/subscription/IMPLEMENTATION_COMPLETE.md`
 - **Payment Verification Setup**: `docs/subscription/PAYMENT_VERIFICATION_SETUP.md`
 - **Design Document**: `docs/superpowers/specs/2026-07-10-subscription-system-design.md`
-- **PayMongo Removal Design**: `docs/superpowers/specs/2026-07-24-paymongo-removal-design.md`
 
 ### External Resources
 
