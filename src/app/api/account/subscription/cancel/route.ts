@@ -40,11 +40,7 @@ export async function POST(): Promise<NextResponse> {
     // 4. Calculate Grace Period
     const gracePeriodEnd = addUTCDays(getUTCNow(), GRACE_PERIOD_DAYS);
 
-    // 5. PayMongo Integration (TODO)
-    // TODO: Call PayMongo API to cancel subscription
-    // For now, we only update the database
-
-    // 6. Return Success Response
+    // 5. Return Success Response
     return NextResponse.json({
       message: 'Subscription will be cancelled at the end of the current billing period',
       final_access_date: gracePeriodEnd.toISOString(),

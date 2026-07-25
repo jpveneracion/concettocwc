@@ -89,7 +89,6 @@ function validateCheckoutRequest(body: CreateCheckoutRequest): NextResponse | nu
  * POST /api/subscriptions/create
  *
  * Validates subscription plan and returns plan details for manual payment flow
- * (Previously created PayMongo checkout sessions - now removed)
  *
  * Request body:
  * - plan_id: string (required) - The subscription plan ID

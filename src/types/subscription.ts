@@ -221,7 +221,6 @@ export interface LegacySubscription {
   trial_end: Date | null;
   current_period_end: Date | null;
   cancel_at_period_end: boolean;
-  paymongo_subscription_id: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -235,7 +234,6 @@ export interface LegacySubscriptionPlan {
   amount: number;
   currency: string;
   interval: string;
-  paymongo_plan_id: string | null;
   features: {
     quotes_limit?: number;
     [key: string]: unknown;

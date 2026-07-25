@@ -60,7 +60,7 @@ function CheckoutContent() {
     setError(null);
 
     try {
-      // Create subscription request (without PayMongo)
+      // Create subscription request for manual payment processing
       const response = await fetch('/api/subscriptions/create', {
         method: 'POST',
         headers: {
