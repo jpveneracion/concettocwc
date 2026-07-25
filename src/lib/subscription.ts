@@ -5,6 +5,7 @@ import {
   AccountStatus,
   TrialStatusResponse,
   SubscriptionPlan,
+  SubscriptionPlanDetails,
   // Legacy types for backward compatibility
   LegacySubscription,
   LegacySubscriptionPlan,
@@ -317,8 +318,27 @@ export async function buildSubscriptionDetails(
   const quotesLimit = (plan.features.quotes_limit as number | null) || null;
   const quotesRemaining = quotesLimit === null ? -1 : Math.max(0, quotesLimit - quotesCreatedThisPeriod);
 
+  // Convert LegacySubscriptionPlan to SubscriptionPlanDetails for compatibility
+  const subscriptionPlanDetails: SubscriptionPlanDetails = {
+    id: plan.id,
+    name: plan.name,
+    description: `Legacy ${plan.name} plan`, // Add description for compatibility
+    price: plan.amount, // Map amount to price
+    currency: plan.currency,
+    interval: plan.interval as any, // Type assertion for compatibility
+    discount_percent: 0, // Legacy plans don't have discount_percent
+    features: {
+      max_quotes_per_period: plan.features.quotes_limit
+    },
+    status: 'active' as any, // Legacy plans are considered active
+    is_active: true,
+    sort_order: 0,
+    created_at: plan.created_at,
+    updated_at: plan.updated_at
+  };
+
   return {
-    plan,
+    plan: subscriptionPlanDetails, // Use converted plan
     status: subscription.status,
     trial_end: subscription.trial_end,
     current_period_end: subscription.current_period_end,

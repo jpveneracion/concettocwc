@@ -1,7 +1,8 @@
--- migrations/remove-paymongo-columns.sql
--- Migration: Remove PayMongo payment gateway columns
+-- Migration: 007_remove_paymongo_columns.sql
+-- Description: Remove PayMongo payment gateway columns
+-- Version: 1.0
+-- Author: Concetto WC Development Team
 -- Date: 2026-07-24
--- Description: Remove unused PayMongo columns from subscription system tables
 
 BEGIN;
 
@@ -24,13 +25,3 @@ ALTER TABLE webhook_events DROP COLUMN IF EXISTS paymongo_event_id;
 DROP INDEX IF EXISTS idx_subscriptions_paymongo_id;
 
 COMMIT;
-
--- Rollback script (save as separate file if needed):
--- BEGIN;
--- ALTER TABLE subscription_plans ADD COLUMN paymongo_plan_id TEXT UNIQUE;
--- ALTER TABLE subscriptions ADD COLUMN paymongo_subscription_id TEXT UNIQUE;
--- ALTER TABLE invoices ADD COLUMN paymongo_invoice_id TEXT UNIQUE;
--- ALTER TABLE payment_methods ADD COLUMN paymongo_payment_method_id TEXT NOT NULL UNIQUE;
--- ALTER TABLE webhook_events ADD COLUMN paymongo_event_id TEXT NOT NULL UNIQUE;
--- CREATE INDEX idx_subscriptions_paymongo_id ON subscriptions(paymongo_subscription_id);
--- COMMIT;

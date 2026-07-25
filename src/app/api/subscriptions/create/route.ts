@@ -1,9 +1,42 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import type { Session } from '@/lib/auth';
 import {
   getSubscriptionByCompanyId,
   getSubscriptionPlan
 } from '@/lib/subscription';
+
+/**
+ * Subscription status constants
+ */
+const SUBSCRIPTION_STATUS = {
+  TRIALING: 'trialing',
+  ACTIVE: 'active',
+  PAST_DUE: 'past_due',
+  CANCELLED: 'cancelled',
+  SUSPENDED: 'suspended'
+} as const;
+
+/**
+ * Create checkout request interface
+ */
+interface CreateCheckoutRequest {
+  plan_id: string;
+  success_url: string;
+  cancel_url: string;
+  payment_method?: string;
+}
+
+/**
+ * Create checkout response interface
+ */
+interface CreateCheckoutResponse {
+  success: boolean;
+  plan_id: string;
+  plan_name: string;
+  amount: number;
+  message: string;
+}
 
 /**
  * Validate checkout request
@@ -13,7 +46,7 @@ import {
  * @param body - The request body to validate
  * @returns NextResponse with error if validation fails, null if validation passes
  */
-function validateCheckoutRequest(body: any): NextResponse | null {
+function validateCheckoutRequest(body: CreateCheckoutRequest): NextResponse | null {
   const { plan_id, success_url, cancel_url } = body;
 
   // Validate required fields
@@ -72,9 +105,13 @@ function validateCheckoutRequest(body: any): NextResponse | null {
  * - message: string - Next step instructions
  */
 export async function POST(req: Request) {
+  // Declare variables outside try block for error handling access
+  let session: Session | null = null;
+  let body: CreateCheckoutRequest | null = null;
+
   try {
     // 1. Authentication Check
-    const session = await getSession();
+    session = await getSession();
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
@@ -83,15 +120,15 @@ export async function POST(req: Request) {
     }
 
     // 2. Request Validation
-    const body = await req.json();
+    body = await req.json();
 
     // Validate checkout request using helper function
-    const validationError = validateCheckoutRequest(body);
+    const validationError = validateCheckoutRequest(body!);
     if (validationError) {
       return validationError;
     }
 
-    const { plan_id } = body;
+    const { plan_id } = body!;
 
     // 3. Validate plan exists
     const plan = await getSubscriptionPlan(plan_id);
@@ -106,7 +143,8 @@ export async function POST(req: Request) {
     const existingSubscription = await getSubscriptionByCompanyId(session.companyId);
     if (existingSubscription) {
       // Check if existing subscription is still active
-      if (['trialing', 'active'].includes(existingSubscription.status)) {
+      const activeStatuses: Array<string> = [SUBSCRIPTION_STATUS.TRIALING, SUBSCRIPTION_STATUS.ACTIVE];
+      if (activeStatuses.includes(existingSubscription.status)) {
         return NextResponse.json(
           {
             error: 'Company already has an active subscription',
@@ -120,7 +158,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Return validation response with plan details
-    const response = {
+    const response: CreateCheckoutResponse = {
       success: true,
       plan_id: plan.id,
       plan_name: plan.name,
@@ -131,7 +169,11 @@ export async function POST(req: Request) {
     return NextResponse.json(response, { status: 200 });
 
   } catch (error) {
-    console.error('POST /api/subscriptions/create error:', error);
+    console.error('POST /api/subscriptions/create error:', {
+      error,
+      companyId: session?.companyId,
+      planId: body?.plan_id
+    });
 
     return NextResponse.json(
       { error: 'Internal server error' },

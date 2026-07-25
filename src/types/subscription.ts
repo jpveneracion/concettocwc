@@ -211,6 +211,40 @@ export interface UsageDataPoint {
 // ============================================================================
 
 /**
+ * Legacy subscription database model (from subscriptions table)
+ */
+export interface LegacySubscription {
+  id: string;
+  company_id: string;
+  status: string;
+  plan_id: string;
+  trial_end: Date | null;
+  current_period_end: Date | null;
+  cancel_at_period_end: boolean;
+  paymongo_subscription_id: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * Legacy subscription plan database model (from subscription_plans table)
+ */
+export interface LegacySubscriptionPlan {
+  id: string;
+  name: string;
+  amount: number;
+  currency: string;
+  interval: string;
+  paymongo_plan_id: string | null;
+  features: {
+    quotes_limit?: number;
+    [key: string]: unknown;
+  };
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
  * Legacy subscription access interface
  */
 export interface SubscriptionAccess {
