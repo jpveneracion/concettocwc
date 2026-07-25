@@ -46,8 +46,34 @@
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
-  body { background: white; }
-  @page { size: letter portrait; margin: 0.5in; }
+  body {
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+  @page {
+    size: letter portrait;
+    margin: 0.5in;
+  }
+
+  /* Prevent any browser-added timestamps or headers from interfering */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure no fixed/absolute elements interfere with print layout */
+  .demo-watermark {
+    display: none !important;
+  }
+
+  /* Hide any potential print artifacts */
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+  @bottom-center { content: none; }
 }
 
 .print-only { display: none; }
