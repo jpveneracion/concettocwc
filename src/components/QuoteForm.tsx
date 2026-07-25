@@ -145,32 +145,32 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
       {/* Customer info */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <h3 className="font-medium text-sm text-gray-700 mb-4">Customer info</h3>
-        <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Customer name</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={customer} onChange={(e) => setCustomer(e.target.value)} placeholder="e.g. Ms. Ana Santos" />
+            <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={customer} onChange={(e) => setCustomer(e.target.value)} placeholder="e.g. Ms. Ana Santos" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Address</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. Baliwag, Bulacan" />
+            <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. Baliwag, Bulacan" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Date</label>
-            <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="date" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Quote number</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400 bg-gray-50" value={quoteNumber} readOnly />
+            <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-400 bg-gray-50 min-h-[44px]" value={quoteNumber} readOnly />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Our ref</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Optional" />
+            <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Optional" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Status</label>
-            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}>
+            <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}>
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
               <option value="delivered">Delivered</option>
@@ -186,7 +186,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
           <h3 className="font-medium text-sm text-gray-700">Window items</h3>
           <button
             onClick={() => setRows((p) => [...p, newRow(p.length)])}
-            className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="text-sm px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]"
           >
             ➕ Add window
           </button>
@@ -200,22 +200,22 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
                 {rows.length > 1 && (
                   <button
                     onClick={() => setRows((p) => p.filter((r) => r._key !== row._key))}
-                    className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50"
+                    className="text-xs px-3 py-2 text-red-600 border border-red-200 rounded hover:bg-red-50 min-h-[44px] min-w-[44px]"
                   >
                     🗑️ Remove
                   </button>
                 )}
               </div>
 
-              <div className="grid grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Location</label>
-                  <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={row.location} onChange={(e) => updateRow(row._key, { location: e.target.value })} placeholder="e.g. Living Room" />
+                  <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.location} onChange={(e) => updateRow(row._key, { location: e.target.value })} placeholder="e.g. Living Room" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Product code</label>
                   <input
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase"
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm uppercase min-h-[44px]"
                     value={row.product_code}
                     onChange={(e) => {
                       updateRow(row._key, { product_code: e.target.value.toUpperCase() });
@@ -230,36 +230,36 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Collection</label>
-                  <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500" value={row.product_collection} readOnly />
+                  <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-500 min-h-[44px]" value={row.product_collection} readOnly />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Description</label>
-                  <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500" value={row.product_description} readOnly />
+                  <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-500 min-h-[44px]" value={row.product_description} readOnly />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Measure unit</label>
-                  <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={row.unit} onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}>
+                  <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.unit} onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}>
                     <option value="in">Inches</option>
                     <option value="cm">Centimeters</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Fixed measure?</label>
-                  <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={row.is_fixed ? 'yes' : 'no'} onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}>
+                  <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.is_fixed ? 'yes' : 'no'} onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}>
                     <option value="yes">Yes (as-is)</option>
                     <option value="no">No (+{row.unit === 'cm' ? '15cm' : '6in'} overlap)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Width ({row.unit})</label>
-                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={row.measured_width || ''} onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })} />
+                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.measured_width || ''} onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Drop ({row.unit})</label>
-                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={row.measured_drop || ''} onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })} />
+                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.measured_drop || ''} onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })} />
                 </div>
               </div>
 
@@ -289,14 +289,14 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
       {/* Service charges */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <h3 className="font-medium text-sm text-gray-700 mb-4">Service charges</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Installation (₱)</label>
-            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={installation} onChange={(e) => setInstallation(parseFloat(e.target.value) || 0)} />
+            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={installation} onChange={(e) => setInstallation(parseFloat(e.target.value) || 0)} />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Delivery (₱)</label>
-            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={delivery} onChange={(e) => setDelivery(parseFloat(e.target.value) || 0)} />
+            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={delivery} onChange={(e) => setDelivery(parseFloat(e.target.value) || 0)} />
           </div>
         </div>
       </div>
@@ -322,8 +322,8 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
               <p className="text-lg font-semibold text-blue-700">{phpFormat(totals.total)}</p>
             </div>
           </div>
-          <div className="flex gap-3 justify-end">
-            <button onClick={handleSubmit} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          <div className="flex gap-3 justify-end flex-wrap">
+            <button onClick={handleSubmit} disabled={saving} className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 min-h-[44px] min-w-[120px]">
               {saving ? 'Saving...' : '💾 Save quote'}
             </button>
           </div>
@@ -332,7 +332,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
 
       {totals.panels === 0 && (
         <div className="flex justify-end">
-          <button onClick={handleSubmit} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+          <button onClick={handleSubmit} disabled={saving} className="px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 min-h-[44px] min-w-[120px]">
             {saving ? 'Saving...' : '💾 Save quote'}
           </button>
         </div>

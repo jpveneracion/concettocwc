@@ -116,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Open navigation menu"
           aria-expanded={mobileMenuOpen}
         >

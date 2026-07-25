@@ -4,7 +4,42 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, sans-serif; }
+
+  /* Mobile-first base styles */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    /* Ensure adequate touch targets and readable text on mobile */
+    min-width: 320px;
+    overflow-x: hidden;
+  }
+
+  /* Mobile-first responsive typography */
+  h1 { font-size: 1.5rem; line-height: 2rem; }
+  h2 { font-size: 1.25rem; line-height: 1.75rem; }
+  h3 { font-size: 1.125rem; line-height: 1.5rem; }
+
+  @media (min-width: 768px) {
+    h1 { font-size: 1.875rem; line-height: 2.25rem; }
+    h2 { font-size: 1.5rem; line-height: 2rem; }
+    h3 { font-size: 1.25rem; line-height: 1.75rem; }
+  }
+
+  /* Base button styles for mobile-first approach */
+  button, a {
+    touch-action: manipulation;
+  }
+
+  /* Improve touch targets for better mobile experience */
+  input, select, textarea {
+    touch-action: manipulation;
+  }
 }
 
 /* ── Print styles ────────────────────────────────────────── */

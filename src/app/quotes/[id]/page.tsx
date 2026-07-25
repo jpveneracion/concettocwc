@@ -40,11 +40,11 @@ function QuoteDetailPage() {
   if (printType) {
     return (
       <>
-        <div className="no-print p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800 flex justify-between items-center">
-          <span>🖨️ Print preview — {printType === 'po' ? 'Purchase Order' : 'Customer Quotation'}</span>
+        <div className="no-print p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800 flex justify-between items-center flex-wrap gap-2">
+          <span className="flex-1 min-w-max">🖨️ Print preview — {printType === 'po' ? 'Purchase Order' : 'Customer Quotation'}</span>
           <div className="flex gap-2">
-            <button onClick={() => window.print()} className="px-3 py-1 bg-blue-600 text-white rounded text-xs">Print now</button>
-            <a href={`/quotes/${id}`} className="px-3 py-1 border border-gray-300 rounded text-xs">Back to edit</a>
+            <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 text-white rounded text-xs min-h-[44px] min-w-[44px]">Print now</button>
+            <a href={`/quotes/${id}`} className="px-4 py-2 border border-gray-300 rounded text-xs min-h-[44px] min-w-[44px]">Back to edit</a>
           </div>
         </div>
         <DemoWatermark subscriptionStatus={settings.subscription_status} printMode={true}>
@@ -61,14 +61,14 @@ function QuoteDetailPage() {
 
   return (
     <AppLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-xl font-semibold">Edit quote</h1>
           <p className="text-sm text-gray-400 mt-0.5">{quote.quote_number}</p>
         </div>
-        <div className="flex gap-2">
-          <a href={`/quotes/${id}?print=quotation`} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">🖨️ Print quotation</a>
-          <a href={`/quotes/${id}?print=po`} className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">🚚 Print PO</a>
+        <div className="flex gap-2 flex-wrap">
+          <a href={`/quotes/${id}?print=quotation`} className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]">🖨️ Print quotation</a>
+          <a href={`/quotes/${id}?print=po`} className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]">🚚 Print PO</a>
         </div>
       </div>
       <QuoteForm existing={quote} quoteNumber={quote.quote_number} />
