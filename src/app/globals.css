@@ -66,14 +66,6 @@
   .demo-watermark {
     display: none !important;
   }
-
-  /* Hide any potential print artifacts */
-  @top-left { content: none; }
-  @top-right { content: none; }
-  @top-center { content: none; }
-  @bottom-left { content: none; }
-  @bottom-right { content: none; }
-  @bottom-center { content: none; }
 }
 
 .print-only { display: none; }

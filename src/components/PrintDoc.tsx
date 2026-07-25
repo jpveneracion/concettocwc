@@ -15,6 +15,13 @@ export default function PrintDoc({ quote, settings, type }: Props) {
   const items = quote.items ?? [];
   const totalCost = items.reduce((s, i) => s + i.supplier_amount, 0);
 
+  // Format date properly
+  const formattedDate = quote.quote_date ? new Date(quote.quote_date).toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit'
+  }) : '';
+
   return (
     <div className="print-doc" style={{ fontFamily: 'Arial, sans-serif', fontSize: '10pt', color: '#000', width: '100%', padding: '0', background: '#fff' }}>
       {/* Header */}
@@ -24,13 +31,14 @@ export default function PrintDoc({ quote, settings, type }: Props) {
       {/* Info grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginBottom: '10px', fontSize: '8.5pt' }}>
         <div>
+          <strong>{settings.company}</strong><br />
           {settings.address}<br />
           Mobile: {settings.mobile}<br />
           E-mail: {settings.email}
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div>N<sup>o</sup>: <strong>{docNum}</strong></div>
-          <div>Date: <strong>{quote.quote_date}</strong></div>
+          <div>No: <strong>{docNum}</strong></div>
+          <div>Date: <strong>{formattedDate}</strong></div>
           <div>Our Ref: {quote.our_ref}</div>
           <div>Project: WINDOWBLINDS</div>
         </div>

@@ -1,35 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PublicSubscriptionPlan } from '@/types/subscription';
-    base_total: number;
-    period_discount_percent: number;
-    period_discount_amount: number;
-    price_after_period_discount: number;
-    promo_discount_percent?: number;
-    promo_discount_amount?: number;
-    final_price: number;
-    billing_period: 'monthly' | 'quarterly' | 'annual';
-    calculated_at: string;
-  };
-  fallback?: boolean;
+import { PriceCalculationResult } from '@/lib/pricing-service';
+
+interface PlanComparisonProps {
+  onPlanSelect?: (planId: string) => void;
+  selectedPlan?: string;
 }
 
+/**
+ * Response format from pricing service API
+ */
+interface PricingServiceResponse {
+  success: boolean;
+  pricing: PriceCalculationResult;
+}
+
+/**
+ * Billing period plan for display
+ */
 interface BillingPeriod {
-  id: 'monthly' | 'quarterly' | 'annual';
+  id: string;
   name: string;
   months: number;
   basePrice: number;
   periodDiscount: number;
   finalPrice: number;
+  currency: string;
   features: string[];
-  popular?: boolean;
-}
->>>>>>> bfbe891720c58db002470c5f39aae1d2b64589fc
-
-interface PlanComparisonProps {
-  onPlanSelect?: (planId: string) => void;
-  selectedPlan?: string;
+  popular: boolean;
 }
 
 /**
@@ -38,7 +37,7 @@ interface PlanComparisonProps {
  * Displays billing periods using the new dynamic pricing system
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
-  const [plans, setPlans] = useState<PublicSubscriptionPlan[]>([]);
+  const [plans, setPlans] = useState<BillingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +102,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
             basePrice: pricing.base_price,
             periodDiscount: pricing.period_discount_percent,
             finalPrice: pricing.final_price,
+            currency: 'PHP',
             features: standardFeatures[planType] || [],
             popular: planType === 'quarterly' // Quarterly is marked as most popular
           };
@@ -223,7 +223,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-3xl font-bold text-gray-900">
                 {plan.currency === 'PHP' ? '₱' : plan.currency === 'USD' ? '$' : '€'}
-                {plan.price.toLocaleString()}
+                {plan.finalPrice.toLocaleString()}
               </span>
               <span className="text-gray-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
               {plan.periodDiscount > 0 && (

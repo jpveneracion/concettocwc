@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const [company] = await sql`
-      SELECT id, code, name, address, mobile, email, currency,
+      SELECT id, code, name as company, address, mobile, email, currency,
              prepared_by, terms, del_note, closing_note, updated_at, subscription_status
       FROM companies
       WHERE id = ${session.companyId}
@@ -46,7 +46,7 @@ export async function PUT(req: Request) {
         closing_note = ${closing_note},
         updated_at   = now()
       WHERE id = ${session.companyId}
-      RETURNING id, code, name, address, mobile, email, currency,
+      RETURNING id, code, name as company, address, mobile, email, currency,
                 prepared_by, terms, del_note, closing_note, updated_at, subscription_status
     `;
     return NextResponse.json(company);
