@@ -5,12 +5,14 @@ import React from 'react';
 interface DemoWatermarkProps {
   children: React.ReactNode;
   subscriptionStatus: string;
+  printMode?: boolean;
 }
 
-export default function DemoWatermark({ children, subscriptionStatus }: DemoWatermarkProps) {
+export default function DemoWatermark({ children, subscriptionStatus, printMode = false }: DemoWatermarkProps) {
   const shouldShowWatermark =
-    !subscriptionStatus ||
-    ['demo', 'trial'].includes(subscriptionStatus);
+    !printMode &&
+    (!subscriptionStatus ||
+    ['demo', 'trial'].includes(subscriptionStatus));
 
   return (
     <div style={{ position: 'relative' }}>

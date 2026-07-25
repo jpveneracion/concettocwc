@@ -47,7 +47,7 @@ function QuoteDetailPage() {
             <a href={`/quotes/${id}`} className="px-3 py-1 border border-gray-300 rounded text-xs">Back to edit</a>
           </div>
         </div>
-        <DemoWatermark subscriptionStatus={settings.subscription_status}>
+        <DemoWatermark subscriptionStatus={settings.subscription_status} printMode={true}>
           <div className="print-only" ref={printRef}>
             <PrintDoc quote={quote} settings={settings} type={printType} />
           </div>
