@@ -715,6 +715,22 @@ export type SubscriptionPlanSummary = Pick<SubscriptionPlanDetails,
 };
 
 /**
+ * Public subscription plan type returned by the public API endpoint
+ * Used for plan selection in checkout/comparison views
+ */
+export interface PublicSubscriptionPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: string;
+  discount_percent: number;
+  features: string[];
+  is_active: boolean;
+}
+
+/**
  * Plan update history entry
  */
 export interface PlanUpdateHistoryEntry {

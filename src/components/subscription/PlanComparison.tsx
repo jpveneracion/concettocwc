@@ -1,18 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  interval: string;
-  description: string;
-  discount_percent: number;
-  features: string[];
-  is_active: boolean;
-}
+import { PublicSubscriptionPlan } from '@/types/subscription';
 
 interface PlanComparisonProps {
   onPlanSelect?: (planId: string) => void;
@@ -26,10 +15,9 @@ interface PlanComparisonProps {
  * with feature comparison and selection interaction
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<PublicSubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [touchedPlan, setTouchedPlan] = useState<string | null>(null);
 
   // Fetch actual subscription plans from database
   useEffect(() => {
@@ -63,14 +51,12 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   };
 
   const isSelected = (planId: string) => selectedPlan === planId;
-  const isTouched = (planId: string) => touchedPlan === planId;
 
-  const handleTouchStart = (planId: string) => {
-    setTouchedPlan(planId);
-  };
-
-  const handleTouchEnd = () => {
-    setTouchedPlan(null);
+  const handleKeyDown = (event: React.KeyboardEvent, planId: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handlePlanClick(planId);
+    }
   };
 
   if (loading) {
@@ -111,13 +97,16 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
       {plans.map((plan) => (
         <div
           key={plan.id}
+          role="button"
+          tabIndex={0}
+          aria-pressed={isSelected(plan.id)}
+          aria-label={`Select ${plan.name} plan`}
           className={`
             relative bg-white border rounded-xl overflow-hidden cursor-pointer
             ${isSelected(plan.id) ? 'border-blue-500 shadow-md' : 'border-gray-200'}
           `}
-          onTouchStart={() => handleTouchStart(plan.id)}
-          onTouchEnd={handleTouchEnd}
           onClick={() => handlePlanClick(plan.id)}
+          onKeyDown={(e) => handleKeyDown(e, plan.id)}
         >
           {/* Popular Badge - Highlight middle plan if 3 plans, or second if 2 plans */}
           {(plans.length === 3 && plan === plans[1]) || (plans.length === 2 && plan === plans[1]) ? (
