@@ -242,20 +242,31 @@ export async function incrementPromoUsage(promoCode: string): Promise<boolean> {
 // ============================================================================
 
 /**
- * Get QR code URL for a specific plan price
+ * Get QR code URL for a specific plan
  */
 async function getPlanQrCode(
-  planPrice: number,
+  plan: PlanDetails,
   paymentMethod: 'gcash' | 'gotyme'
 ): Promise<string | null> {
   try {
-    // Determine plan tier based on price
-    let planTier = '';
-    if (planPrice < 600) planTier = 'basic';
-    else if (planPrice < 1500) planTier = 'pro';
-    else planTier = 'premium';
+    // Extract billing period from plan name
+    // Plan names are like "Monthly Plan", "Quarterly Plan", "Annual Plan"
+    const lowerName = plan.name.toLowerCase();
+    let billingPeriod = '';
+    if (lowerName.includes('monthly') || lowerName.includes('month')) {
+      billingPeriod = 'monthly';
+    } else if (lowerName.includes('quarterly') || lowerName.includes('quarter')) {
+      billingPeriod = 'quarterly';
+    } else if (lowerName.includes('annual') || lowerName.includes('year')) {
+      billingPeriod = 'annual';
+    }
 
-    const column = `${paymentMethod}_${planTier}_qr_url`;
+    if (!billingPeriod) {
+      console.warn('Could not determine billing period from plan name:', plan.name);
+      return null;
+    }
+
+    const column = `${paymentMethod}_${billingPeriod}_qr_url`;
 
     const result = await sql`
       SELECT ${sql(column)} as qr_url
@@ -337,7 +348,7 @@ export async function getPaymentQrCode(
   }
 
   // Priority 2: Use plan-specific QR code
-  const planQrUrl = await getPlanQrCode(plan.price, paymentMethod);
+  const planQrUrl = await getPlanQrCode(plan, paymentMethod);
   if (planQrUrl) {
     return {
       url: planQrUrl,
@@ -383,21 +394,21 @@ export async function getPaymentQrCode(
  * Update plan QR codes
  */
 export async function updatePlanQrCodes(settings: {
-  gcash_basic?: string;
-  gcash_pro?: string;
-  gcash_premium?: string;
-  gotyme_basic?: string;
-  gotyme_pro?: string;
-  gotyme_premium?: string;
+  gcash_monthly?: string;
+  gcash_quarterly?: string;
+  gcash_annual?: string;
+  gotyme_monthly?: string;
+  gotyme_quarterly?: string;
+  gotyme_annual?: string;
 }): Promise<boolean> {
   try {
     // Update GCash payment settings row
     await sql`
       UPDATE payment_settings
       SET
-        gcash_basic_qr_url = ${settings.gcash_basic || null},
-        gcash_pro_qr_url = ${settings.gcash_pro || null},
-        gcash_premium_qr_url = ${settings.gcash_premium || null},
+        gcash_monthly_qr_url = ${settings.gcash_monthly || null},
+        gcash_quarterly_qr_url = ${settings.gcash_quarterly || null},
+        gcash_annual_qr_url = ${settings.gcash_annual || null},
         updated_at = CURRENT_TIMESTAMP
       WHERE payment_method = 'gcash'
     `;
@@ -406,9 +417,9 @@ export async function updatePlanQrCodes(settings: {
     await sql`
       UPDATE payment_settings
       SET
-        gotyme_basic_qr_url = ${settings.gotyme_basic || null},
-        gotyme_pro_qr_url = ${settings.gotyme_pro || null},
-        gotyme_premium_qr_url = ${settings.gotyme_premium || null},
+        gotyme_monthly_qr_url = ${settings.gotyme_monthly || null},
+        gotyme_quarterly_qr_url = ${settings.gotyme_quarterly || null},
+        gotyme_annual_qr_url = ${settings.gotyme_annual || null},
         updated_at = CURRENT_TIMESTAMP
       WHERE payment_method = 'gotyme'
     `;

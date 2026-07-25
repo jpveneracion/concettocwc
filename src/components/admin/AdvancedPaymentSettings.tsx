@@ -18,12 +18,12 @@ interface PaymentSettings {
     };
   };
   planQrCodes: {
-    gcash_basic?: string;
-    gcash_pro?: string;
-    gcash_premium?: string;
-    gotyme_basic?: string;
-    gotyme_pro?: string;
-    gotyme_premium?: string;
+    gcash_monthly?: string;
+    gcash_quarterly?: string;
+    gcash_annual?: string;
+    gotyme_monthly?: string;
+    gotyme_quarterly?: string;
+    gotyme_annual?: string;
   };
   business: {
     name: string;
@@ -340,33 +340,33 @@ export default function AdvancedPaymentSettings() {
       {activeTab === 'plan-qrcodes' && (
         <div className="space-y-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">Plan Tier QR Codes</h4>
+            <h4 className="font-semibold text-blue-900 mb-2">Billing Period QR Codes</h4>
             <p className="text-sm text-blue-700">
-              Upload QR codes for each plan tier. These will be used automatically based on the customer's chosen subscription tier.
+              Upload QR codes for each billing period. These will be used automatically based on the customer's chosen billing frequency.
             </p>
           </div>
 
           {['gcash', 'gotyme'].map((method) => (
             <div key={method} className="bg-white rounded-lg border p-6">
-              <h3 className="text-lg font-semibold capitalize mb-4">{method} Plan Tier QR Codes</h3>
+              <h3 className="text-lg font-semibold capitalize mb-4">{method} Billing Period QR Codes</h3>
 
               <div className="grid md:grid-cols-3 gap-4">
                 {[
-                  { tier: 'basic', price: 'Basic', field: `${method}_basic` },
-                  { tier: 'pro', price: 'Pro', field: `${method}_pro` },
-                  { tier: 'premium', price: 'Premium', field: `${method}_premium` }
+                  { period: 'monthly', label: 'Monthly', field: `${method}_monthly` },
+                  { period: 'quarterly', label: 'Quarterly', field: `${method}_quarterly` },
+                  { period: 'annual', label: 'Annual', field: `${method}_annual` }
                 ].map((plan) => (
                   <div key={plan.field} className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {plan.price} Tier
+                        {plan.label}
                       </label>
 
                       {settings.planQrCodes?.[plan.field as keyof typeof settings.planQrCodes] && (
                         <div className="relative w-24 h-24 border rounded-lg overflow-hidden mb-2">
                           <img
                             src={settings.planQrCodes[plan.field as keyof typeof settings.planQrCodes] as string}
-                            alt={`${method} ${plan.tier} QR`}
+                            alt={`${method} ${plan.period} QR`}
                             className="w-full h-full object-contain"
                           />
                           <div className="absolute bottom-1 right-1 bg-green-500 text-white text-xs px-1 rounded">

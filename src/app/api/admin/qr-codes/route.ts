@@ -23,8 +23,8 @@ export async function GET(req: Request) {
 
     // Fetch plan QR codes from both gcash and gotyme payment settings rows
     const result = await sql`
-      SELECT payment_method, gcash_basic_qr_url, gcash_pro_qr_url, gcash_premium_qr_url,
-             gotyme_basic_qr_url, gotyme_pro_qr_url, gotyme_premium_qr_url
+      SELECT payment_method, gcash_monthly_qr_url, gcash_quarterly_qr_url, gcash_annual_qr_url,
+             gotyme_monthly_qr_url, gotyme_quarterly_qr_url, gotyme_annual_qr_url
       FROM payment_settings
       WHERE payment_method IN ('gcash', 'gotyme')
     `;
@@ -33,12 +33,12 @@ export async function GET(req: Request) {
     const gotymeRow = result.find(r => r.payment_method === 'gotyme');
 
     const planQrCodes = {
-      gcash_basic: gcashRow?.gcash_basic_qr_url || null,
-      gcash_pro: gcashRow?.gcash_pro_qr_url || null,
-      gcash_premium: gcashRow?.gcash_premium_qr_url || null,
-      gotyme_basic: gotymeRow?.gotyme_basic_qr_url || null,
-      gotyme_pro: gotymeRow?.gotyme_pro_qr_url || null,
-      gotyme_premium: gotymeRow?.gotyme_premium_qr_url || null
+      gcash_monthly: gcashRow?.gcash_monthly_qr_url || null,
+      gcash_quarterly: gcashRow?.gcash_quarterly_qr_url || null,
+      gcash_annual: gcashRow?.gcash_annual_qr_url || null,
+      gotyme_monthly: gotymeRow?.gotyme_monthly_qr_url || null,
+      gotyme_quarterly: gotymeRow?.gotyme_quarterly_qr_url || null,
+      gotyme_annual: gotymeRow?.gotyme_annual_qr_url || null
     };
 
     return NextResponse.json(planQrCodes);
