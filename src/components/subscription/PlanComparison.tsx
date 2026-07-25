@@ -29,7 +29,6 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
   const [touchedPlan, setTouchedPlan] = useState<string | null>(null);
 
   // Fetch actual subscription plans from database
@@ -64,7 +63,6 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
   };
 
   const isSelected = (planId: string) => selectedPlan === planId;
-  const isHovered = (planId: string) => hoveredPlan === planId;
   const isTouched = (planId: string) => touchedPlan === planId;
 
   const handleTouchStart = (planId: string) => {
@@ -114,11 +112,9 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
         <div
           key={plan.id}
           className={`
-            relative bg-white border rounded-xl overflow-hidden transition-shadow duration-200 cursor-pointer
-            ${isSelected(plan.id) ? 'border-blue-500 shadow-md' : 'border-gray-200 hover:shadow-md'}
+            relative bg-white border rounded-xl overflow-hidden cursor-pointer
+            ${isSelected(plan.id) ? 'border-blue-500 shadow-md' : 'border-gray-200'}
           `}
-          onMouseEnter={() => setHoveredPlan(plan.id)}
-          onMouseLeave={() => setHoveredPlan(null)}
           onTouchStart={() => handleTouchStart(plan.id)}
           onTouchEnd={handleTouchEnd}
           onClick={() => handlePlanClick(plan.id)}
@@ -164,10 +160,10 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
             {/* CTA Button */}
             <button
               className={`
-                w-full py-2 px-4 rounded-lg font-medium transition-colors duration-200
+                w-full py-2 px-4 rounded-lg font-medium
                 ${isSelected(plan.id)
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700'
                 }
               `}
             >
