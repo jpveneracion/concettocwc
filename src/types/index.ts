@@ -28,6 +28,7 @@ export interface Settings {
   closing_note: string;
   updated_at: string;
   subscription_status: 'demo' | 'trial' | 'active' | 'past_due';
+  minimum_area_sqft: number;
 }
 
 export interface Product {
@@ -61,6 +62,7 @@ export interface QuoteItem {
   supplier_cost_sqft: number;
   retail_amount: number;
   supplier_amount: number;
+  minimum_applied: boolean;
 }
 
 export interface Quote {

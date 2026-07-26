@@ -57,6 +57,7 @@ export interface Company {
   updated_at: TimestampWithTimezone;
   cost_categories: string[]; // JSONB array
   currency: string;
+  minimum_area_sqft: number; // numeric
   subscription_status: SubscriptionStatus;
   trial_end: TimestampWithTimezone | null;
 }
@@ -238,6 +239,7 @@ export interface QuoteItem {
   final_width: number; // numeric
   final_drop: number; // numeric
   area_sqft: number; // numeric
+  minimum_applied: boolean;
   retail_price_sqft: number; // numeric
   supplier_cost_sqft: number; // numeric
   retail_amount: number; // numeric
@@ -451,6 +453,7 @@ export interface CompanyCreateInput {
   closing_note?: string;
   cost_categories?: string[];
   currency?: string;
+  minimum_area_sqft?: number;
   subscription_status?: SubscriptionStatus;
   trial_end?: Date;
 }
@@ -469,6 +472,7 @@ export interface CompanyUpdateInput {
   closing_note?: string;
   cost_categories?: string[];
   currency?: string;
+  minimum_area_sqft?: number;
   subscription_status?: SubscriptionStatus;
   trial_end?: Date;
 }
@@ -551,6 +555,7 @@ export interface QuoteItemCreateInput {
   final_width?: number;
   final_drop?: number;
   area_sqft?: number;
+  minimum_applied?: boolean;
   retail_price_sqft?: number;
   supplier_cost_sqft?: number;
   retail_amount?: number;

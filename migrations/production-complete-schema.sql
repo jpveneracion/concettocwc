@@ -32,6 +32,7 @@ CREATE TABLE companies (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   cost_categories jsonb DEFAULT '["materials", "labor", "overhead", "shipping"]'::jsonb,
   currency text DEFAULT 'PHP'::text,
+  minimum_area_sqft numeric NOT NULL DEFAULT 15,
   subscription_status character varying(20) DEFAULT 'demo'::character varying,
   trial_end timestamp with time zone,
   CONSTRAINT companies_pkey PRIMARY KEY (id)
@@ -271,6 +272,7 @@ CREATE TABLE quote_items (
   final_width numeric NOT NULL DEFAULT 0,
   final_drop numeric NOT NULL DEFAULT 0,
   area_sqft numeric NOT NULL DEFAULT 0,
+  minimum_applied boolean DEFAULT false,
   retail_price_sqft numeric NOT NULL DEFAULT 0,
   supplier_cost_sqft numeric NOT NULL DEFAULT 0,
   retail_amount numeric NOT NULL DEFAULT 0,
