@@ -162,7 +162,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   // entered before settings loaded get the floor applied.
   useEffect(() => {
     const min = companySettings.minimum_area_sqft ?? 0;
-    setRows((prev) => prev.map((r) => recomputeRow(r, min)));
+    if (min > 0) setRows((prev) => prev.map((r) => recomputeRow(r, min)));
   }, [companySettings.minimum_area_sqft]);
 
   useEffect(() => {
@@ -607,7 +607,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
               </div>
               {row.minimum_applied && (
                 <p className="text-xs text-amber-600 mt-2">
-                  Minimum charge applied ({companySettings.minimum_area_sqft} sq.ft.)
+                  Minimum charge applied ({companySettings.minimum_area_sqft ?? 0} sq.ft.)
                 </p>
               )}
             </div>

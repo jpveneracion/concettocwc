@@ -355,7 +355,7 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
                 </div>
                 {row.minimum_applied && (
                   <div className="col-span-4">
-                    <p className="text-xs text-amber-600">Minimum charge applied</p>
+                    <p className="text-xs text-amber-600">Minimum charge applied ({minimumArea} sq.ft.)</p>
                   </div>
                 )}
               </div>
