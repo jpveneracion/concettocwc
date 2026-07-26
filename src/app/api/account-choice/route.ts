@@ -47,6 +47,10 @@ export async function POST(req: Request) {
       if (!data.company_name) {
         return NextResponse.json({ error: 'Company name required' }, { status: 400 });
       }
+      const minimumArea = Number(data.minimum_area_sqft);
+      if (!Number.isFinite(minimumArea) || minimumArea < 0) {
+        return NextResponse.json({ error: 'Minimum area is required and must be 0 or greater' }, { status: 400 });
+      }
 
       // Generate unique company code
       const companyCode = await generateUniqueCompanyCode();
@@ -55,7 +59,8 @@ export async function POST(req: Request) {
         name: data.company_name,
         address: data.company_address || '',
         mobile: data.company_mobile || '',
-        email: data.company_email || ''
+        email: data.company_email || '',
+        minimum_area_sqft: minimumArea
       });
 
       companyId = company.id;

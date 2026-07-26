@@ -18,6 +18,10 @@ export async function POST(req: Request) {
     if (!company?.code || !company?.name) {
       return NextResponse.json({ error: 'Company code and name are required' }, { status: 400 });
     }
+    const minimumArea = Number(company.minimum_area_sqft);
+    if (!Number.isFinite(minimumArea) || minimumArea < 0) {
+      return NextResponse.json({ error: 'Minimum area is required and must be 0 or greater' }, { status: 400 });
+    }
     if (!user?.email || !user?.password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
@@ -50,14 +54,15 @@ export async function POST(req: Request) {
 
     // Create company
     const [newCompany] = await sql`
-      INSERT INTO companies (code, name, address, mobile, email, prepared_by)
+      INSERT INTO companies (code, name, address, mobile, email, prepared_by, minimum_area_sqft)
       VALUES (
         ${companyCode},
         ${company.name.trim()},
         ${company.address?.trim() ?? ''},
         ${company.mobile?.trim() ?? ''},
         ${company.email?.trim() ?? ''},
-        ${company.prepared_by?.trim() ?? ''}
+        ${company.prepared_by?.trim() ?? ''},
+        ${minimumArea}
       )
       RETURNING id, code, name
     `;

@@ -37,6 +37,7 @@ interface CompanyData {
   address?: string;
   mobile?: string;
   email?: string;
+  minimum_area_sqft?: number;
 }
 
 // Find existing OAuth account
@@ -106,14 +107,18 @@ export async function validateCompanyCode(companyCode: string): Promise<CompanyR
 
 // Create new company
 export async function createCompany(companyData: CompanyData): Promise<CompanyRecord> {
+  const minimumArea = Number.isFinite(companyData.minimum_area_sqft) && (companyData.minimum_area_sqft ?? 0) >= 0
+    ? (companyData.minimum_area_sqft as number)
+    : 15;
   const [company] = await sql`
-    INSERT INTO companies (code, name, address, mobile, email)
+    INSERT INTO companies (code, name, address, mobile, email, minimum_area_sqft)
     VALUES (
       ${companyData.code.toUpperCase()},
       ${companyData.name},
       ${companyData.address || ''},
       ${companyData.mobile || ''},
-      ${companyData.email || ''}
+      ${companyData.email || ''},
+      ${minimumArea}
     )
     RETURNING id, code, name
   `;

@@ -15,7 +15,8 @@ export default function AccountChoicePage() {
     company_name: '',
     company_address: '',
     company_mobile: '',
-    company_email: ''
+    company_email: '',
+    minimum_area_sqft: '15'
   });
 
   useEffect(() => {
@@ -44,6 +45,20 @@ export default function AccountChoicePage() {
 
       const piUserData = tempPiUser ? JSON.parse(tempPiUser) : null;
 
+      // Validate create-company fields
+      if (action === 'create') {
+        const minimumAreaNum = Number(formData.minimum_area_sqft);
+        if (
+          formData.minimum_area_sqft.trim() === '' ||
+          !Number.isFinite(minimumAreaNum) ||
+          minimumAreaNum < 0
+        ) {
+          setError('Minimum area must be a number of 0 or more');
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await fetch('/api/auth/account-choice', {
         method: 'POST',
         headers: {
@@ -63,7 +78,8 @@ export default function AccountChoicePage() {
             company_name: formData.company_name,
             company_address: formData.company_address,
             company_mobile: formData.company_mobile,
-            company_email: formData.company_email
+            company_email: formData.company_email,
+            minimum_area_sqft: parseFloat(formData.minimum_area_sqft) || 0
           })
         })
       });
@@ -202,6 +218,23 @@ export default function AccountChoicePage() {
                   className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
                   placeholder="company@email.com"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Area (sq.ft.) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.minimum_area_sqft}
+                  onChange={(e) => setFormData({...formData, minimum_area_sqft: e.target.value})}
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  placeholder="15"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
               </div>
             </>
           )}

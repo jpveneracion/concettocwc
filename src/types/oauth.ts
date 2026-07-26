@@ -48,5 +48,6 @@ export interface AccountChoiceData {
   company_address?: string;
   company_mobile?: string;
   company_email?: string;
+  minimum_area_sqft?: number;
   email: string; // Required for Pi users
 }

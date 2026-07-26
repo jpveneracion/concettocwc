@@ -14,6 +14,7 @@ export default function SignUpPage() {
   const [mobile, setMobile] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [preparedBy, setPreparedBy] = useState('');
+  const [minimumArea, setMinimumArea] = useState('15');
 
   // User credentials
   const [userEmail, setUserEmail] = useState('');
@@ -27,6 +28,11 @@ export default function SignUpPage() {
     // Validation
     if (!companyCode.trim() || !companyName.trim()) {
       setError('Company code and name are required');
+      return;
+    }
+    const minimumAreaNum = Number(minimumArea);
+    if (minimumArea.trim() === '' || !Number.isFinite(minimumAreaNum) || minimumAreaNum < 0) {
+      setError('Minimum area must be a number of 0 or more');
       return;
     }
     if (!userEmail.trim() || !password) {
@@ -56,6 +62,7 @@ export default function SignUpPage() {
             mobile: mobile.trim(),
             email: companyEmail.trim(),
             prepared_by: preparedBy.trim(),
+            minimum_area_sqft: parseFloat(minimumArea) || 0,
           },
           user: {
             email: userEmail.trim().toLowerCase(),
@@ -176,6 +183,23 @@ export default function SignUpPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     placeholder="Your Name"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Minimum Area (sq.ft.) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={minimumArea}
+                    onChange={(e) => setMinimumArea(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    placeholder="15"
+                    required
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
                 </div>
               </div>
             </div>
