@@ -14,6 +14,7 @@ export default function PrintDoc({ quote, settings, type }: Props) {
   const docNum = isPO ? generatePoNumber(quote.quote_number) : quote.quote_number;
   const items = quote.items ?? [];
   const totalCost = items.reduce((s, i) => s + i.supplier_amount, 0);
+  const hasMinimumApplied = items.some((i) => i.minimum_applied);
 
   // Format date properly
   const formattedDate = quote.quote_date ? new Date(quote.quote_date).toLocaleDateString('en-PH', {
@@ -117,7 +118,7 @@ export default function PrintDoc({ quote, settings, type }: Props) {
                     {item.retail_price_sqft.toFixed(2)}
                   </td>
                   <td style={{ border: '1px solid #000', padding: '3px 4px', textAlign: 'right', color: '#0000ff', fontWeight: 700 }}>
-                    {item.retail_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    {item.retail_amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}{item.minimum_applied ? '*' : ''}
                   </td>
                 </>
               )}
@@ -142,6 +143,10 @@ export default function PrintDoc({ quote, settings, type }: Props) {
       </table>
 
       <p style={{ textAlign: 'center', fontSize: '8pt', margin: '4px 0' }}>-NF-</p>
+
+      {hasMinimumApplied && (
+        <p style={{ fontSize: '7pt', margin: '2px 0 4px' }}>* Minimum charge applied</p>
+      )}
 
       {/* Service section */}
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8.5pt', marginTop: '8px' }}>

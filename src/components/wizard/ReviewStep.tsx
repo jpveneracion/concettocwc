@@ -153,6 +153,11 @@ export default function ReviewStep() {
                     <span className="text-gray-600">Retail Amount:</span>
                     <span className="ml-2 font-medium text-blue-700">{phpFormat(item.retail_amount)}</span>
                   </div>
+                  {item.minimum_applied && (
+                    <div className="col-span-2">
+                      <span className="text-xs text-amber-600">Minimum charge applied</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

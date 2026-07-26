@@ -27,18 +27,19 @@ function newRow(order: number): ItemRow {
     supplier_cost_sqft: 0,
     retail_amount: 0,
     supplier_amount: 0,
+    minimum_applied: false,
   };
 }
 
-function recompute(row: ItemRow): ItemRow {
+function recompute(row: ItemRow, minimumArea = 0): ItemRow {
   const { final_width, final_drop } = calcFinalSize(
     row.measured_width, row.measured_drop, row.is_fixed, row.unit as MeasureUnit
   );
   const area_sqft = calcAreaSqft(final_width, final_drop, row.unit as MeasureUnit);
-  const { retail_amount, supplier_amount } = calcAmounts(
-    area_sqft, row.retail_price_sqft, row.supplier_cost_sqft
+  const { retail_amount, supplier_amount, minimum_applied } = calcAmounts(
+    area_sqft, row.retail_price_sqft, row.supplier_cost_sqft, minimumArea
   );
-  return { ...row, final_width, final_drop, area_sqft, retail_amount, supplier_amount };
+  return { ...row, final_width, final_drop, area_sqft, retail_amount, supplier_amount, minimum_applied };
 }
 
 interface Props {
@@ -68,12 +69,33 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
       : [newRow(0)]
   );
   const [lookupStatus, setLookupStatus] = useState<Record<string, string>>({});
+  const [minimumArea, setMinimumArea] = useState(0);
+
+  // Fetch company settings once on mount to apply the minimum-billable-area floor.
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((settings) => {
+        setMinimumArea(Number(settings.minimum_area_sqft) || 0);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch company settings:', error);
+      });
+  }, []);
+
+  // When the company minimum first becomes known, recompute all rows so the
+  // floor is applied to items entered (or loaded) before settings resolved.
+  useEffect(() => {
+    if (minimumArea > 0) {
+      setRows((prev) => prev.map((r) => recompute(r, minimumArea)));
+    }
+  }, [minimumArea]);
 
   const updateRow = useCallback((key: string, patch: Partial<ItemRow>) => {
     setRows((prev) =>
-      prev.map((r) => (r._key === key ? recompute({ ...r, ...patch }) : r))
+      prev.map((r) => (r._key === key ? recompute({ ...r, ...patch }, minimumArea) : r))
     );
-  }, []);
+  }, [minimumArea]);
 
   async function lookupCode(key: string, code: string) {
     if (!code.trim()) return;
@@ -92,7 +114,7 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
                 product_description: p.description,
                 retail_price_sqft: p.retail_price,
                 supplier_cost_sqft: p.supplier_cost,
-              })
+              }, minimumArea)
             : r
         )
       );
@@ -331,6 +353,11 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
                   <p className="text-xs text-gray-400 mb-1">Retail amount</p>
                   <p className="text-sm font-semibold text-blue-600">{phpFormat(row.retail_amount)}</p>
                 </div>
+                {row.minimum_applied && (
+                  <div className="col-span-4">
+                    <p className="text-xs text-amber-600">Minimum charge applied</p>
+                  </div>
+                )}
               </div>
             </div>
           ))}

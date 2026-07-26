@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem, MeasureUnit } from '@/types';
-import { calcFinalSize, calcAreaSqft } from '@/lib/calc';
+import { calcFinalSize, calcAreaSqft, calcAmounts } from '@/lib/calc';
 import { isPastDatedQuote as computeIsPastDated } from '@/lib/utc-utils';
 
 interface MeasurementData {
@@ -24,6 +24,7 @@ interface ProductLookupResult {
 
 interface CompanySettings {
   currency?: string;
+  minimum_area_sqft?: number;
 }
 
 interface LookupStatus {
@@ -68,10 +69,11 @@ function newRow(order: number): ItemRow {
     supplier_cost_sqft: 0,
     retail_amount: 0,
     supplier_amount: 0,
+    minimum_applied: false,
   };
 }
 
-function recomputeRow(row: ItemRow): ItemRow {
+function recomputeRow(row: ItemRow, minimumArea = 0): ItemRow {
   const { final_width, final_drop } = calcFinalSize(
     row.measured_width,
     row.measured_drop,
@@ -79,15 +81,18 @@ function recomputeRow(row: ItemRow): ItemRow {
     row.unit as MeasureUnit
   );
   const area_sqft = calcAreaSqft(final_width, final_drop, row.unit as MeasureUnit);
+  const { retail_amount, supplier_amount, minimum_applied } = calcAmounts(
+    area_sqft, row.retail_price_sqft, row.supplier_cost_sqft, minimumArea
+  );
 
   return {
     ...row,
     final_width,
     final_drop,
     area_sqft,
-    // Calculate amounts if prices are available
-    retail_amount: area_sqft * row.retail_price_sqft,
-    supplier_amount: area_sqft * row.supplier_cost_sqft,
+    retail_amount,
+    supplier_amount,
+    minimum_applied,
   };
 }
 
@@ -153,6 +158,13 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
       });
   }, []);
 
+  // Recompute all rows when the company minimum is first known so rows
+  // entered before settings loaded get the floor applied.
+  useEffect(() => {
+    const min = companySettings.minimum_area_sqft ?? 0;
+    setRows((prev) => prev.map((r) => recomputeRow(r, min)));
+  }, [companySettings.minimum_area_sqft]);
+
   useEffect(() => {
     const data: MeasurementData = {
       items: rows.map(({ _key, ...rest }) => ({
@@ -207,7 +219,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
   const updateRow = (key: string, patch: Partial<ItemRow>) => {
     setRows((prev) =>
-      prev.map((r) => (r._key === key ? recomputeRow({ ...r, ...patch }) : r))
+      prev.map((r) => (r._key === key ? recomputeRow({ ...r, ...patch }, companySettings.minimum_area_sqft ?? 0) : r))
     );
   };
 
@@ -243,8 +255,6 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
             product_description: product.description,
             retail_price_sqft: product.retail_price,
             supplier_cost_sqft: product.supplier_cost,
-            retail_amount: rows[rowIndex].area_sqft * product.retail_price,
-            supplier_amount: rows[rowIndex].area_sqft * product.supplier_cost,
           });
         }
 
@@ -595,6 +605,11 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   <p className="text-sm font-medium">{row.area_sqft.toFixed(2)}</p>
                 </div>
               </div>
+              {row.minimum_applied && (
+                <p className="text-xs text-amber-600 mt-2">
+                  Minimum charge applied ({companySettings.minimum_area_sqft} sq.ft.)
+                </p>
+              )}
             </div>
           </div>
         ))}
