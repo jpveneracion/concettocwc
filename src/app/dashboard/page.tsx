@@ -8,6 +8,8 @@ import PopularCollections from '@/components/dashboard/PopularCollections';
 import EncryptionModal from '@/components/EncryptionModal';
 import type { DashboardMetrics } from '@/types';
 
+const YEAR_DROPDOWN_SPAN = 10;
+
 export default function DashboardPage() {
   const currentUtcYear = new Date().getUTCFullYear();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -19,10 +21,20 @@ export default function DashboardPage() {
   const [encryptPhase, setEncryptPhase] = useState<'encrypting' | 'verifying' | 'deleting' | 'complete'>('encrypting');
   const [currency, setCurrency] = useState<string>('USD');
 
+  const tabClassName = (active: boolean) =>
+    `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+      active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+    }`;
+
+  // Side effects run once on mount.
   useEffect(() => {
-    fetchMetrics();
     fetchCurrency();
     encryptExistingData();
+  }, []);
+
+  // Metrics refetch whenever the filter changes (also runs on mount).
+  useEffect(() => {
+    fetchMetrics();
   }, [period, selectedYear]);
 
   async function fetchCurrency() {
@@ -189,41 +201,25 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setPeriod('month')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              period === 'month'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={tabClassName(period === 'month')}
           >
             Current Month
           </button>
           <button
             onClick={() => setPeriod('year')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              period === 'year'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={tabClassName(period === 'year')}
           >
             Current Year
           </button>
           <button
             onClick={() => setPeriod('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              period === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={tabClassName(period === 'all')}
           >
             All Time
           </button>
           <button
             onClick={() => setPeriod('custom')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              period === 'custom'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={tabClassName(period === 'custom')}
           >
             Specific Year
           </button>
@@ -231,9 +227,9 @@ export default function DashboardPage() {
             <select
               value={String(selectedYear)}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-4 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700"
+              className={`${tabClassName(false)} border border-gray-300`}
             >
-              {Array.from({ length: 10 }, (_, i) => currentUtcYear - i).map((year) => (
+              {Array.from({ length: YEAR_DROPDOWN_SPAN }, (_, i) => currentUtcYear - i).map((year) => (
                 <option key={year} value={String(year)}>
                   {year}
                 </option>
