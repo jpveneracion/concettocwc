@@ -1,8 +1,9 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Quote, QuoteItem, MeasureUnit } from '@/types';
 import { calcFinalSize, calcAreaSqft, calcAmounts, phpFormat } from '@/lib/calc';
+import { isPastDatedQuote as computeIsPastDated } from '@/lib/utc-utils';
 
 type ItemRow = Omit<QuoteItem, 'id' | 'quote_id'> & { _key: string };
 
@@ -52,6 +53,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
   const [customer, setCustomer] = useState(existing?.customer_name ?? '');
   const [address, setAddress] = useState(existing?.customer_address ?? '');
   const [date, setDate] = useState(existing?.quote_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const isPastDatedQuote = useMemo(() => computeIsPastDated(date), [date]);
   const [ref, setRef] = useState(existing?.our_ref ?? '');
   const [status, setStatus] = useState(existing?.status ?? 'draft');
   const [installation, setInstallation] = useState(existing?.installation_fee ?? 0);
@@ -237,6 +239,33 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
                   <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-500 min-h-[44px]" value={row.product_description} readOnly />
                 </div>
               </div>
+
+              {isPastDatedQuote && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Retail price per sq.ft. (₱)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+                      value={row.retail_price_sqft || ''}
+                      onChange={(e) => updateRow(row._key, { retail_price_sqft: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Supplier cost per sq.ft. (₱)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+                      value={row.supplier_cost_sqft || ''}
+                      onChange={(e) => updateRow(row._key, { supplier_cost_sqft: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                 <div>

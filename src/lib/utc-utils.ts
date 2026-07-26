@@ -74,6 +74,36 @@ export function isPastUTCDate(date: Date): boolean {
 }
 
 /**
+ * Check if a quote date string represents a strictly past calendar day.
+ *
+ * Gates manual per-sq.ft. price editing in `QuoteForm` and the wizard's
+ * `MeasurementsStep`: when the quote date is strictly before today (UTC),
+ * price fields become editable; today and future dates remain read-only
+ * (spec: "Quote date exactly today → treated as current (no edit, read-only)").
+ *
+ * UTC-standardized to match the project convention in `timezone-config.ts`.
+ * Only UTC methods are used — never local-time methods like `setHours`.
+ *
+ * @param dateString - ISO date string (YYYY-MM-DD or full ISO). Null/undefined/empty returns false.
+ * @returns true iff the date's UTC calendar day is strictly before today's UTC calendar day.
+ *          Returns false for invalid date strings (Invalid Date → NaN getTime).
+ *
+ * @example
+ * ```ts
+ * isPastDatedQuote('2020-01-01'); // true (strictly past)
+ * isPastDatedQuote('2099-01-01'); // false (future)
+ * isPastDatedQuote(undefined);    // false
+ * isPastDatedQuote('not-a-date'); // false (Invalid Date)
+ * ```
+ */
+export function isPastDatedQuote(dateString: string | undefined | null): boolean {
+  if (!dateString) return false;
+  const quoteDate = new Date(dateString);
+  if (Number.isNaN(quoteDate.getTime())) return false;
+  return isPastUTCDate(quoteDate);
+}
+
+/**
  * Check if a date is in the future (after today UTC midnight)
  *
  * @param date - Date to check

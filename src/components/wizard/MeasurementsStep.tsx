@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem, MeasureUnit } from '@/types';
 import { calcFinalSize, calcAreaSqft } from '@/lib/calc';
+import { isPastDatedQuote as computeIsPastDated } from '@/lib/utc-utils';
 
 interface MeasurementData {
   items: QuoteItem[];
@@ -101,6 +102,15 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (..
 
 export default function MeasurementsStep({ existingData }: MeasurementsStepProps) {
   const { setStepData, getStepData } = useWizard();
+
+  // Date detection for manual pricing.
+  // The wizard stores step data as `unknown`; the customer step is expected
+  // to carry an optional `quote_date` string (YYYY-MM-DD).
+  const customerData = getStepData('customer') as { quote_date?: string | null } | undefined;
+  const isPastDatedQuote = useMemo(
+    () => computeIsPastDated(customerData?.quote_date),
+    [customerData?.quote_date]
+  );
 
   const [rows, setRows] = useState<ItemRow[]>(
     existingData?.items?.length
@@ -529,12 +539,39 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
                       {/* Pricing Information */}
                       <div className="pt-2 border-t border-gray-200">
-                        <div className="bg-white rounded p-2">
-                          <p className="text-xs text-gray-500">Retail Price</p>
-                          <p className="text-sm font-semibold text-green-700">
-                            {currencySymbols[companySettings.currency || 'USD'] || '$'}{row.retail_price_sqft.toFixed(2)}/sq.ft
-                          </p>
-                        </div>
+                        {isPastDatedQuote ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Retail Price per sq.ft.</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
+                                value={row.retail_price_sqft || ''}
+                                onChange={(e) => updateRow(row._key, { retail_price_sqft: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Supplier Cost per sq.ft.</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
+                                value={row.supplier_cost_sqft || ''}
+                                onChange={(e) => updateRow(row._key, { supplier_cost_sqft: parseFloat(e.target.value) || 0 })}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-white rounded p-2">
+                            <p className="text-xs text-gray-500">Retail Price</p>
+                            <p className="text-sm font-semibold text-green-700">
+                              {currencySymbols[companySettings.currency || 'USD'] || '$'}{row.retail_price_sqft.toFixed(2)}/sq.ft
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
