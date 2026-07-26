@@ -44,9 +44,10 @@ function recompute(row: ItemRow): ItemRow {
 interface Props {
   existing?: Quote;
   quoteNumber: string;
+  existingQuoteNumbers?: string[];
 }
 
-export default function QuoteForm({ existing, quoteNumber }: Props) {
+export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
@@ -54,6 +55,9 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
   const [address, setAddress] = useState(existing?.customer_address ?? '');
   const [date, setDate] = useState(existing?.quote_date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const isPastDatedQuote = useMemo(() => computeIsPastDated(date), [date]);
+  const [quoteNumberValue, setQuoteNumberValue] = useState(quoteNumber);
+  const canEditQuoteNumber = isPastDatedQuote && !existing;
+  const isDuplicateQuoteNumber = quoteNumberValue.trim().length > 0 && (existingQuoteNumbers ?? []).includes(quoteNumberValue.trim());
   const [ref, setRef] = useState(existing?.our_ref ?? '');
   const [status, setStatus] = useState(existing?.status ?? 'draft');
   const [installation, setInstallation] = useState(existing?.installation_fee ?? 0);
@@ -109,6 +113,11 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
     if (!customer.trim()) { alert('Customer name is required.'); return; }
     if (!rows.some((r) => r.area_sqft > 0)) { alert('Add at least one window with measurements.'); return; }
 
+    if (canEditQuoteNumber) {
+      if (!quoteNumberValue.trim()) { alert('Quote number is required.'); return; }
+      if (isDuplicateQuoteNumber) { alert('This quote number already exists.'); return; }
+    }
+
     // Prevent changes from delivered status
     if (existing && existing.status === 'delivered') {
       alert('Cannot change status from delivered.');
@@ -124,7 +133,7 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
 
     setSaving(true);
     const payload = {
-      quote_number: quoteNumber,
+      quote_number: quoteNumberValue.trim(),
       customer_name: customer,
       customer_address: address,
       quote_date: date,
@@ -163,8 +172,21 @@ export default function QuoteForm({ existing, quoteNumber }: Props) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Quote number</label>
-            <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-400 bg-gray-50 min-h-[44px]" value={quoteNumber} readOnly />
+            <label className="block text-xs text-gray-500 mb-1">
+              {canEditQuoteNumber ? 'Quote number (editable for past date)' : 'Quote number'}
+            </label>
+            {canEditQuoteNumber ? (
+              <input
+                className={`w-full border ${isDuplicateQuoteNumber ? 'border-red-300' : 'border-gray-200'} rounded-lg px-4 py-3 text-sm min-h-[44px]`}
+                value={quoteNumberValue}
+                onChange={(e) => setQuoteNumberValue(e.target.value)}
+              />
+            ) : (
+              <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-400 bg-gray-50 min-h-[44px]" value={quoteNumberValue} readOnly />
+            )}
+            {isDuplicateQuoteNumber && (
+              <p className="text-xs text-red-500 mt-1">This quote number already exists.</p>
+            )}
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Our ref</label>

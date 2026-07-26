@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
-import { getUTCMidnight, toUTCMidnight, isFutureUTCDate } from '@/lib/utc-utils';
+import { getUTCMidnight, toUTCMidnight, isFutureUTCDate, isPastDatedQuote } from '@/lib/utc-utils';
 
 interface CustomerData {
   customer_name: string;
@@ -10,14 +10,16 @@ interface CustomerData {
   quote_date: string;
   our_ref: string;
   status: 'draft' | 'sent' | 'delivered' | 'cancelled';
+  quote_number?: string;
 }
 
 interface CustomerStepProps {
   quoteNumber: string;
+  existingQuoteNumbers?: string[];
   existingData?: CustomerData;
 }
 
-export default function CustomerStep({ quoteNumber, existingData }: CustomerStepProps) {
+export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existingData }: CustomerStepProps) {
   const { setStepData } = useWizard();
   const { canCreateFutureOrders, isLoading: restrictionsLoading } = useTrialRestrictions();
 
@@ -26,6 +28,9 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
   const [date, setDate] = useState(existingData?.quote_date ?? new Date().toISOString().slice(0, 10));
   const [ref, setRef] = useState(existingData?.our_ref ?? '');
   const [status, setStatus] = useState<'draft' | 'sent' | 'delivered' | 'cancelled'>(existingData?.status ?? 'draft');
+  const [quoteNumberValue, setQuoteNumberValue] = useState(quoteNumber);
+  const canEditQuoteNumber = isPastDatedQuote(date);
+  const isDuplicateQuoteNumber = quoteNumberValue.trim().length > 0 && (existingQuoteNumbers ?? []).includes(quoteNumberValue.trim());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateWarning, setDateWarning] = useState<string | null>(null);
 
@@ -36,6 +41,7 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
       quote_date: date,
       our_ref: ref,
       status,
+      quote_number: quoteNumberValue,
     };
     setStepData('customer', data);
 
@@ -51,13 +57,21 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
         setDateWarning(null);
       }
     }
-  }, [customer, address, date, ref, status, setStepData, canCreateFutureOrders, restrictionsLoading]);
+  }, [customer, address, date, ref, status, quoteNumberValue, setStepData, canCreateFutureOrders, restrictionsLoading]);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
     if (!customer.trim()) {
       newErrors.customer = 'Customer name is required';
+    }
+
+    if (canEditQuoteNumber) {
+      if (!quoteNumberValue.trim()) {
+        newErrors.quote_number = 'Quote number is required';
+      } else if (isDuplicateQuoteNumber) {
+        newErrors.quote_number = 'This quote number already exists';
+      }
     }
 
     // Check if future date is allowed
@@ -82,7 +96,7 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
     return () => {
       delete window.__customerStepValidation;
     };
-  }, [customer, address, date, ref, status]);
+  }, [customer, address, date, ref, status, quoteNumberValue, canEditQuoteNumber, existingQuoteNumbers]);
 
   return (
     <div className="space-y-4">
@@ -131,14 +145,25 @@ export default function CustomerStep({ quoteNumber, existingData }: CustomerStep
           )}
         </div>
 
-        {/* Quote Number (Read-only) */}
+        {/* Quote Number */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Quote Number</label>
-          <input
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-400 bg-gray-50"
-            value={quoteNumber}
-            readOnly
-          />
+          <label className="block text-sm text-gray-600 mb-1">
+            {canEditQuoteNumber ? 'Quote Number (editable for past date)' : 'Quote Number'}
+          </label>
+          {canEditQuoteNumber ? (
+            <input
+              className={`w-full border ${errors.quote_number ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm min-h-[44px]`}
+              value={quoteNumberValue}
+              onChange={(e) => setQuoteNumberValue(e.target.value)}
+            />
+          ) : (
+            <input
+              className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-400 bg-gray-50"
+              value={quoteNumberValue}
+              readOnly
+            />
+          )}
+          {errors.quote_number && <p className="text-xs text-red-500 mt-1">{errors.quote_number}</p>}
         </div>
 
         {/* Reference */}

@@ -6,6 +6,7 @@ import { clearDraft } from '../lib/wizardStorage';
 
 interface QuoteWizardProps {
   quoteNumber: string;
+  existingQuoteNumbers?: string[];
   existingData?: {
     customer?: {
       customer_name: string;
@@ -52,6 +53,7 @@ interface CustomerStepData {
   quote_date: string;
   our_ref: string;
   status: string;
+  quote_number?: string;
 }
 
 interface MeasurementsStepData {
@@ -119,7 +121,7 @@ const STEP_LABELS: Record<WizardStep, string> = {
 
 const STEP_ORDER: WizardStep[] = ['customer', 'measurements', 'review'];
 
-export default function QuoteWizard({ quoteNumber, existingData, onComplete }: QuoteWizardProps) {
+export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existingData, onComplete }: QuoteWizardProps) {
   // Initialize localStorage with existing data or empty state
   const initialWizardState: WizardState = {
     customer: existingData?.customer || null,
@@ -237,6 +239,7 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
   // Get step-specific props
   interface StepProps {
     quoteNumber?: string;
+    existingQuoteNumbers?: string[];
     existingData?: {
       customer_name?: string;
       customer_address?: string;
@@ -274,6 +277,7 @@ export default function QuoteWizard({ quoteNumber, existingData, onComplete }: Q
       case 'customer':
         return {
           quoteNumber,
+          existingQuoteNumbers,
           existingData: existingData?.customer ? {
             customer_name: existingData.customer.customer_name,
             customer_address: existingData.customer.customer_address,

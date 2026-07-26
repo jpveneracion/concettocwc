@@ -12,6 +12,7 @@ type WizardStepData = {
     quote_date: string;
     our_ref: string;
     status: string;
+    quote_number?: string;
   };
   items: any[];
   installation_fee: number;
@@ -21,6 +22,7 @@ type WizardStepData = {
 export default function NewQuotePage() {
   const router = useRouter();
   const [quoteNumber, setQuoteNumber] = useState('');
+  const [existingQuoteNumbers, setExistingQuoteNumbers] = useState<string[]>([]);
   const [useWizard, setUseWizard] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -42,6 +44,7 @@ export default function NewQuotePage() {
         const yr = new Date().getFullYear().toString().slice(-2);
         const seq = (data.quotes.length + 1).toString().padStart(5, '0');
         setQuoteNumber(`${data.companyCode}-DF-QT-${yr}-${seq}`);
+        setExistingQuoteNumbers((data.quotes ?? []).map((q: { quote_number: string }) => q.quote_number));
       })
       .catch(() => {
         window.location.href = '/login';
@@ -61,11 +64,17 @@ export default function NewQuotePage() {
       return;
     }
 
+    const editedQuoteNumber = wizardData.customer?.quote_number?.trim();
+    if (editedQuoteNumber && existingQuoteNumbers.includes(editedQuoteNumber)) {
+      alert('Quote number already exists. Please use a different number.');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload = {
-        quote_number: quoteNumber,
+        quote_number: (wizardData.customer?.quote_number || quoteNumber).trim(),
         customer_name: wizardData.customer.customer_name,
         customer_address: wizardData.customer.customer_address || '',
         quote_date: wizardData.customer.quote_date,
@@ -123,12 +132,13 @@ export default function NewQuotePage() {
           ) : (
             <QuoteWizard
               quoteNumber={quoteNumber}
+              existingQuoteNumbers={existingQuoteNumbers}
               onComplete={handleWizardSubmit}
             />
           )}
         </div>
       ) : (
-        <QuoteForm quoteNumber={quoteNumber} />
+        <QuoteForm quoteNumber={quoteNumber} existingQuoteNumbers={existingQuoteNumbers} />
       )}
     </AppLayout>
   );
