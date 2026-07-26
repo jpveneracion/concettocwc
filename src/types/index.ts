@@ -115,7 +115,7 @@ export interface DashboardMetrics {
 export interface DateRange {
   startDate: string; // ISO date string
   endDate: string;   // ISO date string
-  period: 'month' | 'year' | 'custom';
+  period: 'month' | 'year' | 'custom' | 'all';
 }
 
 // Cost categories (company-configurable)

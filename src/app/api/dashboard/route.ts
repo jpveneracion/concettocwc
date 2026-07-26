@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     const searchParams = req.nextUrl.searchParams;
-    const period = (searchParams.get('period') as 'month' | 'year' | 'custom') || 'month';
+    const period = (searchParams.get('period') as 'month' | 'year' | 'custom' | 'all') || 'month';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
@@ -63,6 +63,11 @@ export async function GET(req: NextRequest) {
       const firstDay = createUTCDate(now.getUTCFullYear(), 0, 1);
       dateStart = firstDay.toISOString().split('T')[0];
       dateEnd = now.toISOString().split('T')[0];
+    } else if (period === 'all') {
+      // All time: include every quote (past and future-dated). Wide range avoids
+      // refactoring every helper's (startDate, endDate) signature.
+      dateStart = '1970-01-01';
+      dateEnd = '9999-12-31';
     } else {
       // Custom range
       if (!startDate || !endDate) {

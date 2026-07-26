@@ -9,10 +9,12 @@ import EncryptionModal from '@/components/EncryptionModal';
 import type { DashboardMetrics } from '@/types';
 
 export default function DashboardPage() {
+  const currentUtcYear = new Date().getUTCFullYear();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'month' | 'year'>('month');
+  const [period, setPeriod] = useState<'month' | 'year' | 'all' | 'custom'>('month');
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getUTCFullYear());
   const [encrypting, setEncrypting] = useState(false);
   const [encryptPhase, setEncryptPhase] = useState<'encrypting' | 'verifying' | 'deleting' | 'complete'>('encrypting');
   const [currency, setCurrency] = useState<string>('USD');
@@ -21,7 +23,7 @@ export default function DashboardPage() {
     fetchMetrics();
     fetchCurrency();
     encryptExistingData();
-  }, [period]);
+  }, [period, selectedYear]);
 
   async function fetchCurrency() {
     try {
@@ -94,7 +96,11 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       setEncrypting(true);
-      const res = await fetch(`/api/dashboard?period=${period}`);
+      const dashboardUrl =
+        period === 'custom'
+          ? `/api/dashboard?period=custom&startDate=${selectedYear}-01-01&endDate=${selectedYear}-12-31`
+          : `/api/dashboard?period=${period}`;
+      const res = await fetch(dashboardUrl);
       const data = await res.json();
 
       if (!res.ok) {
@@ -140,6 +146,15 @@ export default function DashboardPage() {
     return `${(value * 100).toFixed(0)}%`;
   }
 
+  const salesTitle =
+    period === 'month'
+      ? 'Monthly Sales'
+      : period === 'year'
+        ? 'Yearly Sales'
+        : period === 'all'
+          ? 'All-Time Sales'
+          : `${selectedYear} Sales`;
+
   if (loading) {
     return (
       <AppLayout>
@@ -171,7 +186,7 @@ export default function DashboardPage() {
       <EncryptionModal show={encrypting} />
       <div className="mb-6">
         <h1 className="text-xl font-semibold mb-4">Dashboard</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setPeriod('month')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -192,14 +207,47 @@ export default function DashboardPage() {
           >
             Current Year
           </button>
+          <button
+            onClick={() => setPeriod('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              period === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            All Time
+          </button>
+          <button
+            onClick={() => setPeriod('custom')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              period === 'custom'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Specific Year
+          </button>
+          {period === 'custom' && (
+            <select
+              value={String(selectedYear)}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-4 py-2 rounded-lg text-sm font-medium border bg-white text-gray-700"
+            >
+              {Array.from({ length: 10 }, (_, i) => currentUtcYear - i).map((year) => (
+                <option key={year} value={String(year)}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
       {/* Top metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <MetricCard
-          title={period === 'month' ? 'Monthly Sales' : 'Yearly Sales'}
-          value={formatCurrency(period === 'month' ? metrics.monthlySales : metrics.yearlySales)}
+          title={salesTitle}
+          value={formatCurrency(metrics.monthlySales)}
           icon="💰"
           color="blue"
         />
