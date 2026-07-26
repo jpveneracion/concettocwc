@@ -272,7 +272,7 @@ CREATE TABLE quote_items (
   final_width numeric NOT NULL DEFAULT 0,
   final_drop numeric NOT NULL DEFAULT 0,
   area_sqft numeric NOT NULL DEFAULT 0,
-  minimum_applied boolean DEFAULT false,
+  minimum_applied boolean NOT NULL DEFAULT false,
   retail_price_sqft numeric NOT NULL DEFAULT 0,
   supplier_cost_sqft numeric NOT NULL DEFAULT 0,
   retail_amount numeric NOT NULL DEFAULT 0,
