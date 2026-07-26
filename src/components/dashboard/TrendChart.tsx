@@ -4,12 +4,13 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface TrendChartProps {
   data: Array<{ label: string; revenue: number }>;
   currency?: string;
+  title?: string;
 }
 
-export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) {
+export default function TrendChart({ data, currency = 'USD', title = 'Revenue Trends' }: TrendChartProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
-      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Revenue Trends</h3>
+      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={180}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

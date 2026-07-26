@@ -107,7 +107,6 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      setEncrypting(true);
       const dashboardUrl =
         period === 'custom'
           ? `/api/dashboard?period=custom&startDate=${selectedYear}-01-01&endDate=${selectedYear}-12-31`
@@ -128,7 +127,6 @@ export default function DashboardPage() {
       setMetrics(null);
     } finally {
       setLoading(false);
-      setEncrypting(false);
     }
   }
 
@@ -166,6 +164,15 @@ export default function DashboardPage() {
         : period === 'all'
           ? 'All-Time Sales'
           : `${selectedYear} Sales`;
+
+  const trendTitle =
+    period === 'month'
+      ? 'Revenue Trends · Last 6 Months'
+      : period === 'year'
+        ? 'Revenue Trends · This Year'
+        : period === 'all'
+          ? 'Revenue Trends · All Time'
+          : `Revenue Trends · ${selectedYear}`;
 
   if (loading) {
     return (
@@ -271,7 +278,7 @@ export default function DashboardPage() {
 
       {/* Charts and tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TrendChart data={metrics.revenueTrends} currency={currency} />
+        <TrendChart data={metrics.revenueTrends} currency={currency} title={trendTitle} />
         <PopularCollections collections={metrics.popularCollections} currency={currency} />
       </div>
 
