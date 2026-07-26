@@ -33,10 +33,17 @@ export function calcAreaSqft(
   return (widthIn * dropIn) / 144;
 }
 
-export function calcAmounts(area: number, retail: number, cost: number) {
+export function calcAmounts(
+  area: number,
+  retail: number,
+  cost: number,
+  minimumArea = 0
+): { retail_amount: number; supplier_amount: number; minimum_applied: boolean } {
+  const billedArea = minimumArea > 0 ? Math.max(area, minimumArea) : area;
   return {
-    retail_amount: area * retail,
-    supplier_amount: area * cost,
+    retail_amount: billedArea * retail,
+    supplier_amount: billedArea * cost,
+    minimum_applied: billedArea > area,
   };
 }
 

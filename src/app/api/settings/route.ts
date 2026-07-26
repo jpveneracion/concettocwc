@@ -11,7 +11,8 @@ export async function GET() {
 
     const [company] = await sql`
       SELECT id, code, name as company, address, mobile, email, currency,
-             prepared_by, terms, del_note, closing_note, updated_at, subscription_status
+             prepared_by, terms, del_note, closing_note, updated_at, subscription_status,
+             minimum_area_sqft::float
       FROM companies
       WHERE id = ${session.companyId}
     `;
@@ -32,6 +33,7 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     const { name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note } = body;
+    const minimum_area_sqft = Math.max(0, Number(body.minimum_area_sqft) || 0);
 
     const [company] = await sql`
       UPDATE companies SET
@@ -44,10 +46,12 @@ export async function PUT(req: Request) {
         terms        = ${terms},
         del_note     = ${del_note},
         closing_note = ${closing_note},
+        minimum_area_sqft = ${minimum_area_sqft},
         updated_at   = now()
       WHERE id = ${session.companyId}
       RETURNING id, code, name as company, address, mobile, email, currency,
-                prepared_by, terms, del_note, closing_note, updated_at, subscription_status
+                prepared_by, terms, del_note, closing_note, updated_at, subscription_status,
+                minimum_area_sqft::float
     `;
     return NextResponse.json(company);
   } catch (err) {

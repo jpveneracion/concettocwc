@@ -12,6 +12,7 @@ type CompanyForm = {
   terms: string;
   del_note: string;
   closing_note: string;
+  minimum_area_sqft: number;
 };
 
 export default function SettingsPage() {
@@ -123,6 +124,18 @@ export default function SettingsPage() {
                 <option value="HKD">HKD - Hong Kong Dollar (HK$)</option>
                 <option value="CNY">CNY - Chinese Yuan (¥)</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Minimum area (sq.ft.)</label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={(form.minimum_area_sqft as number) ?? 15}
+                onChange={(e) => setForm({ ...form, minimum_area_sqft: parseFloat(e.target.value) || 0 })}
+              />
+              <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
             </div>
             {field('Prepared by', 'prepared_by', 'John Paul Veneracion')}
           </div>
