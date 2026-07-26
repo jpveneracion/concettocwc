@@ -2,7 +2,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface TrendChartProps {
-  data: Array<{ month: string; revenue: number }>;
+  data: Array<{ label: string; revenue: number }>;
   currency?: string;
 }
 
@@ -14,7 +14,7 @@ export default function TrendChart({ data, currency = 'USD' }: TrendChartProps) 
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
-            dataKey="month"
+            dataKey="label"
             stroke="#6b7280"
             fontSize={10}
             tickLine={false}

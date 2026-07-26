@@ -5,8 +5,7 @@ import { getUTCNow, createUTCDate } from '@/lib/utc-utils';
 
 // TypeScript interfaces for SQL query results
 interface RevenueTrendRow {
-  month: string;
-  month_num: number;
+  label: string;
   revenue: string | number;
 }
 
@@ -102,8 +101,8 @@ export async function GET(req: NextRequest) {
       getConversionRate(companyId, dateStart, dateEnd),
       // Average order value
       getAverageOrderValue(companyId, dateStart, dateEnd),
-      // Revenue trends (last 6 months)
-      getRevenueTrends(companyId),
+      // Revenue trends (period-aware: monthly or yearly buckets)
+      getRevenueTrends(companyId, period, dateStart, dateEnd),
       // Popular collections
       getPopularCollections(companyId, dateStart, dateEnd),
       // Top customers
@@ -217,26 +216,59 @@ async function getAverageOrderValue(companyId: string, startDate: string, endDat
   return Number(result[0]?.avg_order || 0);
 }
 
-async function getRevenueTrends(companyId: string) {
+async function getRevenueTrends(
+  companyId: string,
+  period: 'month' | 'year' | 'custom' | 'all',
+  dateStart: string,
+  dateEnd: string
+) {
+  if (period === 'all') {
+    // One bucket per year, all time.
+    const result = await sql(`
+      SELECT
+        EXTRACT(YEAR FROM quote_date)::TEXT as label,
+        EXTRACT(YEAR FROM quote_date) as sort_key,
+        SUM(total) as revenue
+      FROM quotes
+      WHERE company_id = $1
+        AND status IN ('delivered', 'sent')
+      GROUP BY label, sort_key
+      ORDER BY sort_key
+    `, [companyId]);
+    return result.map((row: Record<string, any>) => {
+      const typedRow = row as RevenueTrendRow;
+      return { label: typedRow.label, revenue: Number(typedRow.revenue) };
+    });
+  }
+
+  // Monthly buckets. For 'month', use a trailing 6-month UTC window
+  // (a single current-month window yields only one bar); for 'year'/'custom',
+  // use the selected year's range passed in.
+  let start = dateStart;
+  let end = dateEnd;
+  if (period === 'month') {
+    const now = getUTCNow();
+    const startMonth = createUTCDate(now.getUTCFullYear(), now.getUTCMonth() - 5, 1);
+    start = startMonth.toISOString().split('T')[0];
+    end = now.toISOString().split('T')[0];
+  }
+
   const result = await sql(`
     SELECT
-      TO_CHAR(quote_date, 'Mon') as month,
-      EXTRACT(MONTH FROM quote_date) as month_num,
+      TO_CHAR(quote_date, 'Mon') as label,
+      date_trunc('month', quote_date) as sort_key,
       SUM(total) as revenue
     FROM quotes
     WHERE company_id = $1
       AND status IN ('delivered', 'sent')
-      AND quote_date >= date_trunc('month', CURRENT_DATE - INTERVAL '5 months')
-    GROUP BY month, month_num
-    ORDER BY month_num
-  `, [companyId]);
-
+      AND quote_date >= $2
+      AND quote_date <= $3
+    GROUP BY label, sort_key
+    ORDER BY sort_key
+  `, [companyId, start, end]);
   return result.map((row: Record<string, any>) => {
     const typedRow = row as RevenueTrendRow;
-    return {
-      month: typedRow.month,
-      revenue: Number(typedRow.revenue),
-    };
+    return { label: typedRow.label, revenue: Number(typedRow.revenue) };
   });
 }
 

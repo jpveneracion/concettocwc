@@ -107,7 +107,7 @@ export interface DashboardMetrics {
   approvedQuotes: number;
   pendingQuotes: number;
   averageOrderValue: number;
-  revenueTrends: Array<{ month: string; revenue: number }>;
+  revenueTrends: Array<{ label: string; revenue: number }>;
   popularCollections: Array<{ collection: string; count: number; revenue: number }>;
   topCustomers: Array<{ customerName: string; totalRevenue: number; quoteCount: number }>;
 }
