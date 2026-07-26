@@ -75,6 +75,7 @@ interface MeasurementsStepData {
     supplier_cost_sqft: number;
     retail_amount: number;
     supplier_amount: number;
+    minimum_applied?: boolean;
   }>;
 }
 
