@@ -4,6 +4,7 @@ import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
 import { validateQuoteCreation, restrictionErrorResponse } from '@/lib/api-restrictions';
+import { calcAmounts } from '@/lib/calc';
 import type { QuotePayload } from '@/types';
 
 export async function GET() {
@@ -116,10 +117,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const subtotal = items.reduce((s, i) => s + i.retail_amount, 0);
+    // Fetch company minimum billable area once (server-authoritative).
+    // We NEVER trust client-supplied retail_amount/supplier_amount/minimum_applied —
+    // they are recomputed here from the real area + price + company minimum.
+    const [company] = await sql`
+      SELECT minimum_area_sqft::float AS minimum_area_sqft
+      FROM companies WHERE id = ${session.companyId}
+    `;
+    const minimumArea = company?.minimum_area_sqft ?? 0;
+
+    const processedItems = items.map((item) => {
+      const { retail_amount, supplier_amount, minimum_applied } = calcAmounts(
+        item.area_sqft, item.retail_price_sqft, item.supplier_cost_sqft, minimumArea
+      );
+      return { ...item, retail_amount, supplier_amount, minimum_applied };
+    });
+
+    const subtotal = processedItems.reduce((s, i) => s + i.retail_amount, 0);
     const total = subtotal + installation_fee + delivery_fee;
-    const total_area = items.reduce((s, i) => s + i.area_sqft, 0);
-    const panel_count = items.length;
+    // total_area uses the REAL measured area, not the floored billed area.
+    const total_area = processedItems.reduce((s, i) => s + i.area_sqft, 0);
+    const panel_count = processedItems.length;
 
     // Encrypt PII
     const customerNameEncrypted = encryptPII(customer_name);
@@ -153,9 +171,9 @@ export async function POST(req: Request) {
       RETURNING id, quote_number, customer_name, customer_address, created_at
     `;
 
-    // Insert items
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    // Insert items (iterate processedItems so we persist server-computed amounts)
+    for (let i = 0; i < processedItems.length; i++) {
+      const item = processedItems[i];
       await sql`
         INSERT INTO quote_items (
           quote_id, sort_order, location,
@@ -163,7 +181,7 @@ export async function POST(req: Request) {
           unit, is_fixed,
           measured_width, measured_drop, final_width, final_drop,
           area_sqft, retail_price_sqft, supplier_cost_sqft,
-          retail_amount, supplier_amount
+          retail_amount, supplier_amount, minimum_applied
         ) VALUES (
           ${quote.id}, ${i},
           ${item.location ?? ''},
@@ -176,7 +194,7 @@ export async function POST(req: Request) {
           ${item.final_width}, ${item.final_drop},
           ${item.area_sqft},
           ${item.retail_price_sqft}, ${item.supplier_cost_sqft},
-          ${item.retail_amount}, ${item.supplier_amount}
+          ${item.retail_amount}, ${item.supplier_amount}, ${item.minimum_applied}
         )
       `;
     }

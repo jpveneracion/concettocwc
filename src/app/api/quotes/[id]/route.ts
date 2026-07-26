@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
+import { calcAmounts } from '@/lib/calc';
 import type { QuotePayload } from '@/types';
 
 export async function GET(
@@ -41,7 +42,8 @@ export async function GET(
              final_width::float, final_drop::float,
              area_sqft::float,
              retail_price_sqft::float, supplier_cost_sqft::float,
-             retail_amount::float, supplier_amount::float
+             retail_amount::float, supplier_amount::float,
+             minimum_applied
       FROM quote_items
       WHERE quote_id = ${id}::uuid
       ORDER BY sort_order ASC
@@ -110,10 +112,27 @@ export async function PUT(
       status,
     } = body;
 
-    const subtotal = items.reduce((s, i) => s + i.retail_amount, 0);
+    // Fetch company minimum billable area once (server-authoritative).
+    // Recompute retail_amount/supplier_amount/minimum_applied here, ignoring
+    // any client-supplied values — the DB never trusts them.
+    const [company] = await sql`
+      SELECT minimum_area_sqft::float AS minimum_area_sqft
+      FROM companies WHERE id = ${session.companyId}
+    `;
+    const minimumArea = company?.minimum_area_sqft ?? 0;
+
+    const processedItems = items.map((item) => {
+      const { retail_amount, supplier_amount, minimum_applied } = calcAmounts(
+        item.area_sqft, item.retail_price_sqft, item.supplier_cost_sqft, minimumArea
+      );
+      return { ...item, retail_amount, supplier_amount, minimum_applied };
+    });
+
+    const subtotal = processedItems.reduce((s, i) => s + i.retail_amount, 0);
     const total = subtotal + installation_fee + delivery_fee;
-    const total_area = items.reduce((s, i) => s + i.area_sqft, 0);
-    const panel_count = items.length;
+    // total_area uses the REAL measured area, not the floored billed area.
+    const total_area = processedItems.reduce((s, i) => s + i.area_sqft, 0);
+    const panel_count = processedItems.length;
 
     // Validate status if provided
     if (status && !['draft', 'sent', 'delivered', 'cancelled'].includes(status)) {
@@ -166,11 +185,11 @@ export async function PUT(
       WHERE id = ${id}::uuid AND company_id = ${session.companyId}
     `;
 
-    // Replace items
+    // Replace items (iterate processedItems so we persist server-computed amounts)
     await sql`DELETE FROM quote_items WHERE quote_id = ${id}::uuid`;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (let i = 0; i < processedItems.length; i++) {
+      const item = processedItems[i];
       await sql`
         INSERT INTO quote_items (
           quote_id, sort_order, location,
@@ -178,7 +197,7 @@ export async function PUT(
           unit, is_fixed,
           measured_width, measured_drop, final_width, final_drop,
           area_sqft, retail_price_sqft, supplier_cost_sqft,
-          retail_amount, supplier_amount
+          retail_amount, supplier_amount, minimum_applied
         ) VALUES (
           ${id}::uuid, ${i},
           ${item.location ?? ''},
@@ -191,7 +210,7 @@ export async function PUT(
           ${item.final_width}, ${item.final_drop},
           ${item.area_sqft},
           ${item.retail_price_sqft}, ${item.supplier_cost_sqft},
-          ${item.retail_amount}, ${item.supplier_amount}
+          ${item.retail_amount}, ${item.supplier_amount}, ${item.minimum_applied}
         )
       `;
     }
