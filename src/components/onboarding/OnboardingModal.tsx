@@ -107,19 +107,11 @@ const onboardingSteps: OnboardingStep[] = [
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onComplete?: () => void;
 }
 
-export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
+export default function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  useEffect(() => {
-    // Check if user has completed onboarding
-    const completedOnboarding = localStorage.getItem('concetto_onboarding_completed');
-    if (completedOnboarding) {
-      setIsCompleted(true);
-    }
-  }, []);
 
   const handleNext = () => {
     if (currentStep < onboardingSteps.length - 1) {
@@ -130,18 +122,21 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
   };
 
   const handleComplete = () => {
-    localStorage.setItem('concetto_onboarding_completed', 'true');
-    setIsCompleted(true);
-    onClose();
+    if (onComplete) {
+      onComplete();
+    } else {
+      onClose();
+    }
   };
 
   const handleSkip = () => {
+    // Just close, don't mark as complete - can show again next time
     onClose();
   };
 
   const step = onboardingSteps[currentStep];
 
-  if (!isOpen || isCompleted) {
+  if (!isOpen) {
     return null;
   }
 

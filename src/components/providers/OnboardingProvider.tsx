@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, createContext, useContext } from 'react';
+import React, { useEffect, createContext, useContext, useState } from 'react';
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger';
-import { FeatureOnboardingModal } from '@/components/onboarding';
+import { FeatureOnboardingModal, OnboardingModal } from '@/components/onboarding';
 import { allOnboardingContent } from '@/components/onboarding/onboarding-content';
+import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted } from '@/lib/onboarding/first-login-tracking';
 
 interface OnboardingContextType {
   triggerOnboarding: (route?: string) => void;
+  triggerGeneralOnboarding: () => void;
   completeOnboarding: (route?: string) => void;
   skipOnboarding: (route?: string) => void;
   canShowForRoute: (route: string) => boolean;
@@ -70,6 +72,23 @@ export function OnboardingProvider({
     autoTrigger
   });
 
+  // First login onboarding state
+  const [showGeneralOnboarding, setShowGeneralOnboarding] = useState(false);
+
+  // Check for first login onboarding on mount
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return;
+
+    // Add delay before showing general onboarding
+    const timer = setTimeout(() => {
+      if (shouldShowFirstLoginOnboarding()) {
+        setShowGeneralOnboarding(true);
+      }
+    }, triggerDelay);
+
+    return () => clearTimeout(timer);
+  }, [enabled, triggerDelay]);
+
   // Handle modal close
   const handleClose = () => {
     resetCurrentTrigger();
@@ -82,6 +101,23 @@ export function OnboardingProvider({
     } else {
       handleClose();
     }
+  };
+
+  // Handle general onboarding completion
+  const handleGeneralOnboardingComplete = () => {
+    markFirstLoginOnboardingCompleted();
+    setShowGeneralOnboarding(false);
+  };
+
+  // Handle general onboarding skip
+  const handleGeneralOnboardingSkip = () => {
+    // Don't mark as complete - can show again next login
+    setShowGeneralOnboarding(false);
+  };
+
+  // Manual trigger for general onboarding
+  const triggerGeneralOnboarding = () => {
+    setShowGeneralOnboarding(true);
   };
 
   // Get the appropriate content for the feature
@@ -97,6 +133,7 @@ export function OnboardingProvider({
   // Context value for manual triggering
   const contextValue: OnboardingContextType = {
     triggerOnboarding,
+    triggerGeneralOnboarding,
     completeOnboarding,
     skipOnboarding,
     canShowForRoute,
@@ -107,7 +144,15 @@ export function OnboardingProvider({
     <OnboardingContext.Provider value={contextValue}>
       {children}
 
-      {/* Show onboarding modal when appropriate */}
+      {/* Show general first login onboarding */}
+      {showGeneralOnboarding && (
+        <OnboardingModal
+          isOpen={showGeneralOnboarding}
+          onClose={handleGeneralOnboardingSkip}
+        />
+      )}
+
+      {/* Show feature onboarding modal when appropriate */}
       {!isLoading && shouldShow && content && (
         <FeatureOnboardingModal
           isOpen={shouldShow}
