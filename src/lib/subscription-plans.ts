@@ -464,3 +464,61 @@ export function validateSubscriptionPlanData(data: CreateSubscriptionPlanInput):
     errors
   };
 }
+
+// ============================================================================
+// PLAN IDENTIFIER RESOLUTION
+// ============================================================================
+
+/**
+ * Plan identifier billing period mapping
+ * Maps frontend billing period identifiers to database interval values
+ */
+const BILLING_PERIOD_TO_INTERVAL_MAP: Record<string, string> = {
+  'monthly': 'month',
+  'quarterly': 'quarter',
+  'annual': 'year'
+};
+
+/**
+ * Resolve plan identifier to subscription plan UUID
+ *
+ * Takes a billing period identifier (monthly/quarterly/annual) and queries
+ * the database to find the matching subscription plan by interval field.
+ *
+ * @param billingPeriod - Billing period identifier ('monthly' | 'quarterly' | 'annual')
+ * @returns Promise with plan UUID or null if not found
+ */
+export async function resolvePlanIdentifier(
+  billingPeriod: string
+): Promise<string | null> {
+  try {
+    // Map billing period to database interval
+    const interval = BILLING_PERIOD_TO_INTERVAL_MAP[billingPeriod];
+
+    if (!interval) {
+      console.error(`Invalid billing period identifier: ${billingPeriod}`);
+      return null;
+    }
+
+    // Query database for plan with matching interval
+    const result = await sql`
+      SELECT id
+      FROM subscription_plans
+      WHERE interval = ${interval}
+      LIMIT 1
+    `;
+
+    if (result.length === 0) {
+      console.error(`No subscription plan found for interval: ${interval}`);
+      return null;
+    }
+
+    const planId = result[0].id;
+    console.log(`Resolved billing period '${billingPeriod}' to plan UUID: ${planId}`);
+
+    return planId;
+  } catch (error) {
+    console.error(`Error resolving plan identifier for '${billingPeriod}':`, error);
+    return null;
+  }
+}

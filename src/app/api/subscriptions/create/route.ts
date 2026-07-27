@@ -5,6 +5,7 @@ import {
   getSubscriptionByCompanyId,
   getSubscriptionPlan
 } from '@/lib/subscription';
+import { resolvePlanIdentifier } from '@/lib/subscription-plans';
 
 /**
  * Subscription status constants
@@ -129,8 +130,29 @@ export async function POST(req: Request) {
 
     const { plan_id } = body!;
 
-    // 3. Validate plan exists
-    const plan = await getSubscriptionPlan(plan_id);
+    // 3. Resolve plan identifier to UUID
+    // The plan_id might be a billing period identifier (monthly/quarterly/annual)
+    // or a direct UUID. Try to resolve it first.
+    let resolvedPlanId: string | null = plan_id;
+
+    // Check if plan_id looks like a UUID (has 36 characters with dashes)
+    const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(plan_id);
+
+    if (!isUuidFormat) {
+      // plan_id appears to be a billing period identifier, resolve it to UUID
+      console.log(`plan_id '${plan_id}' is not a UUID format, attempting to resolve...`);
+      resolvedPlanId = await resolvePlanIdentifier(plan_id);
+
+      if (!resolvedPlanId) {
+        return NextResponse.json(
+          { error: `Unable to resolve plan identifier '${plan_id}'. Please check that the subscription plan exists.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 4. Validate plan exists
+    const plan = await getSubscriptionPlan(resolvedPlanId!);
     if (!plan) {
       return NextResponse.json(
         { error: 'Invalid subscription plan' },
@@ -138,7 +160,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Duplicate Subscription Check
+    // 5. Duplicate Subscription Check
     const existingSubscription = await getSubscriptionByCompanyId(session.companyId);
     if (existingSubscription) {
       // Check if existing subscription is still active
@@ -156,7 +178,7 @@ export async function POST(req: Request) {
       // User wants to upgrade or renew
     }
 
-    // 5. Return validation response with plan details
+    // 6. Return validation response with plan details
     const response: CreateCheckoutResponse = {
       success: true,
       plan_id: plan.id,
@@ -171,7 +193,8 @@ export async function POST(req: Request) {
     console.error('POST /api/subscriptions/create error:', {
       error,
       companyId: session?.companyId,
-      planId: body?.plan_id
+      originalPlanId: body?.plan_id,
+      resolvedPlanId: body?.plan_id
     });
 
     return NextResponse.json(
