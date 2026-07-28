@@ -1,13 +1,18 @@
 // src/app/api/subscription-plans/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getSubscriptionPlanById, formatSubscriptionPlanForAPI } from '@/lib/subscription-plans';
+import {
+  getSubscriptionPlanById,
+  formatSubscriptionPlanForAPI,
+  resolvePlanIdentifier
+} from '@/lib/subscription-plans';
 
 /**
  * GET - Get single subscription plan by ID (public endpoint)
  *
- * This endpoint allows customers to fetch plan details using the plan UUID
- * from the payment instructions page or checkout flow
+ * This endpoint allows customers to fetch plan details using either:
+ * - A plan UUID (database primary key)
+ * - A billing period identifier (monthly/quarterly/annual) that gets resolved to UUID
  *
  * @param req - NextRequest
  * @param params - Route parameters containing the plan ID
@@ -20,25 +25,46 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Validate UUID format (basic validation)
-    if (!id || typeof id !== 'string' || id.length < 36) {
+    // Validate that we have some kind of ID
+    if (!id || typeof id !== 'string') {
       return NextResponse.json(
         {
-          error: 'Invalid plan ID format',
-          details: 'Plan ID must be a valid UUID string'
+          error: 'Invalid plan ID',
+          details: 'Plan ID must be provided'
         },
         { status: 400 }
       );
     }
 
-    // Get plan from database
-    const plan = await getSubscriptionPlanById(id);
+    let resolvedPlanId: string | null = id;
+
+    // Check if ID looks like a UUID (has 36 characters with dashes)
+    const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    if (!isUuidFormat) {
+      // ID appears to be a billing period identifier, resolve it to UUID
+      console.log(`Plan ID '${id}' is not a UUID format, attempting to resolve...`);
+      resolvedPlanId = await resolvePlanIdentifier(id);
+
+      if (!resolvedPlanId) {
+        return NextResponse.json(
+          {
+            error: `Unable to resolve plan identifier '${id}'. Please check that the subscription plan exists.`,
+            details: `No plan found for billing period: ${id}`
+          },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Get plan from database using resolved UUID
+    const plan = await getSubscriptionPlanById(resolvedPlanId);
 
     if (!plan) {
       return NextResponse.json(
         {
           error: 'Plan not found',
-          details: `No plan found with ID: ${id}`
+          details: `No plan found with ID: ${resolvedPlanId}`
         },
         { status: 404 }
       );
