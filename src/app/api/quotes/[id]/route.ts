@@ -4,6 +4,7 @@ import { sql } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
 import { calcAmounts } from '@/lib/calc';
+import { setTenantContext, resetTenantContext } from '@/lib/rls';
 import type { QuotePayload } from '@/types';
 
 export async function GET(
@@ -17,22 +18,27 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription access
-    const access = await checkSubscriptionAccess(session);
+    // Set RLS context for tenant isolation
+    await setTenantContext(session.companyId, session.role || 'user');
 
-    // Allow read access even in readonly mode
-    const [quote] = await sql`
-      SELECT id, quote_number, customer_name, customer_address,
-             customer_name_encrypted, customer_address_encrypted,
-             quote_date, our_ref, status,
-             installation_fee::float, delivery_fee::float,
-             subtotal::float, total::float,
-             total_area::float, panel_count,
-             created_at, updated_at
-      FROM quotes
-      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
-    `;
-    if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    try {
+      // Check subscription access
+      const access = await checkSubscriptionAccess(session);
+
+      // Allow read access even in readonly mode
+      // RLS policies now handle company_id filtering automatically
+      const [quote] = await sql`
+        SELECT id, quote_number, customer_name, customer_address,
+               customer_name_encrypted, customer_address_encrypted,
+               quote_date, our_ref, status,
+               installation_fee::float, delivery_fee::float,
+               subtotal::float, total::float,
+               total_area::float, panel_count,
+               created_at, updated_at
+        FROM quotes
+        WHERE id = ${id}::uuid
+      `;
+      if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const items = await sql`
       SELECT id, quote_id, sort_order, location,
@@ -77,6 +83,10 @@ export async function GET(
       accessMode: access.mode,
       subscriptionRequired: !access.allowed && access.mode !== 'readonly'
     });
+    } finally {
+      // Always reset RLS context
+      await resetTenantContext();
+    }
   } catch (err) {
     console.error('GET /api/quotes/[id]', err);
     return NextResponse.json({ error: 'Failed to fetch quote' }, { status: 500 });
@@ -94,16 +104,20 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription access - require full access for quote updates
-    const access = await checkSubscriptionAccess(session);
-    if (access.mode !== 'full') {
-      return NextResponse.json({
-        error: 'Active subscription required for quote modifications',
-        checkoutUrl: '/subscription/checkout',
-        mode: access.mode,
-        reason: access.reason
-      }, { status: 403 });
-    }
+    // Set RLS context for tenant isolation
+    await setTenantContext(session.companyId, session.role || 'user');
+
+    try {
+      // Check subscription access - require full access for quote updates
+      const access = await checkSubscriptionAccess(session);
+      if (access.mode !== 'full') {
+        return NextResponse.json({
+          error: 'Active subscription required for quote modifications',
+          checkoutUrl: '/subscription/checkout',
+          mode: access.mode,
+          reason: access.reason
+        }, { status: 403 });
+      }
 
     const body: QuotePayload = await req.json();
     const {
@@ -174,7 +188,7 @@ export async function PUT(
         panel_count      = ${panel_count},
         status           = ${status || 'draft'},
         updated_at       = now()
-      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
+      WHERE id = ${id}::uuid
     `;
 
     // After successful update, delete plaintext columns immediately
@@ -182,7 +196,7 @@ export async function PUT(
       UPDATE quotes SET
         customer_name = NULL,
         customer_address = NULL
-      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
+      WHERE id = ${id}::uuid
     `;
 
     // Replace items (iterate processedItems so we persist server-computed amounts)
@@ -225,7 +239,7 @@ export async function PUT(
              total_area::float, panel_count,
              created_at, updated_at
       FROM quotes
-      WHERE id = ${id}::uuid AND company_id = ${session.companyId}
+      WHERE id = ${id}::uuid
     `;
 
     return NextResponse.json({
@@ -237,6 +251,10 @@ export async function PUT(
         ? decryptPII(quote.customer_address_encrypted)
         : quote.customer_address || '',
     });
+    } finally {
+      // Always reset RLS context
+      await resetTenantContext();
+    }
   } catch (err) {
     console.error('PUT /api/quotes/[id]', err);
     return NextResponse.json({ error: 'Failed to update quote' }, { status: 500 });
@@ -254,19 +272,28 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription access - require full access for quote deletion
-    const access = await checkSubscriptionAccess(session);
-    if (access.mode !== 'full') {
-      return NextResponse.json({
-        error: 'Active subscription required for quote deletion',
-        checkoutUrl: '/subscription/checkout',
-        mode: access.mode,
-        reason: access.reason
-      }, { status: 403 });
-    }
+    // Set RLS context for tenant isolation
+    await setTenantContext(session.companyId, session.role || 'user');
 
-    await sql`DELETE FROM quotes WHERE id = ${id}::uuid AND company_id = ${session.companyId}`;
-    return NextResponse.json({ success: true });
+    try {
+      // Check subscription access - require full access for quote deletion
+      const access = await checkSubscriptionAccess(session);
+      if (access.mode !== 'full') {
+        return NextResponse.json({
+          error: 'Active subscription required for quote deletion',
+          checkoutUrl: '/subscription/checkout',
+          mode: access.mode,
+          reason: access.reason
+        }, { status: 403 });
+      }
+
+      // RLS policies now handle company_id filtering automatically
+      await sql`DELETE FROM quotes WHERE id = ${id}::uuid`;
+      return NextResponse.json({ success: true });
+    } finally {
+      // Always reset RLS context
+      await resetTenantContext();
+    }
   } catch (err) {
     console.error('DELETE /api/quotes/[id]', err);
     return NextResponse.json({ error: 'Failed to delete quote' }, { status: 500 });

@@ -5,6 +5,7 @@ import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
 import { validateQuoteCreation, restrictionErrorResponse } from '@/lib/api-restrictions';
 import { calcAmounts } from '@/lib/calc';
+import { setTenantContext, resetTenantContext } from '@/lib/rls';
 import type { QuotePayload } from '@/types';
 
 export async function GET() {
@@ -14,57 +15,65 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription access
-    const access = await checkSubscriptionAccess(session);
+    // Set RLS context for tenant isolation
+    await setTenantContext(session.companyId, session.role || 'user');
 
-    // Allow read access even in readonly mode
-    const quotes = await sql`
-      SELECT id, quote_number, customer_name, customer_address,
-             customer_name_encrypted, customer_address_encrypted,
-             quote_date, our_ref, status,
-             installation_fee::float, delivery_fee::float,
-             subtotal::float, total::float,
-             total_area::float, panel_count,
-             created_at, updated_at
-      FROM quotes
-      WHERE company_id = ${session.companyId}
-      ORDER BY created_at DESC
-    `;
+    try {
+      // Check subscription access
+      const access = await checkSubscriptionAccess(session);
 
-    // Decrypt PII for response
-    const decryptedQuotes = quotes.map((q) => {
-      let customerName = q.customer_name as string | null;
-      let customerAddress = q.customer_address as string | null;
+      // Allow read access even in readonly mode
+      // RLS policies now handle company_id filtering automatically
+      const quotes = await sql`
+        SELECT id, quote_number, customer_name, customer_address,
+               customer_name_encrypted, customer_address_encrypted,
+               quote_date, our_ref, status,
+               installation_fee::float, delivery_fee::float,
+               subtotal::float, total::float,
+               total_area::float, panel_count,
+               created_at, updated_at
+        FROM quotes
+        ORDER BY created_at DESC
+      `;
 
-      try {
-        if (q.customer_name_encrypted) {
-          customerName = decryptPII(q.customer_name_encrypted as string);
+      // Decrypt PII for response
+      const decryptedQuotes = quotes.map((q) => {
+        let customerName = q.customer_name as string | null;
+        let customerAddress = q.customer_address as string | null;
+
+        try {
+          if (q.customer_name_encrypted) {
+            customerName = decryptPII(q.customer_name_encrypted as string);
+          }
+        } catch (err) {
+          console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
         }
-      } catch (err) {
-        console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
-      }
 
-      try {
-        if (q.customer_address_encrypted) {
-          customerAddress = decryptPII(q.customer_address_encrypted as string);
+        try {
+          if (q.customer_address_encrypted) {
+            customerAddress = decryptPII(q.customer_address_encrypted as string);
+          }
+        } catch (err) {
+          console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);
         }
-      } catch (err) {
-        console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);
-      }
 
-      return {
-        ...q,
-        customer_name: customerName,
-        customer_address: customerAddress,
-      };
-    });
+        return {
+          ...q,
+          customer_name: customerName,
+          customer_address: customerAddress,
+        };
+      });
 
-    return NextResponse.json({
-      companyCode: session.companyCode,
-      quotes: decryptedQuotes,
-      accessMode: access.mode,
-      subscriptionRequired: !access.allowed && access.mode !== 'readonly'
-    });
+      return NextResponse.json({
+        companyCode: session.companyCode,
+        quotes: decryptedQuotes,
+        accessMode: access.mode,
+        subscriptionRequired: !access.allowed && access.mode !== 'readonly'
+      });
+    } finally {
+      // Always reset RLS context
+      await resetTenantContext();
+    }
   } catch (err) {
     console.error('GET /api/quotes', err);
     return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 });
@@ -78,32 +87,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body early for trial restriction validation
-    const body: QuotePayload = await req.json();
-    const { quote_date } = body;
+    // Set RLS context for tenant isolation
+    await setTenantContext(session.companyId, session.role || 'user');
 
-    // Validate trial restrictions for quote creation
-    if (quote_date) {
-      const validationResult = await validateQuoteCreation(
-        session,
-        new Date(quote_date)
-      );
+    try {
+      // Parse request body early for trial restriction validation
+      const body: QuotePayload = await req.json();
+      const { quote_date } = body;
 
-      if (!validationResult.allowed) {
-        return restrictionErrorResponse(validationResult);
+      // Validate trial restrictions for quote creation
+      if (quote_date) {
+        const validationResult = await validateQuoteCreation(
+          session,
+          new Date(quote_date)
+        );
+
+        if (!validationResult.allowed) {
+          return restrictionErrorResponse(validationResult);
+        }
       }
-    }
 
-    // Check subscription access - require full access for quote creation
-    const access = await checkSubscriptionAccess(session);
-    if (access.mode !== 'full') {
-      return NextResponse.json({
-        error: 'Subscription required for quote creation',
-        checkoutUrl: '/subscription/checkout',
-        mode: access.mode,
-        reason: access.reason
-      }, { status: 402 });
-    }
+      // Check subscription access - require full access for quote creation
+      const access = await checkSubscriptionAccess(session);
+      if (access.mode !== 'full') {
+        return NextResponse.json({
+          error: 'Subscription required for quote creation',
+          checkoutUrl: '/subscription/checkout',
+          mode: access.mode,
+          reason: access.reason
+        }, { status: 402 });
+      }
 
     const {
       quote_number, customer_name, customer_address,
@@ -206,11 +219,15 @@ export async function POST(req: Request) {
       WHERE id = ${quote.id}
     `;
 
-    return NextResponse.json({
-      ...quote,
-      customer_name,
-      customer_address,
-    }, { status: 201 });
+      return NextResponse.json({
+        ...quote,
+        customer_name,
+        customer_address,
+      }, { status: 201 });
+    } finally {
+      // Always reset RLS context
+      await resetTenantContext();
+    }
   } catch (err) {
     console.error('POST /api/quotes', err);
     return NextResponse.json({ error: 'Failed to save quote' }, { status: 500 });
