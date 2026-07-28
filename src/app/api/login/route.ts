@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { sql } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { setTenantContext } from '@/lib/rls';
 
 // Helper function to get the appropriate cookie domain based on environment
 function getCookieDomain(): string | undefined {
@@ -132,6 +133,19 @@ export async function POST(req: Request) {
       hasPricing = false; // Default to false if check fails
     }
 
+    // Get user role for RLS context
+    const [userRole] = await sql`
+      SELECT role FROM users WHERE id = ${user.user_id}
+    `;
+
+    // Normalize role for RLS (handle 'super_admin' -> 'superadmin' conversion)
+    const normalizedRole = (() => {
+      const role = userRole?.role?.toLowerCase() || 'user';
+      if (role === 'super_admin') return 'superadmin';
+      if (role === 'admin' || role === 'user' || role === 'superadmin') return role;
+      return 'user';
+    })();
+
     // Set session cookie - use decrypted email if needed
     const sessionEmail = user.email || email; // fallback to input email if stored is null
 
@@ -142,6 +156,7 @@ export async function POST(req: Request) {
       companyId: user.company_id,
       companyCode: user.company_code,
       email: sessionEmail,
+      role: normalizedRole,
     }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -150,7 +165,16 @@ export async function POST(req: Request) {
       path: '/',
       domain: getCookieDomain(),
     });
-    console.log('✅ Session cookie set successfully');
+    console.log('✅ Session cookie set successfully with role:', normalizedRole);
+
+    // Establish RLS context for the logged-in user
+    try {
+      await setTenantContext(user.company_id, normalizedRole);
+      console.log('✅ RLS context established for user:', user.user_id, 'company:', user.company_id, 'role:', normalizedRole);
+    } catch (rlsError) {
+      console.error('❌ Failed to establish RLS context (authentication will proceed):', rlsError);
+      // Don't fail login if RLS context establishment fails
+    }
 
     console.log('🎯 Returning login response...');
     return NextResponse.json({

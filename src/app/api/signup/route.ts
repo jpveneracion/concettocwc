@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { setTrialExpiration } from '@/lib/subscription';
+import { setTenantContext } from '@/lib/rls';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
