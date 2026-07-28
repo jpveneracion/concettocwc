@@ -36,14 +36,14 @@ export default function AdminDashboardPage() {
         </Link>
 
         <Link
-          href="/admin/pending-products"
+          href="/admin/company-products"
           className="bg-green-50 border border-green-200 rounded-lg p-6 hover:bg-green-100 transition-colors"
         >
           <h3 className="text-lg font-semibold text-green-900 mb-2">
-            🏷️ Pending Products
+            🏢 Company Products
           </h3>
           <p className="text-green-700 text-sm">
-            Review and approve merchant-submitted products
+            Review and promote company-specific products to global catalog
           </p>
         </Link>
 

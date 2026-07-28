@@ -41,25 +41,6 @@ export interface PermissionCheck {
 }
 
 /**
- * Pending product awaiting admin approval
- */
-export interface PendingProduct {
-  id: string;
-  company_id: string;
-  code: string;
-  collection: string | null;
-  description: string;
-  unit: ProductUnit;
-  status: ProductStatus;
-  submitted_by: string | null;
-  reviewed_by: string | null;
-  review_notes: string | null;
-  created_at: Date;
-  updated_at: Date;
-  reviewed_at: Date | null;
-}
-
-/**
  * Product lookup result combining approved and pending products
  */
 export interface ProductLookupResult {
@@ -69,50 +50,4 @@ export interface ProductLookupResult {
   collection: string | null;
   source: ProductSource;
   unit: ProductUnit;
-}
-
-/**
- * Request to create pending product
- */
-export interface CreatePendingProductRequest {
-  code: string;
-  collection?: string;
-  description: string;
-  unit?: ProductUnit;
-}
-
-/**
- * Request to approve pending product
- */
-export interface ApproveProductRequest {
-  pending_product_id: string;
-  review_notes?: string;
-}
-
-/**
- * Request to reject pending product
- */
-export interface RejectProductRequest {
-  pending_product_id: string;
-  review_notes?: string;
-}
-
-/**
- * Pending products list response
- */
-export interface PendingProductListResponse {
-  products: PendingProduct[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-/**
- * Product review statistics for admin dashboard
- */
-export interface ProductReviewStats {
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  duplicateCodes: string[];
 }

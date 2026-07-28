@@ -5,6 +5,7 @@ import type { AccountLinkRequest, OAuthProvider } from '@/types/oauth';
 import { cookies } from 'next/headers';
 import { sql } from '@/lib/db';
 import { setTrialExpiration } from '@/lib/subscription';
+import { setTenantContext, resetTenantContext, type RLSUserRole } from '@/lib/rls';
 
 // Helper function to get the appropriate cookie domain based on environment
 function getCookieDomain(): string | undefined {
@@ -24,20 +25,49 @@ function getCookieDomain(): string | undefined {
   return undefined;
 }
 
+/**
+ * Normalize database role to RLS role format
+ * Maps 'super_admin' (database) to 'superadmin' (RLS functions)
+ */
+function normalizeRoleForRLS(dbRole: string | null | undefined): RLSUserRole {
+  const role = dbRole?.toLowerCase() || 'user';
+
+  // Map database 'super_admin' to RLS 'superadmin'
+  if (role === 'super_admin') {
+    return 'superadmin';
+  }
+
+  // Validate role is allowed
+  if (role === 'admin' || role === 'user' || role === 'superadmin') {
+    return role as RLSUserRole;
+  }
+
+  // Default to 'user' for any unknown role
+  return 'user';
+}
+
 // Helper function to set custom session cookie for compatibility with proxy middleware
-async function setCustomSessionCookie(userId: string, companyId: string, email: string) {
+async function setCustomSessionCookie(userId: string, companyId: string, email: string, role?: string) {
   try {
-    // Get company code for the session
-    const [company] = await sql`
-      SELECT code FROM companies WHERE id = ${companyId}
+    // Get company code and user role for the session
+    const [companyAndUser] = await sql`
+      SELECT
+        companies.code as company_code,
+        users.role as user_role
+      FROM companies
+      JOIN users ON users.company_id = companies.id
+      WHERE companies.id = ${companyId} AND users.id = ${userId}
     `;
+
+    const normalizedRole = normalizeRoleForRLS(companyAndUser?.user_role || role);
 
     const cookieStore = await cookies();
     cookieStore.set('session', JSON.stringify({
       userId,
       companyId,
-      companyCode: company?.code || 'UNKNOWN',
+      companyCode: companyAndUser?.company_code || 'UNKNOWN',
       email,
+      role: normalizedRole,
     }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -47,7 +77,17 @@ async function setCustomSessionCookie(userId: string, companyId: string, email: 
       domain: getCookieDomain(),
     });
 
-    console.log('✅ Custom session cookie set for user:', userId);
+    console.log('✅ Custom session cookie set for user:', userId, 'with role:', normalizedRole);
+
+    // Set RLS context after successful authentication
+    try {
+      await setTenantContext(companyId, normalizedRole);
+      console.log('✅ RLS context set for user:', userId, 'company:', companyId, 'role:', normalizedRole);
+    } catch (rlsError) {
+      console.error('❌ Failed to set RLS context (authentication will proceed):', rlsError);
+      // Don't fail authentication if RLS context setting fails
+      // This allows graceful degradation while maintaining security
+    }
   } catch (error) {
     console.error('❌ Failed to set custom session cookie:', error);
   }
@@ -116,12 +156,12 @@ export const authOptions = {
           // Add user ID to the user object for later use
           user.id = existingAccount.user_id;
 
-          // Get user's company ID and set custom session cookie
+          // Get user's company ID and role and set custom session cookie
           const [userData] = await sql`
-            SELECT company_id FROM users WHERE id = ${existingAccount.user_id}
+            SELECT company_id, role FROM users WHERE id = ${existingAccount.user_id}
           `;
           if (userData) {
-            await setCustomSessionCookie(existingAccount.user_id, userData.company_id, user.email);
+            await setCustomSessionCookie(existingAccount.user_id, userData.company_id, user.email, userData.role);
           }
 
           return true;
@@ -148,8 +188,8 @@ export const authOptions = {
           console.log('✅ OAuth account linked successfully');
           user.id = existingUser.id;
 
-          // Set custom session cookie for existing user
-          await setCustomSessionCookie(existingUser.id, existingUser.company_id, user.email);
+          // Set custom session cookie for existing user with role
+          await setCustomSessionCookie(existingUser.id, existingUser.company_id, user.email, existingUser.role || 'user');
 
           return true;
         }
@@ -213,9 +253,9 @@ export const authOptions = {
           // Don't fail sign-in if trial setup fails - continue with login
         }
 
-        // Set custom session cookie for new user with error handling
+        // Set custom session cookie for new user with role and error handling
         try {
-          await setCustomSessionCookie(newUser.id, company.id, user.email);
+          await setCustomSessionCookie(newUser.id, company.id, user.email, 'user');
         } catch (cookieError) {
           console.error('⚠️ Failed to set session cookie (non-critical):', cookieError);
           // Don't fail sign-in if cookie setup fails
@@ -270,6 +310,40 @@ export const authOptions = {
           email: token.email as string,
           name: token.name as string,
         };
+
+        // Add RLS information to session if userId is available
+        if (token.userId) {
+          try {
+            const [userAndCompany] = await sql`
+              SELECT
+                users.role as user_role,
+                users.company_id as company_id,
+                companies.code as company_code
+              FROM users
+              JOIN companies ON companies.id = users.company_id
+              WHERE users.id = ${token.userId}
+            `;
+
+            if (userAndCompany) {
+              const normalizedRole = normalizeRoleForRLS(userAndCompany.user_role);
+              (session as any).user.role = normalizedRole;
+              (session as any).user.companyId = userAndCompany.company_id;
+              (session as any).user.companyCode = userAndCompany.company_code;
+
+              // Set RLS context for this session
+              try {
+                await setTenantContext(userAndCompany.company_id, normalizedRole);
+                console.log('✅ RLS context set in session callback for user:', token.userId);
+              } catch (rlsError) {
+                console.error('❌ Failed to set RLS context in session callback (authentication will proceed):', rlsError);
+                // Don't fail authentication if RLS context setting fails
+              }
+            }
+          } catch (error) {
+            console.error('❌ Failed to fetch user data for RLS context:', error);
+            // Don't fail session creation if user data fetch fails
+          }
+        }
       }
       return session;
     }

@@ -18,7 +18,6 @@ const navItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: '🛡️' },
-  { href: '/admin/pending-products', label: 'Pending Products', icon: '📋' },
   { href: '/admin/company-products', label: 'Company Products', icon: '🏢' },
   { href: '/admin/activation-codes', label: 'Activation Codes', icon: '🔑' },
   { href: '/admin/plans', label: 'Subscription Plans', icon: '💳' },

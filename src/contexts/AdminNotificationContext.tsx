@@ -25,15 +25,15 @@ export function AdminNotificationProvider({ children }: AdminNotificationProvide
 
   const refreshNotifications = useCallback(async () => {
     try {
-      // Fetch pending products count for notifications - only get PENDING status
-      const pendingRes = await fetch('/api/pending-products?status=PENDING');
+      // Fetch company products pending promotion count for notifications
+      const pendingRes = await fetch('/api/admin/company-products/pending-promotion');
       if (pendingRes.ok) {
         const pendingData = await pendingRes.json();
         const pendingCount = pendingData.products?.length || 0;
 
         setNotifications({
           pendingApprovals: pendingCount,
-          systemAlerts: pendingCount > 5 ? ['High volume of pending products'] : [],
+          systemAlerts: pendingCount > 5 ? ['High volume of company products awaiting promotion'] : [],
           unreadCount: pendingCount,
         });
       }

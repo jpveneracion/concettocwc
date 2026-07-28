@@ -46,9 +46,9 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
       href: '/admin/pricing',
     },
     {
-      label: 'Pending Products',
-      icon: '📋',
-      href: '/admin/pending-products',
+      label: 'Company Products',
+      icon: '🏢',
+      href: '/admin/company-products',
       badge: notifications.pendingApprovals > 0 ? notifications.pendingApprovals : undefined,
     },
   ];
