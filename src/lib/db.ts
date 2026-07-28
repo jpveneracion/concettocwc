@@ -8,6 +8,14 @@ if (!process.env.DATABASE_URL) {
 export const sql = neon(process.env.DATABASE_URL);
 
 /**
+ * RLS context interface for type safety
+ */
+export interface RLSContext {
+  companyId: string;
+  userRole: string;
+}
+
+/**
  * Generic database query function with type safety
  * @param sqlQuery - SQL query template string
  * @param params - Query parameters
@@ -1239,4 +1247,213 @@ async function withQueryTimeout<T>(
       setTimeout(() => reject(new Error(`Query timeout exceeded ${timeoutMs}ms`)), timeoutMs)
     )
   ]);
+}
+
+/**
+ * Execute database operations with RLS tenant context
+ * This wrapper automatically sets the tenant context before operations
+ * and resets it after completion, ensuring proper isolation.
+ *
+ * @param companyId - The company ID UUID for tenant context
+ * @param userRole - The user role ('user', 'admin', 'superadmin')
+ * @param operation - Function to execute with tenant context
+ * @returns Promise of the operation result
+ * @throws Error if context setup fails or operation fails
+ *
+ * @example
+ * ```typescript
+ * const result = await withRLSContext(
+ *   session.companyId,
+ *   session.role || 'user',
+ *   async () => {
+ *     return await sql('SELECT * FROM quotes');
+ *   }
+ * );
+ * ```
+ */
+export async function withRLSContext<T>(
+  companyId: string,
+  userRole: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  const startTime = Date.now();
+
+  try {
+    // Validate inputs
+    if (!companyId) {
+      throw new Error('Company ID is required for RLS context');
+    }
+
+    if (!userRole) {
+      throw new Error('User role is required for RLS context');
+    }
+
+    if (!['user', 'admin', 'superadmin'].includes(userRole)) {
+      throw new Error(`Invalid user role: ${userRole}`);
+    }
+
+    // Set tenant context
+    await sql('SELECT set_tenant_context($1, $2)', [companyId, userRole]);
+
+    try {
+      // Execute the operation with tenant context
+      const result = await operation();
+
+      const duration = Date.now() - startTime;
+
+      structuredLog(
+        'rls_operation_success',
+        'withRLSContext',
+        {
+          company_id: companyId,
+          user_role: userRole,
+          duration
+        },
+        duration,
+        true
+      );
+
+      return result;
+    } finally {
+      // Always reset context, even if operation fails
+      try {
+        await sql('SELECT reset_tenant_context()');
+      } catch (resetError) {
+        // Log but don't throw if reset fails
+        const errorMessage = resetError instanceof Error ? resetError.message : 'Unknown error';
+        structuredLog(
+          'rls_context_reset_failed',
+          'withRLSContext',
+          {
+            company_id: companyId,
+            error: errorMessage
+          },
+          Date.now() - startTime,
+          false
+        );
+      }
+    }
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    structuredLog(
+      'rls_operation_failed',
+      'withRLSContext',
+      {
+        company_id: companyId,
+        user_role: userRole,
+        error: errorMessage,
+        duration
+      },
+      duration,
+      false
+    );
+
+    throw error;
+  }
+}
+
+/**
+ * Execute database operations with admin RLS context
+ * Convenience wrapper for admin operations
+ *
+ * @param companyId - The company ID UUID for tenant context
+ * @param operation - Function to execute with admin context
+ * @returns Promise of the operation result
+ * @throws Error if context setup fails or operation fails
+ *
+ * @example
+ * ```typescript
+ * const result = await withAdminRLSContext(
+ *   session.companyId,
+ *   async () => {
+ *     return await sql('SELECT * FROM admin_dashboard');
+ *   }
+ * );
+ * ```
+ */
+export async function withAdminRLSContext<T>(
+  companyId: string,
+  operation: () => Promise<T>
+): Promise<T> {
+  return withRLSContext(companyId, 'admin', operation);
+}
+
+/**
+ * Execute database operations with superadmin RLS context
+ * Superadmin can access all companies' data
+ *
+ * @param operation - Function to execute with superadmin context
+ * @returns Promise of the operation result
+ * @throws Error if context setup fails or operation fails
+ *
+ * @example
+ * ```typescript
+ * const result = await withSuperadminRLSContext(async () => {
+ *   return await sql('SELECT * FROM all_companies_data');
+ * });
+ * ```
+ */
+export async function withSuperadminRLSContext<T>(
+  operation: () => Promise<T>
+): Promise<T> {
+  // Superadmin operations use a special context company ID
+  // This allows access to all companies' data
+  const SUPERADMIN_CONTEXT_ID = '00000000-0000-0000-0000-000000000000';
+  return withRLSContext(SUPERADMIN_CONTEXT_ID, 'superadmin', operation);
+}
+
+/**
+ * Check if RLS context is currently set
+ * @returns Promise indicating if tenant context is active
+ *
+ * @example
+ * ```typescript
+ * const hasContext = await hasRLSContext();
+ * if (!hasContext) {
+ *   console.warn('No RLS context set - queries may not be properly isolated');
+ * }
+ * ```
+ */
+export async function hasRLSContext(): Promise<boolean> {
+  try {
+    const result = await sql('SELECT get_current_company_id() as company_id');
+    return result[0] && result[0].company_id !== null;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Get current RLS context information
+ * @returns Promise with RLS context or null if not set
+ *
+ * @example
+ * ```typescript
+ * const context = await getRLSContext();
+ * if (context) {
+ *   console.log(`Current company: ${context.companyId}, role: ${context.userRole}`);
+ * }
+ * ```
+ */
+export async function getRLSContext(): Promise<RLSContext | null> {
+  try {
+    const result = await sql(`
+      SELECT
+        get_current_company_id() as company_id,
+        get_current_user_role() as user_role
+    `);
+
+    if (!result[0] || !result[0].company_id) {
+      return null;
+    }
+
+    return {
+      companyId: result[0].company_id,
+      userRole: result[0].user_role
+    };
+  } catch (error) {
+    return null;
+  }
 }
