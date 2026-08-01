@@ -1,0 +1,41 @@
+{
+  "file": "src/app/api/login/route.ts",
+  "sql_operations_found": [
+    {
+      "line": 46,
+      "pattern": "sql(",
+      "context": "await sql('SELECT set_app_role($1)', ['concetto_boms']);"
+    },
+    {
+      "line": 49,
+      "pattern": "sql`",
+      "context": "let users = await sql` SELECT u.user_id, u.user_email as email, u.email_hash, u.user_password_hash as password_hash, u.company_id, c.code as company_code FROM find_user_by_email_hash(${emailHash}) u JOIN companies c ON c.id = u.company_id `;"
+    },
+    {
+      "line": 66,
+      "pattern": "sql(",
+      "context": "await sql('SELECT set_app_role($1)', ['concetto_boms']);"
+    },
+    {
+      "line": 68,
+      "pattern": "sql`",
+      "context": "users = await sql` SELECT u.id as user_id, u.email, u.email_encrypted, u.email_hash, u.password_hash, c.id as company_id, c.code as company_code FROM find_user_by_email(${email.toLowerCase().trim()}) u JOIN companies c ON c.id = u.company_id `;"
+    },
+    {
+      "line": 104,
+      "pattern": "sql(",
+      "context": "await sql('SELECT update_user_email_hash($1, $2)', [user.user_id, autoEmailHash]);"
+    },
+    {
+      "line": 120,
+      "pattern": "sql(",
+      "context": "const pricingCheckPromise = sql('SELECT check_company_has_pricing($1) as has_pricing', [user.company_id]);"
+    },
+    {
+      "line": 135,
+      "pattern": "sql(",
+      "context": "const [userRoleResult] = await sql('SELECT get_user_admin_status($1) as user_status', [user.user_id]);"
+    }
+  ],
+  "total_count": 7
+}
