@@ -1,0 +1,139 @@
+{
+  "operations_risk_assessment": [
+    {
+      "operation": "src/app/api/login/route.ts:46",
+      "query_type": "SELECT",
+      "function_used": "set_app_role",
+      "function_status": "🟢 SAFE",
+      "vulnerability_type": "NONE - Foundation security function",
+      "tables": ["none"],
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "set_app_role() is a SECURITY DEFINER function that properly sets application role context for RLS policies. This is the foundation of the RLS security architecture and operates safely.",
+      "rls_bypass_method": "controlled_security_definer",
+      "needs_fix": false,
+      "fix_priority": "NONE",
+      "recommended_fix": "None required - function operates safely as foundation for RLS context"
+    },
+    {
+      "operation": "src/app/api/login/route.ts:49",
+      "query_type": "SELECT",
+      "function_used": "find_user_by_email_hash",
+      "function_status": "🔴 VULNERABLE",
+      "vulnerability_type": "CRITICAL - Exposes password_hash without authorization",
+      "tables": ["users", "companies"],
+      "risk_level": "🔴 CRITICAL - ACCOUNT TAKEOVER RISK",
+      "risk_reasoning": "Uses vulnerable find_user_by_email_hash() function that returns password_hash without role context validation. This function can be called by anyone to retrieve password hashes, enabling credential theft and account takeover attacks. The function bypasses RLS policies without proper authorization checks.",
+      "rls_bypass_method": "broken_security_definer_function",
+      "needs_fix": true,
+      "fix_priority": "CRITICAL",
+      "recommended_fix": "Add role context validation: IF current_setting('app.role', true) IS NULL THEN RAISE EXCEPTION 'Security: No role context set'; END IF; Consider removing password_hash from return values or requiring additional authentication context."
+    },
+    {
+      "operation": "src/app/api/login/route.ts:66",
+      "query_type": "SELECT",
+      "function_used": "set_app_role",
+      "function_status": "🟢 SAFE",
+      "vulnerability_type": "NONE - Foundation security function",
+      "tables": ["none"],
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "set_app_role() is called again to reset application role context after authentication. This is the same safe SECURITY DEFINER function used at line 46 and operates safely as the foundation for RLS security.",
+      "rls_bypass_method": "controlled_security_definer",
+      "needs_fix": false,
+      "fix_priority": "NONE",
+      "recommended_fix": "None required - function operates safely"
+    },
+    {
+      "operation": "src/app/api/login/route.ts:68",
+      "query_type": "SELECT",
+      "function_used": "find_user_by_email",
+      "function_status": "🔴 VULNERABLE",
+      "vulnerability_type": "CRITICAL - Exposes password_hash and allows user enumeration",
+      "tables": ["users", "companies"],
+      "risk_level": "🔴 CRITICAL - ACCOUNT TAKEOVER AND USER ENUMERATION RISK",
+      "risk_reasoning": "Uses vulnerable find_user_by_email() function that returns password_hash without authorization checks and allows email-based user enumeration. Attackers can use this to: 1) Harvest password hashes by enumerating emails, 2) Identify valid users for targeted attacks, 3) Perform credential stuffing attacks. This is a fallback authentication method that's even more dangerous than the primary method.",
+      "rls_bypass_method": "broken_security_definer_function",
+      "needs_fix": true,
+      "fix_priority": "CRITICAL",
+      "recommended_fix": "Add role context validation: IF current_setting('app.role', true) IS NULL THEN RAISE EXCEPTION 'Security: No role context set'; END IF; Remove password_hash from return values or require additional authentication context."
+    },
+    {
+      "operation": "src/app/api/login/route.ts:104",
+      "query_type": "SELECT",
+      "function_used": "update_user_email_hash",
+      "function_status": "🔴 VULNERABLE",
+      "vulnerability_type": "CRITICAL - Unauthorized data modification",
+      "tables": ["users"],
+      "risk_level": "🔴 CRITICAL - ACCOUNT HIJACKING RISK",
+      "risk_reasoning": "Uses vulnerable update_user_email_hash() function that allows anyone to modify any user's email_hash without authorization checks. This UPDATE function has no ownership verification or role context validation. Attackers can: 1) Break legitimate authentication by corrupting email hashes, 2) Potentially hijack accounts by manipulating email hashes, 3) Cause denial of service by mass hash corruption.",
+      "rls_bypass_method": "broken_security_definer_function",
+      "needs_fix": true,
+      "fix_priority": "CRITICAL",
+      "recommended_fix": "Add role context validation AND ownership verification: IF current_setting('app.role', true) IS NULL OR current_setting('app.user_id', true) != user_id THEN RAISE EXCEPTION 'Security: Unauthorized email hash modification';"
+    },
+    {
+      "operation": "src/app/api/login/route.ts:120",
+      "query_type": "SELECT",
+      "function_used": "check_company_has_pricing",
+      "function_status": "🟢 SAFE",
+      "vulnerability_type": "NONE - Minimal data exposure",
+      "tables": ["companies", "pricing"],
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "Uses safe check_company_has_pricing() function that performs a simple boolean check for company pricing configuration. Returns minimal data (true/false), has adequate authorization controls, and is appropriate for authentication flow. This function operates safely within the SECURITY DEFINER bypass pattern.",
+      "rls_bypass_method": "controlled_security_definer",
+      "needs_fix": false,
+      "fix_priority": "NONE",
+      "recommended_fix": "None required - function operates safely"
+    },
+    {
+      "operation": "src/app/api/login/route.ts:135",
+      "query_type": "SELECT",
+      "function_used": "get_user_admin_status",
+      "function_status": "🟡 SECURITY_CONCERN",
+      "vulnerability_type": "MEDIUM - Information disclosure",
+      "tables": ["users"],
+      "risk_level": "🟡 MEDIUM - PRIVILEGE RECONNAISSANCE RISK",
+      "risk_reasoning": "Uses get_user_admin_status() function that exposes admin status without authorization checks. While less critical than password hash exposure, this allows privilege reconnaissance where attackers can identify admin users for targeted attacks. The function is read-only but still requires role context validation to prevent unauthorized privilege escalation attempts.",
+      "rls_bypass_method": "broken_security_definer_function",
+      "needs_fix": true,
+      "fix_priority": "MEDIUM",
+      "recommended_fix": "Add role context validation: IF current_setting('app.role', true) IS NULL THEN RAISE EXCEPTION 'Security: No role context set'; END IF; This prevents unauthorized admin status reconnaissance."
+    }
+  ],
+  "summary": {
+    "total_operations": 7,
+    "critical_risk": 4,
+    "medium_risk": 1,
+    "safe": 2,
+    "overall_login_security": "🔴 CRITICAL VULNERABLE",
+    "critical_vulnerabilities_found": 4,
+    "security_definer_functions_total": 7,
+    "vulnerable_functions": 4,
+    "safe_functions": 3,
+    "primary_threats": [
+      "PASSWORD_HASH_EXPOSURE - Multiple functions return password hashes without authorization",
+      "ACCOUNT_TAKEOVER - Vulnerable authentication functions enable credential theft",
+      "USER_ENUMERATION - Email-based lookups allow user reconnaissance",
+      "UNAUTHORIZED_MODIFICATION - UPDATE functions without ownership verification",
+      "PRIVILEGE_RECONNAISSANCE - Admin status exposure without authorization"
+    ],
+    "immediate_security_actions_required": [
+      "DEPLOYMENT_PRIORITY: Fix find_user_by_email_hash() - add role context validation",
+      "DEPLOYMENT_PRIORITY: Fix find_user_by_email() - add role context validation and remove password_hash",
+      "DEPLOYMENT_PRIORITY: Fix update_user_email_hash() - add role context and ownership validation",
+      "MEDIUM_PRIORITY: Fix get_user_admin_status() - add role context validation",
+      "VERIFICATION_REQUIRED: Audit all other SECURITY DEFINER functions for similar issues",
+      "MONITORING_REQUIRED: Implement logging for authentication bypass function usage"
+    ],
+    "security_gaps_summary": "While RLS policies are properly configured and some SECURITY DEFINER functions operate safely (set_app_role, check_company_has_pricing), 4 critical vulnerabilities in authentication-related SECURITY DEFINER functions completely undermine the login security. The broken functions bypass RLS without authorization, exposing password hashes and allowing unauthorized modifications. This represents a critical security failure that enables account takeover, credential theft, and privilege reconnaissance attacks."
+  },
+  "analysis_timestamp": "2026-08-01T13:00:00Z",
+  "analysis_basis": "Cross-referenced login operations analysis (login_operations_analysis.json) with SECURITY DEFINER function vulnerability analysis (login_rls_status.json) to determine actual risk levels based on discovered vulnerabilities rather than theoretical RLS compliance.",
+  "credibility_assessment": {
+    "analysis_method": "VULNERABILITY_BASED_RISK_ASSESSMENT",
+    "risk_calculation_basis": "Actual code vulnerabilities discovered in Task 4",
+    "confidence_level": "HIGH",
+    "verification_status": "VERIFIED_AGAINST_ACTUAL_FUNCTION_VULNERABILITIES",
+    "theoretical_rls_assessment_revoked": true,
+    "revised_assessment_basis": "Risk levels now reflect actual SECURITY DEFINER function vulnerabilities instead of assuming RLS compliance implies safety."
+  }
+}
