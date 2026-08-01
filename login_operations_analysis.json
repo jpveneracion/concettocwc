@@ -1,0 +1,124 @@
+{
+  "file": "src/app/api/login/route.ts",
+  "operations_analyzed": [
+    {
+      "line": 46,
+      "query_type": "SELECT",
+      "tables_affected": ["none"],
+      "raw_query": "SELECT set_app_role($1)",
+      "operation_context": "role_setting",
+      "is_function_call": true,
+      "function_name": "set_app_role",
+      "business_purpose": "Sets application role context for RLS policies",
+      "parameters": ["concetto_boms"],
+      "security_impact": "high - configures RLS context for all subsequent operations"
+    },
+    {
+      "line": 49,
+      "query_type": "SELECT",
+      "tables_affected": ["users", "companies"],
+      "raw_query": "SELECT u.user_id, u.user_email as email, u.email_hash, u.user_password_hash as password_hash, u.company_id, c.code as company_code FROM find_user_by_email_hash($1) u JOIN companies c ON c.id = u.company_id",
+      "operation_context": "user_authentication",
+      "is_function_call": true,
+      "function_name": "find_user_by_email_hash",
+      "business_purpose": "Retrieves user credentials and company data for authentication using email hash",
+      "parameters": ["emailHash"],
+      "security_impact": "critical - returns password hash for authentication verification",
+      "tables_joined": ["companies"],
+      "returns": ["user_id", "email", "email_hash", "password_hash", "company_id", "company_code"]
+    },
+    {
+      "line": 66,
+      "query_type": "SELECT",
+      "tables_affected": ["none"],
+      "raw_query": "SELECT set_app_role($1)",
+      "operation_context": "role_setting",
+      "is_function_call": true,
+      "function_name": "set_app_role",
+      "business_purpose": "Resets application role context for RLS policies after authentication",
+      "parameters": ["concetto_boms"],
+      "security_impact": "high - reconfigures RLS context for authenticated operations"
+    },
+    {
+      "line": 68,
+      "query_type": "SELECT",
+      "tables_affected": ["users", "companies"],
+      "raw_query": "SELECT u.id as user_id, u.email, u.email_encrypted, u.email_hash, u.password_hash, c.id as company_id, c.code as company_code FROM find_user_by_email($1) u JOIN companies c ON c.id = u.company_id",
+      "operation_context": "user_authentication_fallback",
+      "is_function_call": true,
+      "function_name": "find_user_by_email",
+      "business_purpose": "Fallback authentication method using direct email lookup when hash method fails",
+      "parameters": ["email"],
+      "security_impact": "critical - alternative authentication method with password hash access",
+      "tables_joined": ["companies"],
+      "returns": ["user_id", "email", "email_encrypted", "email_hash", "password_hash", "company_id", "company_code"]
+    },
+    {
+      "line": 104,
+      "query_type": "SELECT",
+      "tables_affected": ["users"],
+      "raw_query": "SELECT update_user_email_hash($1, $2)",
+      "operation_context": "user_data_maintenance",
+      "is_function_call": true,
+      "function_name": "update_user_email_hash",
+      "business_purpose": "Updates or creates email hash for user to improve future authentication performance",
+      "parameters": ["user_id", "autoEmailHash"],
+      "security_impact": "medium - modifies user authentication data but non-critical for login flow"
+    },
+    {
+      "line": 120,
+      "query_type": "SELECT",
+      "tables_affected": ["companies", "pricing"],
+      "raw_query": "SELECT check_company_has_pricing($1) as has_pricing",
+      "operation_context": "subscription_validation",
+      "is_function_call": true,
+      "function_name": "check_company_has_pricing",
+      "business_purpose": "Validates that company has active pricing configuration before allowing login",
+      "parameters": ["company_id"],
+      "security_impact": "high - subscription access control check",
+      "returns": ["has_pricing"]
+    },
+    {
+      "line": 135,
+      "query_type": "SELECT",
+      "tables_affected": ["users"],
+      "raw_query": "SELECT get_user_admin_status($1) as user_status",
+      "operation_context": "authorization_check",
+      "is_function_call": true,
+      "function_name": "get_user_admin_status",
+      "business_purpose": "Retrieves user admin status for authorization and feature access control",
+      "parameters": ["user_id"],
+      "security_impact": "high - determines administrative privileges and access levels",
+      "returns": ["user_status"]
+    }
+  ],
+  "analysis_summary": {
+    "total_operations": 7,
+    "query_types": {
+      "SELECT": 7
+    },
+    "operation_contexts": {
+      "role_setting": 2,
+      "user_authentication": 1,
+      "user_authentication_fallback": 1,
+      "user_data_maintenance": 1,
+      "subscription_validation": 1,
+      "authorization_check": 1
+    },
+    "tables_affected": {
+      "users": 5,
+      "companies": 3,
+      "pricing": 1,
+      "none": 2
+    },
+    "security_impact_distribution": {
+      "critical": 2,
+      "high": 3,
+      "medium": 1
+    },
+    "all_function_calls": true,
+    "rls_dependency": "high - all operations rely on set_app_role for RLS context"
+  },
+  "analysis_timestamp": "2026-08-01T12:00:00Z",
+  "total_operations_analyzed": 7
+}
