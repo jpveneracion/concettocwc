@@ -73,5 +73,164 @@
     "bypass_pattern": "SECURITY DEFINER functions in migration 047 provide controlled RLS bypass for legitimate authentication"
   },
   "analysis_timestamp": "2026-08-01T12:30:00Z",
-  "analysis_methodology": "Cross-referenced login operations analysis (login_operations_analysis.json) with RLS migration files to determine RLS status, policy conditions, and SECURITY DEFINER function availability for each affected table."
+  "analysis_methodology": "Cross-referenced login operations analysis (login_operations_analysis.json) with RLS migration files to determine RLS status, policy conditions, and SECURITY DEFINER function availability for each affected table.",
+  "security_definer_function_verification": [
+    {
+      "function_name": "find_user_by_email_hash",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 57-76)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "CRITICAL_ISSUE_FOUND",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "HIGH",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🔴 CRITICAL_SECURITY_ISSUE",
+      "notes": "Returns password_hash without any authorization checks. Missing role context validation compared to version in 046. CRITICAL: Anyone can call this to retrieve password hashes.",
+      "severity": "CRITICAL",
+      "vulnerability_type": "SENSITIVE_DATA_EXPOSURE",
+      "remediation_required": "Add role context validation: IF current_setting('app.role', true) IS NULL THEN RAISE EXCEPTION 'Security: No role context set';"
+    },
+    {
+      "function_name": "find_user_by_id",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 80-103)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "CRITICAL_ISSUE_FOUND",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "HIGH",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🔴 CRITICAL_SECURITY_ISSUE",
+      "notes": "Returns password_hash without any authorization checks. Missing role context validation. Anyone can call this with any UUID to get password hashes.",
+      "severity": "CRITICAL",
+      "vulnerability_type": "SENSITIVE_DATA_EXPOSURE",
+      "remediation_required": "Add role context validation and remove password_hash from return values unless needed for auth"
+    },
+    {
+      "function_name": "find_user_by_email",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 107-127)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "CRITICAL_ISSUE_FOUND",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "HIGH",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🔴 CRITICAL_SECURITY_ISSUE",
+      "notes": "Returns password_hash and allows email enumeration without authorization. Missing role context validation. Could be abused for user reconnaissance.",
+      "severity": "CRITICAL",
+      "vulnerability_type": "SENSITIVE_DATA_EXPOSURE_AND_USER_ENUMERATION",
+      "remediation_required": "Add role context validation and consider limiting return fields for non-auth purposes"
+    },
+    {
+      "function_name": "update_user_email_hash",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 153-160)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "CRITICAL_ISSUE_FOUND",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "CRITICAL",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🔴 CRITICAL_SECURITY_ISSUE",
+      "notes": "UPDATE function with no authorization checks. Anyone can change any user's email_hash. Could break authentication or hijack accounts.",
+      "severity": "CRITICAL",
+      "vulnerability_type": "UNAUTHORIZED_DATA_MODIFICATION",
+      "remediation_required": "Add role context validation and ownership verification (only user can change their own email hash)"
+    },
+    {
+      "function_name": "get_user_admin_status",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 175-189)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "MISSING",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "MEDIUM",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🟡 SECURITY_CONCERN",
+      "notes": "Read-only but exposes admin status without authorization. Could be used for privilege reconnaissance. Less critical but still requires protection.",
+      "severity": "MEDIUM",
+      "vulnerability_type": "INFORMATION_DISCLOSURE",
+      "remediation_required": "Add role context validation to prevent unauthorized admin status checks"
+    },
+    {
+      "function_name": "check_company_has_pricing",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 722-729)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "ADEQUATE",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "NONE",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🟢 SAFE",
+      "notes": "Simple boolean check for company pricing existence. Returns minimal data, appropriate for authentication flow.",
+      "severity": "SAFE",
+      "vulnerability_type": "NONE",
+      "remediation_required": "None required - function operates safely"
+    },
+    {
+      "function_name": "validate_reset_token",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 197-215)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "ADEQUATE",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "LOW",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🟢 SAFE",
+      "notes": "Password reset token validation with proper expiration checking. Appropriate security controls for password reset flow.",
+      "severity": "SAFE",
+      "vulnerability_type": "NONE",
+      "remediation_required": "None required - function properly designed"
+    },
+    {
+      "function_name": "mark_reset_token_used",
+      "migration_location": "047_create_comprehensive_security_definer_functions.sql (lines 219-226)",
+      "code_verified": true,
+      "sql_injection_protection": "SAFE",
+      "authorization_checks": "MISSING",
+      "error_handling": "ADEQUATE",
+      "privilege_escalation_risk": "LOW",
+      "input_validation": "ADEQUATE",
+      "overall_status": "🟡 SECURITY_CONCERN",
+      "notes": "UPDATE function without authorization checks. Anyone could mark tokens as used, potentially blocking legitimate password resets.",
+      "severity": "MEDIUM",
+      "vulnerability_type": "POTENTIAL_DENIAL_OF_SERVICE",
+      "remediation_required": "Add role context validation to ensure only legitimate password reset flows can mark tokens used"
+    }
+  ],
+  "critical_vulnerabilities_found": 4,
+  "functions_requiring_fixes": 5,
+  "security_verification_summary": {
+    "total_functions_verified": 8,
+    "safe_functions": 2,
+    "functions_with_critical_issues": 4,
+    "functions_with_concerns": 2,
+    "primary_vulnerability_types": [
+      "SENSITIVE_DATA_EXPOSURE - Password hashes returned without authorization",
+      "UNAUTHORIZED_DATA_MODIFICATION - UPDATE functions without access controls",
+      "USER_ENUMERATION - Email lookups allow user reconnaissance",
+      "INFORMATION_DISCLOSURE - Admin status exposed without validation"
+    ],
+    "critical_security_gap": "Migration 047 functions lack role context validation that exists in migration 046 versions. The functions in 047 can be called by anyone without any application context validation.",
+    "recommended_immediate_actions": [
+      "DEPLOYMENT_PRIORITY: Add role context validation to all functions returning sensitive data",
+      "DEPLOYMENT_PRIORITY: Remove password_hash from function returns unless absolutely required",
+      "DEPLOYMENT_PRIORITY: Add ownership checks to UPDATE functions",
+      "MIGRATION_NEEDED: Create new migration to fix security issues in 047 functions",
+      "VERIFICATION_NEEDED: Check which version of functions are actually deployed (046 vs 047)"
+    ]
+  },
+  "rls_architecture_notes": {
+    "users_table_rls": "Multi-policy system with user-level isolation, tenant isolation, and privilege protection",
+    "companies_table_rls": "Tenant self-isolation pattern where table IS the tenant (id = get_current_company_id())",
+    "pricing_table_rls": "Global read-all with superadmin-only write access pattern",
+    "bypass_pattern": "SECURITY DEFINER functions in migration 047 provide controlled RLS bypass for legitimate authentication",
+    "security_definer_analysis": "CRITICAL: While RLS policies are properly implemented, the SECURITY DEFINER bypass functions have critical authorization vulnerabilities that undermine the RLS protection."
+  },
+  "corrected_analysis_conclusion": {
+    "rls_policies_status": "PROPERLY_CONFIGURED",
+    "security_definer_functions_status": "CRITICALLY_VULNERABLE",
+    "overall_login_security": "VULNERABLE_DUE_TO_BYPASS_FUNCTION_ISSUES",
+    "critical_bottleneck": "RLS protection is undermined by SECURITY DEFINER functions that bypass RLS without proper authorization controls",
+    "zero_violations_status": "REVISED - Zero RLS violations found in policies, but SECURITY DEFINER bypass functions have critical security vulnerabilities that must be addressed",
+    "credibility_basis": "Security assessment now based on actual code verification rather than function existence assumptions"
+  }
 }
