@@ -1,0 +1,77 @@
+{
+  "table_analysis": [
+    {
+      "table": "users",
+      "operations_count": 5,
+      "has_rls": true,
+      "rls_migration_file": "migrations/015_enable_rls_users_oauth.sql",
+      "policy_conditions": "Multi-policy RLS system: (1) User isolation: id = get_current_user_id() OR (is_current_user_admin() AND company_id = get_current_company_id()) OR is_current_user_superadmin(), (2) Tenant isolation: company_id = get_current_company_id() OR is_current_user_superadmin(), (3) Role protection preventing privilege escalation",
+      "security_definer_function_exists": true,
+      "available_functions": ["find_user_by_id", "find_user_by_email_hash", "find_user_by_email", "update_user_email_hash", "get_user_admin_status"],
+      "rls_bypass_available": true,
+      "bypass_mechanism": "SECURITY DEFINER functions in migrations/047_create_comprehensive_security_definer_functions.sql bypass RLS for authentication operations",
+      "security_assessment": "HIGH - Comprehensive RLS with SECURITY DEFINER bypass for legitimate authentication flows",
+      "policy_count": 11,
+      "critical_policies": ["users_self_isolation", "users_tenant_isolation", "users_user_id_immutable", "users_company_id_immutable", "users_role_protection"]
+    },
+    {
+      "table": "companies",
+      "operations_count": 3,
+      "has_rls": true,
+      "rls_migration_file": "migrations/023_enable_rls_companies.sql",
+      "policy_conditions": "Tenant self-isolation pattern: id = get_current_company_id() OR is_current_user_superadmin() - UNIQUE implementation where companies table IS the tenant table",
+      "security_definer_function_exists": true,
+      "available_functions": ["check_company_has_pricing"],
+      "rls_bypass_available": true,
+      "bypass_mechanism": "SECURITY DEFINER function check_company_has_pricing validates company access to pricing configuration",
+      "security_assessment": "HIGH - Unique tenant self-isolation pattern with appropriate SECURITY DEFINER bypass",
+      "policy_count": 10,
+      "critical_policies": ["companies_tenant_self_isolation", "companies_id_immutable", "companies_write_protection", "companies_subscription_status_protection"]
+    },
+    {
+      "table": "pricing",
+      "operations_count": 1,
+      "has_rls": true,
+      "rls_migration_file": "migrations/040_enable_rls_pricing_config.sql",
+      "policy_conditions": "Read-all authenticated users (USING true), Superadmin-only write access (is_current_user_superadmin())",
+      "security_definer_function_exists": true,
+      "available_functions": ["check_company_has_pricing"],
+      "rls_bypass_available": true,
+      "bypass_mechanism": "SECURITY DEFINER function check_company_has_pricing bypasses RLS to validate company pricing access",
+      "security_assessment": "MEDIUM - Global pricing table with read-all, superadmin-write model, appropriate SECURITY DEFINER bypass",
+      "policy_count": 3,
+      "critical_policies": ["pricing_config_read_all", "pricing_config_superadmin_write", "pricing_config_critical_protection"]
+    }
+  ],
+  "analysis_summary": {
+    "total_tables_analyzed": 3,
+    "total_operations_analyzed": 9,
+    "tables_with_rls_enabled": 3,
+    "tables_with_security_definer_functions": 3,
+    "rls_compliance_rate": "100%",
+    "security_definer_coverage": "100%"
+  },
+  "critical_findings": [
+    "All login-affected tables have RLS enabled with comprehensive policies",
+    "SECURITY DEFINER functions provide controlled RLS bypass for authentication",
+    "Users table has most comprehensive RLS implementation (11 policies)",
+    "Companies table uses unique tenant self-isolation pattern",
+    "Pricing table uses appropriate read-all/superadmin-write model",
+    "No RLS violations detected in login operations",
+    "All authentication operations properly protected by RLS bypass functions"
+  ],
+  "security_recommendations": [
+    "Monitor SECURITY DEFINER function usage for potential abuse",
+    "Regular audits of RLS policy effectiveness recommended",
+    "Consider implementing additional logging for authentication bypass functions",
+    "Maintain current policy structure as it provides comprehensive security"
+  ],
+  "rls_architecture_notes": {
+    "users_table_rls": "Multi-policy system with user-level isolation, tenant isolation, and privilege protection",
+    "companies_table_rls": "Tenant self-isolation pattern where table IS the tenant (id = get_current_company_id())",
+    "pricing_table_rls": "Global read-all with superadmin-only write access pattern",
+    "bypass_pattern": "SECURITY DEFINER functions in migration 047 provide controlled RLS bypass for legitimate authentication"
+  },
+  "analysis_timestamp": "2026-08-01T12:30:00Z",
+  "analysis_methodology": "Cross-referenced login operations analysis (login_operations_analysis.json) with RLS migration files to determine RLS status, policy conditions, and SECURITY DEFINER function availability for each affected table."
+}
