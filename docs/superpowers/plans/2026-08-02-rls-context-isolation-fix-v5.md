@@ -84,13 +84,13 @@ Expected: Shows that context persists after transaction ends (connection pool le
 > # Find highest number, then use NEXT sequential number
 > ```
 
-- [ ] **Step 0: Check existing migration numbers**
+- [x] **Step 0: Check existing migration numbers**
 ```bash
 ls -la migrations/*.sql | sort -t'_' -k1 -n
 ```
 Expected: Identify current highest migration number (e.g., 058, 062, etc.)
 
-- [ ] **Step 1: Create migration file with transaction scope fix**
+- [x] **Step 1: Create migration file with transaction scope fix**
 Use the NEXT sequential number found in Step 0. Example: if highest is 062, create `063_fix_rls_context_transaction_scope.sql`
 
 ```sql
