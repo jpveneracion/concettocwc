@@ -17,9 +17,9 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 3/50 tasks completed (6%)
+## Overall Progress: 4/50 tasks completed (8%)
 
-### Step A: Database Functions and Policies - 3/12 tasks (25%)
+### Step A: Database Functions and Policies - 4/12 tasks (33%)
 ### Step B: Application Layer Changes - 0/13 tasks (0%)
 ### Step C: Routes Pattern Implementation - 0/3 tasks (0%)
 ### Step D: Verification and Testing - 0/10 tasks (0%)
@@ -192,7 +192,7 @@ psql $DATABASE_URL -f $MIG_FILE
 
 Expected: Migration applies successfully
 
-- [ ] **Step 2: Verify transaction scope behavior**
+- [x] **Step 2: Verify transaction scope behavior**
 
 ```bash
 # Create verification script using established pattern
@@ -256,9 +256,9 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 2.1: Create app.role Guard Removal Migration
-**Status:** ⏳ PENDING
-**Size:** ~1.5k tokens  
-**Files:** Create: `migrations/[NEXT_NUMBER]_remove_app_role_guards.sql`
+**Status:** ✅ COMPLETED
+**Size:** ~1.5k tokens
+**Files:** Created: `migrations/074_remove_app_role_guards.sql`
 
 > **🔍 MIGRATION NUMBERING REQUIRED:** 
 > ```bash
