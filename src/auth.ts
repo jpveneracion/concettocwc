@@ -1,11 +1,11 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
-import { findUserByEmail, createUserWithOAuth, findOAuthAccount, linkOAuthAccount } from '@/lib/oauth';
+import { findUserByEmail, createUserWithOAuth, findOAuthAccount, linkOAuthAccount, type UserRecord } from '@/lib/oauth';
 import type { AccountLinkRequest, OAuthProvider } from '@/types/oauth';
 import { cookies } from 'next/headers';
-import { sql } from '@/lib/db';
 import { setTrialExpiration } from '@/lib/subscription';
 import { setTenantContext, resetTenantContext, type RLSUserRole } from '@/lib/rls';
+import { normalizeRoleForRLS } from '@/types/roles';
 
 // Helper function to get the appropriate cookie domain based on environment
 function getCookieDomain(): string | undefined {
@@ -25,50 +25,53 @@ function getCookieDomain(): string | undefined {
   return undefined;
 }
 
-/**
- * Normalize database role to RLS role format
- * Maps 'super_admin' (database) to 'superadmin' (RLS functions)
- */
-function normalizeRoleForRLS(dbRole: string | null | undefined): RLSUserRole {
-  const role = dbRole?.toLowerCase() || 'user';
-
-  // Map database 'super_admin' to RLS 'superadmin'
-  if (role === 'super_admin') {
-    return 'superadmin';
-  }
-
-  // Validate role is allowed
-  if (role === 'admin' || role === 'user' || role === 'superadmin') {
-    return role as RLSUserRole;
-  }
-
-  // Default to 'user' for any unknown role
-  return 'user';
-}
-
 // Helper function to set custom session cookie for compatibility with proxy middleware
 async function setCustomSessionCookie(userId: string, companyId: string, email: string, role?: string) {
+  console.log('🔍 setCustomSessionCookie called for userId:', userId, 'companyId:', companyId);
   try {
-    // Get company code and user role for the session
-    const [companyAndUser] = await sql`
-      SELECT
-        companies.code as company_code,
-        users.role as user_role
-      FROM companies
-      JOIN users ON users.company_id = companies.id
-      WHERE companies.id = ${companyId} AND users.id = ${userId}
-    `;
-
-    const normalizedRole = normalizeRoleForRLS(companyAndUser?.user_role || role);
-
     const cookieStore = await cookies();
-    cookieStore.set('session', JSON.stringify({
+
+    // Set session data with what we have - don't fail if we can't get company details
+    let companyCode = 'UNKNOWN';
+    let normalizedRole = normalizeRoleForRLS(role);
+
+    // Try to get company code and user role, but don't fail if we can't
+    try {
+      const { sql } = await import('@/lib/db');
+      console.log('🔍 Fetching company and user data...');
+
+      const [companyAndUser] = await sql`
+        SELECT
+          companies.code as company_code,
+          users.role as user_role
+        FROM companies
+        JOIN users ON users.company_id = companies.id
+        WHERE companies.id = ${companyId} AND users.id = ${userId}
+      `;
+
+      console.log('🔍 Company and user data:', companyAndUser);
+
+      if (companyAndUser) {
+        companyCode = companyAndUser.company_code || 'UNKNOWN';
+        normalizedRole = normalizeRoleForRLS(companyAndUser.user_role || role);
+        console.log('🔍 Got company code:', companyCode, 'and role:', normalizedRole);
+      }
+    } catch (dbError) {
+      console.warn('⚠️ Could not fetch company/user data, using defaults:', dbError);
+      // Continue with defaults - session is more important than company code
+    }
+
+    const sessionData = {
       userId,
-      companyId,
-      companyCode: companyAndUser?.company_code || 'UNKNOWN',
+      companyId, // This is the critical part that was failing before
+      companyCode,
       email,
       role: normalizedRole,
-    }), {
+    };
+
+    console.log('🔍 Setting session cookie with data:', sessionData);
+
+    cookieStore.set('session', JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -77,19 +80,13 @@ async function setCustomSessionCookie(userId: string, companyId: string, email: 
       domain: getCookieDomain(),
     });
 
-    console.log('✅ Custom session cookie set for user:', userId, 'with role:', normalizedRole);
+    console.log('✅ Custom session cookie set for user:', userId, 'with companyId:', companyId);
 
-    // Set RLS context after successful authentication
-    try {
-      await setTenantContext(companyId, normalizedRole);
-      console.log('✅ RLS context set for user:', userId, 'company:', companyId, 'role:', normalizedRole);
-    } catch (rlsError) {
-      console.error('❌ Failed to set RLS context (authentication will proceed):', rlsError);
-      // Don't fail authentication if RLS context setting fails
-      // This allows graceful degradation while maintaining security
-    }
+    // Note: RLS context will be set in session callback to avoid duplicate database calls
+    // This optimizes mobile performance by reducing unnecessary database operations
   } catch (error) {
     console.error('❌ Failed to set custom session cookie:', error);
+    throw error; // Re-throw so the OAuth flow knows something went wrong
   }
 }
 
@@ -123,6 +120,11 @@ if (providers.length === 0) {
   console.warn('⚠️ No OAuth providers configured - OAuth authentication will not work');
 }
 
+// Debug environment variable loading
+console.log('=== NextAuth Configuration Debug ===');
+console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? '✅ Set (length: ' + process.env.NEXTAUTH_SECRET.length + ')' : '❌ Missing');
+console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL || '❌ Missing');
+
 export const authOptions = {
   providers,
   trustHost: true, // Allow localhost for development
@@ -137,13 +139,14 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }: any) {
+      console.log('🔍 signIn callback START');
       if (!user?.email || !account) {
         console.error('OAuth sign-in failed: Missing user data');
         return false;
       }
 
       try {
-        console.log('Processing OAuth sign-in for:', user.email);
+        console.log('🔍 Processing OAuth sign-in for:', user.email);
 
         // Check if OAuth account already exists
         const existingAccount = await findOAuthAccount(
@@ -156,12 +159,19 @@ export const authOptions = {
           // Add user ID to the user object for later use
           user.id = existingAccount.user_id;
 
-          // Get user's company ID and role and set custom session cookie
-          const [userData] = await sql`
-            SELECT company_id, role FROM users WHERE id = ${existingAccount.user_id}
-          `;
+          // Get user's company ID and role using SECURITY DEFINER function to bypass RLS
+          const { sql } = await import('@/lib/db');
+          console.log('🔍 Fetching user data using SECURITY DEFINER function...');
+          const [userJson] = await sql`SELECT find_user_by_id(${existingAccount.user_id}::uuid) as user_data`;
+          const userData = userJson?.user_data;
+          console.log('🔍 User data from SECURITY DEFINER function:', userData);
+
           if (userData) {
-            await setCustomSessionCookie(existingAccount.user_id, userData.company_id, user.email, userData.role);
+            console.log('🔍 Calling setCustomSessionCookie...');
+            await setCustomSessionCookie(existingAccount.user_id, userData.user_company_id, user.email, userData.user_role);
+            console.log('🔍 setCustomSessionCookie completed');
+          } else {
+            console.log('❌ No user data found!');
           }
 
           return true;
@@ -239,19 +249,10 @@ export const authOptions = {
         console.log('✅ Created new OAuth user:', newUser.id, 'with company:', company.id);
         user.id = newUser.id;
 
-        // Set trial expiration for new OAuth users with timeout protection
-        try {
-          const trialPromise = setTrialExpiration(newUser.id, 3);
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Trial setup timeout')), 5000)
-          );
-
-          await Promise.race([trialPromise, timeoutPromise]);
-          console.log('✅ Set 3-day trial expiration for new user:', newUser.id);
-        } catch (trialError) {
-          console.error('⚠️ Failed to set trial expiration (non-critical):', trialError);
-          // Don't fail sign-in if trial setup fails - continue with login
-        }
+        // Set trial expiration for new OAuth users (fire and forget for mobile performance)
+        setTrialExpiration(newUser.id, 3)
+          .then(() => console.log('✅ Set 3-day trial expiration for new user:', newUser.id))
+          .catch(err => console.error('⚠️ Failed to set trial expiration (non-critical):', err));
 
         // Set custom session cookie for new user with role and error handling
         try {
@@ -270,25 +271,16 @@ export const authOptions = {
     },
 
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // Handle redirects after OAuth sign-in
-      console.log('OAuth redirect:', { url, baseUrl });
-
-      // If URL is explicitly provided (like callback URLs), use it
-      if (url && url !== '/login') {
-        console.log('Using provided URL:', url);
-        // If the URL is relative, make it absolute
-        if (url.startsWith('/')) {
-          return `${baseUrl}${url}`;
-        }
-        return url;
-      }
-
-      // Default redirect to dashboard after successful OAuth sign-in
-      console.log('Redirecting to dashboard after successful sign-in');
-      return `${baseUrl}/dashboard`;
+      console.log('🔍 Redirect callback called:', { url, baseUrl });
+      // Handles the redirect after successful authentication
+      // If the url is relative, prepend baseUrl, otherwise use url or default to dashboard
+      const redirectUrl = url.startsWith('/') ? `${baseUrl}${url}` : (url || `${baseUrl}/dashboard`);
+      console.log('🔍 Redirect callback returning:', redirectUrl);
+      return redirectUrl;
     },
 
     async jwt({ token, account, user, profile }: any) {
+      console.log('🔍 JWT callback called, user.id =', user?.id);
       if (account && user) {
         token.provider = account.provider;
         token.providerAccountId = account.providerAccountId;
@@ -296,11 +288,16 @@ export const authOptions = {
         token.emailVerified = (profile as any)?.email_verified || false;
         // Store the user ID from signIn callback
         token.userId = user.id;
+        console.log('🔍 JWT token.userId set to:', token.userId);
       }
+      console.log('🔍 JWT callback returning token:', token);
       return token;
     },
 
     async session({ session, token }: any) {
+      console.log('🔍🔍🔍 SESSION CALLBACK CALLED 🔍🔍🔍');
+      console.log('🔍 Session callback START - token.userId =', token.userId);
+      console.log('🔍 Session callback - full token:', JSON.stringify(token));
       if (token) {
         (session as any).provider = token.provider as string;
         (session as any).providerAccountId = token.providerAccountId as string;
@@ -311,24 +308,24 @@ export const authOptions = {
           name: token.name as string,
         };
 
+        console.log('🔍 Session user set:', (session as any).user);
+
         // Add RLS information to session if userId is available
         if (token.userId) {
           try {
-            const [userAndCompany] = await sql`
-              SELECT
-                users.role as user_role,
-                users.company_id as company_id,
-                companies.code as company_code
-              FROM users
-              JOIN companies ON companies.id = users.company_id
-              WHERE users.id = ${token.userId}
-            `;
+            console.log('🔍 Fetching RLS info for userId:', token.userId);
+            const { sql } = await import('@/lib/db');
 
-            if (userAndCompany) {
-              const normalizedRole = normalizeRoleForRLS(userAndCompany.user_role);
+            const [userJson] = await sql`SELECT find_user_by_id(${token.userId}::uuid) as user_data`;
+            const userData = userJson?.user_data;
+
+            console.log('🔍 Session callback: userData =', userData);
+
+            if (userData) {
+              const normalizedRole = normalizeRoleForRLS(userData.user_role);
               (session as any).user.role = normalizedRole;
-              (session as any).user.companyId = userAndCompany.company_id;
-              (session as any).user.companyCode = userAndCompany.company_code;
+              (session as any).user.companyId = userData.user_company_id;
+              (session as any).user.companyCode = userData.company_code;
 
               // Set RLS context for this session
               try {
