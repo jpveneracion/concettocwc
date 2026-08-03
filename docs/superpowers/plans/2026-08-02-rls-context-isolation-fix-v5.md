@@ -74,9 +74,9 @@ Expected: Shows that context persists after transaction ends (connection pool le
 ---
 
 ## Task 1.2: Create Transaction Scope Migration File
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.2k tokens
-**Files:** Create: `migrations/[NEXT_NUMBER]_fix_rls_context_transaction_scope.sql`
+**Files:** Created: `migrations/073_fix_rls_context_transaction_scope.sql`
 
 > **🔍 MIGRATION NUMBERING REQUIRED:** 
 > ```bash
@@ -157,19 +157,19 @@ GRANT EXECUTE ON FUNCTION set_tenant_context(uuid, text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION reset_tenant_context() TO PUBLIC;
 ```
 
-- [ ] **Step 2: Spec compliance check**
-- [ ] ✓ A.1: set_tenant_context uses transaction scope (is_local=true)
-- [ ] ✓ A.1: reset_tenant_context uses transaction scope (is_local=true)
-- [ ] ✓ A.1: reset_tenant_context clears rls.current_user_id (was missing)
-- [ ] ✓ A.2: companies_insert_protection restricted to superadmin
+- [x] **Step 2: Spec compliance check**
+- [x] ✓ A.1: set_tenant_context uses transaction scope (is_local=true)
+- [x] ✓ A.1: reset_tenant_context uses transaction scope (is_local=true)
+- [x] ✓ A.1: reset_tenant_context clears rls.current_user_id (was missing)
+- [x] ✓ A.2: companies_insert_protection restricted to superadmin
 
-- [ ] **Step 3: Code quality review**
-- [ ] ✓ SQL follows PostgreSQL best practices
-- [ ] ✓ SECURITY DEFINER used correctly
-- [ ] ✓ Error messages are clear
-- [ ] ✓ No hardcoded values
+- [x] **Step 3: Code quality review**
+- [x] ✓ SQL follows PostgreSQL best practices
+- [x] ✓ SECURITY DEFINER used correctly
+- [x] ✓ Error messages are clear
+- [x] ✓ No hardcoded values
 
-- [ ] **Step 4: Mark task as completed**
+- [x] **Step 4: Mark task as completed**
 When both spec compliance check and code quality review pass, update this task's status to:
 **Status:** ✅ COMPLETED
 
