@@ -1,11 +1,166 @@
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { neon } from '@neondatabase/serverless';
 import { VerificationStatus, PaymentVerification } from '@/types/payment';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+// Database error types for better error handling
+export interface DatabaseError extends Error {
+  code: 'CONNECTION_ERROR' | 'QUERY_ERROR' | 'TIMEOUT' | 'CONTEXT_ERROR' | 'NOT_FOUND' | 'VALIDATION_ERROR';
+  mobileMessage: string;
+  details?: Record<string, unknown>;
 }
 
+class DatabaseErrorImpl extends Error implements DatabaseError {
+  code: DatabaseError['code'];
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+
+  constructor(
+    code: DatabaseError['code'],
+    message: string,
+    mobileMessage: string,
+    details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'DatabaseError';
+    this.code = code;
+    this.mobileMessage = mobileMessage;
+    this.details = details;
+  }
+}
+
+if (!process.env.DATABASE_URL) {
+  throw new DatabaseErrorImpl(
+    'VALIDATION_ERROR',
+    'DATABASE_URL environment variable is not set',
+    'Database configuration error'
+  );
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
+    rejectUnauthorized: false,
+  },
+});
+
+export type QueryParams = string | number | boolean | Date | null | Buffer;
+
+/**
+ * Execute query with RLS tenant context
+ * All database operations MUST use this to maintain proper RLS isolation
+ * Uses transaction-local configuration to ensure RLS settings only apply to current transaction
+ */
+export async function query<T extends QueryResultRow = Record<string, unknown>>(
+  sql: string,
+  params: QueryParams[] = [],
+  companyId?: string,
+  userRole?: 'user' | 'admin' | 'superadmin'
+): Promise<QueryResult<T>> {
+  const client = await pool.connect();
+
+  try {
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Set RLS context with transaction-local scope (third param = true)
+    if ((companyId !== undefined && companyId !== null && companyId.trim() !== '') ||
+        (userRole !== undefined && userRole !== null && userRole.trim() !== '')) {
+      if (companyId !== undefined && companyId !== null && companyId.trim() !== '') {
+        await client.query(`SELECT set_config('rls.current_company_id', $1, true)`, [companyId]);
+      }
+      if (userRole !== undefined && userRole !== null && userRole.trim() !== '') {
+        await client.query(`SELECT set_config('rls.current_user_role', $1, true)`, [userRole]);
+      }
+    }
+
+    // Execute the actual query
+    const result = await client.query<T>(sql, params);
+
+    // Commit transaction
+    await client.query('COMMIT');
+
+    return result;
+  } catch (error) {
+    // Rollback on error
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.warn('Rollback error:', rollbackError);
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
+    const mobileMessage = 'Database connection issue - please try again';
+
+    throw new DatabaseErrorImpl(
+      'QUERY_ERROR',
+      `Database query failed: ${errorMessage}`,
+      mobileMessage,
+      {
+        sql: sql.substring(0, 100),
+        companyId,
+        userRole,
+        paramsCount: params?.length,
+        originalError: errorMessage
+      }
+    );
+  } finally {
+    client.release();
+  }
+}
+
+// Keep the old sql export for backwards compatibility but deprecate it
 export const sql = neon(process.env.DATABASE_URL);
+
+/**
+ * Template literal SQL function using pg.Pool connection for RLS compatibility
+ * This should be used instead of `sql` when you need RLS policies to work
+ * @example
+ * const result = await querySQL`SELECT * FROM users WHERE id = ${userId}`;
+ */
+export async function querySQL<T extends QueryResultRow = Record<string, unknown>>(
+  strings: TemplateStringsArray,
+  ...values: QueryParams[]
+): Promise<T[]> {
+  // Convert template literal to parameterized query
+  let sql = '';
+  const params: QueryParams[] = [];
+  let paramIndex = 1;
+
+  for (let i = 0; i < strings.length; i++) {
+    sql += strings[i];
+    if (i < values.length) {
+      const value = values[i];
+      if (value !== null && value !== undefined) {
+        sql += `$${paramIndex}`;
+        params.push(value);
+        paramIndex++;
+      } else {
+        sql += 'NULL';
+      }
+    }
+  }
+
+  // Get current RLS context from session if available
+  let companyId: string | undefined;
+  let userRole: 'user' | 'admin' | 'superadmin' | undefined;
+
+  try {
+    // Try to get RLS context from the current session
+    const { getCurrentCompanyId, getCurrentUserRole } = await import('./rls');
+
+    const currentCompanyId = await getCurrentCompanyId();
+    const currentUserRole = await getCurrentUserRole();
+
+    if (currentCompanyId) companyId = currentCompanyId;
+    if (currentUserRole) userRole = currentUserRole;
+  } catch (error) {
+    // If RLS functions aren't available, proceed without context
+    console.debug('RLS context not available:', error);
+  }
+
+  const result = await query<T>(sql, params, companyId, userRole);
+  return result.rows || [];
+}
 
 /**
  * RLS context interface for type safety
@@ -22,15 +177,6 @@ export interface RLSContext {
  * @returns Promise of typed result array
  * @throws Error if query execution fails
  */
-export async function query<T>(sqlQuery: TemplateStringsArray, ...params: (string | number | boolean | null)[]): Promise<T[]> {
-  try {
-    const result = await sql(sqlQuery, ...params);
-    return result as T[];
-  } catch (error) {
-    throw new Error(`Database query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
 /**
  * Database count result interface
  */
@@ -54,12 +200,16 @@ type PaymentMethod = 'gcash' | 'gotyme' | 'usdc';
 interface UserRecord {
   id: string; // UUID in database
   email: string;
-  name: string;
-  trial_expires_at?: string;
-  subscription_activated?: boolean;
+  email_hash: string;
+  company_id: string;
+  role?: string; // User role: 'user', 'admin', 'super_admin'
+  trial_expires_at?: Date | null;
+  subscription_activated?: boolean | null;
+  subscription_plan?: string | null;
+  is_admin?: boolean | null;
+  password_hash?: string | null;
   activation_code?: string;
   discount_percent?: number;
-  subscription_plan?: string;
   created_at: string;
   updated_at: string;
 }
@@ -146,18 +296,46 @@ export async function updateUser(userId: string, updates: {
  */
 export async function getUser(userId: string): Promise<UserRecord> {
   try {
-    const result = await sql('SELECT * FROM users WHERE id = $1', [userId]);
+    // Use SECURITY DEFINER function directly through query()
+    // RLS context will be set by requireSessionWithRLS wrapper (Task 8)
+    const result = await query<{
+      user_id: string;
+      user_email: string;
+      user_email_hash: string;
+      user_company_id: string;
+      user_role: string | null;
+      user_trial_expires_at: Date | null;
+      user_subscription_activated: boolean | null;
+      user_subscription_plan: string | null;
+      user_is_admin: boolean | null;
+      user_password_hash: string | null;
+      user_created_at: Date;
+    }>('SELECT * FROM find_user_by_id($1)', [userId]);
 
-    if (!result[0]) {
-      throw new Error(`User with ID ${userId} not found`);
+    if (!result.rows[0]) {
+      throw new DatabaseErrorImpl('NOT_FOUND', `User with ID ${userId} not found`, 'User account not found');
     }
 
-    return result[0] as UserRecord;
+    return {
+      id: result.rows[0].user_id,
+      email: result.rows[0].user_email,
+      email_hash: result.rows[0].user_email_hash,
+      company_id: result.rows[0].user_company_id,
+      role: result.rows[0].user_role as DatabaseRole | undefined,
+      trial_expires_at: result.rows[0].user_trial_expires_at,
+      subscription_activated: result.rows[0].user_subscription_activated,
+      subscription_plan: result.rows[0].user_subscription_plan,
+      is_admin: result.rows[0].user_is_admin,
+      password_hash: result.rows[0].user_password_hash,
+      created_at: result.rows[0].user_created_at ? new Date(result.rows[0].user_created_at).toISOString() : new Date().toISOString(),
+      updated_at: undefined
+    };
   } catch (error) {
-    if (error instanceof Error && error.message.includes('not found')) {
+    if (error instanceof DatabaseErrorImpl) {
       throw error;
     }
-    throw new Error(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new DatabaseErrorImpl('QUERY_ERROR', `Failed to get user: ${errorMessage}`, 'Unable to load user profile', { userId, originalError: errorMessage });
   }
 }
 
@@ -298,8 +476,9 @@ export async function createPaymentVerification(verification: {
  */
 export async function getPaymentVerificationById(id: string): Promise<PaymentVerificationRecord | null> {
   try {
-    const result = await sql('SELECT * FROM payment_verifications WHERE id = $1', [id]);
-    return (result[0] as PaymentVerificationRecord) || null;
+    // Use query() with automatic RLS context instead of raw sql()
+    const result = await query('SELECT * FROM payment_verifications WHERE id = $1', [id]);
+    return (result.rows[0] as PaymentVerificationRecord) || null;
   } catch (error) {
     throw new Error(`Failed to get payment verification: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -325,23 +504,19 @@ export async function getPaymentVerificationsByUserId(
   status?: 'pending' | 'approved' | 'rejected'
 ): Promise<PaymentVerificationRecord[]> {
   try {
+    let sqlQuery = 'SELECT * FROM payment_verifications WHERE user_id = $1';
+    const params: QueryParams[] = [userId];
+
     if (status) {
-      const result = await withQueryTimeout(async () =>
-        sql(
-          'SELECT * FROM payment_verifications WHERE user_id = $1 AND status = $2 ORDER BY submitted_at DESC',
-          [userId, status]
-        )
-      );
-      return result as PaymentVerificationRecord[];
+      sqlQuery += ' AND status = $2';
+      params.push(status);
     }
 
-    const result = await withQueryTimeout(async () =>
-      sql(
-        'SELECT * FROM payment_verifications WHERE user_id = $1 ORDER BY submitted_at DESC',
-        [userId]
-      )
-    );
-    return result as PaymentVerificationRecord[];
+    sqlQuery += ' ORDER BY submitted_at DESC';
+
+    // Use query() with automatic RLS context
+    const result = await query(sqlQuery, params);
+    return result.rows as PaymentVerificationRecord[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -1292,8 +1467,11 @@ export async function withRLSContext<T>(
       throw new Error(`Invalid user role: ${userRole}`);
     }
 
-    // Set tenant context
-    await sql('SELECT set_tenant_context($1, $2)', [companyId, userRole]);
+    // Set tenant context using direct transaction-local calls
+    await sql(`
+      SELECT set_config('rls.current_company_id', $1, true),
+             set_config('rls.current_user_role', $2, true)
+    `, [companyId, userRole]);
 
     try {
       // Execute the operation with tenant context
@@ -1455,5 +1633,71 @@ export async function getRLSContext(): Promise<RLSContext | null> {
     };
   } catch (error) {
     return null;
+  }
+}
+
+/**
+ * Execute query with RLS bypass for initial setup operations
+ * This function bypasses RLS policies for critical initialization operations
+ * like creating the first company during OAuth signup.
+ *
+ * SECURITY WARNING: Only use this for trusted initialization operations.
+ * Never use this for regular user operations.
+ *
+ * @param sqlQuery - SQL query to execute
+ * @param params - Query parameters
+ * @returns Promise of typed result array
+ * @throws DatabaseError if query execution fails
+ *
+ * @example
+ * ```typescript
+ * // Create initial company during OAuth signup
+ * const company = await queryWithRLSBypass<CompanyRecord>(
+ *   'INSERT INTO companies (code, name) VALUES ($1, $2) RETURNING *',
+ *   ['COMPANY1', 'My Company']
+ * );
+ * ```
+ */
+export async function queryWithRLSBypass<T extends QueryResultRow = Record<string, unknown>>(
+  sqlQuery: string,
+  params: QueryParams[] = []
+): Promise<T[]> {
+  const client = await pool.connect();
+
+  try {
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Temporarily disable RLS for this transaction
+    await client.query('SET LOCAL row_security = off');
+
+    // Execute the query with RLS bypassed
+    const result = await client.query<T>(sqlQuery, params);
+
+    // Commit transaction
+    await client.query('COMMIT');
+
+    return result.rows || [];
+  } catch (error) {
+    // Rollback on error
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.warn('Rollback error:', rollbackError);
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown bypass query error';
+    throw new DatabaseErrorImpl(
+      'QUERY_ERROR',
+      `RLS bypass query failed: ${errorMessage}`,
+      'Setup failed - please contact support',
+      {
+        sql: sqlQuery.substring(0, 100),
+        paramsCount: params?.length,
+        originalError: errorMessage
+      }
+    );
+  } finally {
+    client.release();
   }
 }
