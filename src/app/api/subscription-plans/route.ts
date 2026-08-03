@@ -5,55 +5,36 @@ import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
 
 // GET - Get active subscription plans (public endpoint)
+// Uses SECURITY DEFINER function get_subscription_plans() for controlled RLS bypass
 export async function GET(req: NextRequest) {
   try {
     // Optional: Check if user is authenticated, but allow access for checkout
     const session = await getSession();
 
-    const searchParams = req.nextUrl.searchParams;
-    const includeInactive = searchParams.get('include_inactive') === 'true';
+    console.log('Fetching subscription plans using SECURITY DEFINER function');
 
-    console.log('Fetching subscription plans with includeInactive:', includeInactive);
-
-    // Direct SQL query to avoid complex utility function issues
-    let query = 'SELECT * FROM subscription_plans';
-    let result: any[];
-
-    if (includeInactive) {
-      // Get all plans
-      result = await sql`SELECT * FROM subscription_plans ORDER BY created_at DESC`;
-    } else {
-      // Only get active plans - check JSONB features field
-      result = await sql`
-        SELECT * FROM subscription_plans
-        WHERE (features->>'is_active')::boolean = true
-        ORDER BY created_at DESC
-      `;
-    }
+    // RLS context will be set by requireSessionWithRLS wrapper (Task 8)
+    // Use SECURITY DEFINER function to get subscription plans
+    const result = await sql('SELECT * FROM get_subscription_plans()');
 
     console.log('Raw database result:', result.length, 'plans');
 
     // Format the plans for API response
     const formattedPlans = result.map((plan: any) => {
-      const features = plan.features || {};
-
-      // Extract features array from JSONB object
-      const featuresArray = Array.isArray(features.features)
-        ? features.features
-        : [];
+      const planData = typeof plan === 'string' ? JSON.parse(plan) : plan;
 
       return {
-        id: plan.id,
-        name: plan.name,
-        description: features.description || '',
-        price: parseFloat(plan.price),
-        currency: plan.currency,
-        interval: plan.interval,
-        discount_percent: features.discount_percent || 0,
-        features: featuresArray,
-        is_active: features.is_active !== undefined ? features.is_active : true,
-        created_at: plan.created_at,
-        updated_at: plan.updated_at
+        id: planData.id,
+        name: planData.name,
+        description: planData.description || '',
+        price: parseFloat(planData.price),
+        currency: planData.currency,
+        interval: planData.interval,
+        discount_percent: planData.discount_percent || 0,
+        features: planData.features || [],
+        is_active: planData.is_active !== undefined ? planData.is_active : true,
+        created_at: planData.created_at,
+        updated_at: planData.updated_at
       };
     });
 
