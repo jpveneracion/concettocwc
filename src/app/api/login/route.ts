@@ -41,36 +41,35 @@ export async function POST(req: Request) {
     console.log('📧 Looking up user:', email);
     const emailHash = hashEmailForSearch(email);
 
-    // Find user with company using email_hash for authentication
+    // Find user with company using SECURITY DEFINER function for user lookup
     let users = await sql`
       SELECT
-        users.id as user_id,
-        users.email,
-        users.email_encrypted,
-        users.email_hash,
-        users.password_hash,
-        companies.id as company_id,
-        companies.code as company_code
-      FROM users
-      JOIN companies ON companies.id = users.company_id
-      WHERE users.email_hash = ${emailHash}
+        u.user_id,
+        u.user_email as email,
+        u.email_hash,
+        u.user_password_hash as password_hash,
+        u.company_id,
+        c.code as company_code
+      FROM find_user_by_email_hash(${emailHash}) u
+      JOIN companies c ON c.id = u.company_id
     `;
 
     // Fallback to email search if email_hash not found (for users without email_hash populated)
     let foundViaEmailFallback = false;
     if (users.length === 0) {
+      console.log('🔍 Email hash not found, trying email fallback with SECURITY DEFINER function...');
+
       users = await sql`
         SELECT
-          users.id as user_id,
-          users.email,
-          users.email_encrypted,
-          users.email_hash,
-          users.password_hash,
-          companies.id as company_id,
-          companies.code as company_code
-        FROM users
-        JOIN companies ON companies.id = users.company_id
-        WHERE users.email = ${email.toLowerCase().trim()}
+          u.id as user_id,
+          u.email,
+          u.email_encrypted,
+          u.email_hash,
+          u.password_hash,
+          c.id as company_id,
+          c.code as company_code
+        FROM find_user_by_email(${email.toLowerCase().trim()}) u
+        JOIN companies c ON c.id = u.company_id
       `;
       foundViaEmailFallback = users.length > 0;
     }
@@ -94,12 +93,9 @@ export async function POST(req: Request) {
 
     // Auto-populate email_hash if user was found via email fallback and password is correct
     if (foundViaEmailFallback && user.email && !user.email_hash) {
+      console.log('🔧 Auto-populating email_hash using SECURITY DEFINER function...');
       const autoEmailHash = hashEmailForSearch(user.email);
-      await sql`
-        UPDATE users
-        SET email_hash = ${autoEmailHash}
-        WHERE id = ${user.user_id}
-      `;
+      await sql('SELECT update_user_email_hash($1, $2)', [user.user_id, autoEmailHash]);
       console.log(`Auto-populated email_hash for user ${user.user_id} (${user.email})`);
     }
 
@@ -112,31 +108,9 @@ export async function POST(req: Request) {
       // Continue anyway - this isn't critical
     }
 
-    // Check if company has pricing set up (collections) with timeout
-    let hasPricing = false;
-    try {
-      const pricingCheckPromise = sql`
-        SELECT COUNT(*) as count
-        FROM company_collections
-        WHERE company_id = ${user.company_id}
-      `;
-
-      // Add timeout protection
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Pricing check timeout')), 3000)
-      );
-
-      const [pricingCheck] = await Promise.race([pricingCheckPromise, timeoutPromise]) as any;
-      hasPricing = pricingCheck && Number(pricingCheck.count) > 0;
-    } catch (pricingError) {
-      console.error('Pricing check failed (non-critical):', pricingError);
-      hasPricing = false; // Default to false if check fails
-    }
-
-    // Get user role for RLS context
-    const [userRole] = await sql`
-      SELECT role FROM users WHERE id = ${user.user_id}
-    `;
+    // FIXED: Get user role FIRST, before setting context
+    const [userRoleResult] = await sql('SELECT get_user_admin_status($1) as user_status', [user.user_id]);
+    const userRole = userRoleResult?.user_status;
 
     // Normalize role for RLS (handle 'super_admin' -> 'superadmin' conversion)
     const normalizedRole = (() => {
@@ -145,6 +119,29 @@ export async function POST(req: Request) {
       if (role === 'admin' || role === 'user' || role === 'superadmin') return role;
       return 'user';
     })();
+
+    // FIXED: Establish RLS context BEFORE dependent operations
+    try {
+      await setTenantContext(user.company_id, normalizedRole);
+      console.log('✅ RLS context established for user:', user.user_id, 'company:', user.company_id, 'role:', normalizedRole);
+    } catch (rlsError) {
+      console.error('❌ Failed to establish RLS context (authentication will proceed):', rlsError);
+      // Don't fail login if RLS context establishment fails
+    }
+
+    // FIXED: NOW check if company has pricing (AFTER context is set)
+    let hasPricing = false;
+    try {
+      const pricingCheckPromise = sql('SELECT check_company_has_pricing($1) as has_pricing', [user.company_id]);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Pricing check timeout')), 3000)
+      );
+      const [pricingCheck] = await Promise.race([pricingCheckPromise, timeoutPromise]) as any;
+      hasPricing = pricingCheck && pricingCheck.has_pricing;
+    } catch (pricingError) {
+      console.error('Pricing check failed (non-critical):', pricingError);
+      hasPricing = false;
+    }
 
     // Set session cookie - use decrypted email if needed
     const sessionEmail = user.email || email; // fallback to input email if stored is null
@@ -166,15 +163,6 @@ export async function POST(req: Request) {
       domain: getCookieDomain(),
     });
     console.log('✅ Session cookie set successfully with role:', normalizedRole);
-
-    // Establish RLS context for the logged-in user
-    try {
-      await setTenantContext(user.company_id, normalizedRole);
-      console.log('✅ RLS context established for user:', user.user_id, 'company:', user.company_id, 'role:', normalizedRole);
-    } catch (rlsError) {
-      console.error('❌ Failed to establish RLS context (authentication will proceed):', rlsError);
-      // Don't fail login if RLS context establishment fails
-    }
 
     console.log('🎯 Returning login response...');
     return NextResponse.json({
