@@ -38,7 +38,7 @@ export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow public pages and static assets
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/reset-password' ||
+  if (pathname === '/' || pathname === '/login' || pathname === '/signup' || pathname === '/reset-password' ||
       pathname === '/activate-code' || pathname.startsWith('/_next') ||
       pathname.startsWith('/static')) {
     return NextResponse.next();

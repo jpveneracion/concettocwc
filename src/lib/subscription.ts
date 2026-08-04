@@ -12,7 +12,7 @@ import {
   SubscriptionAccess,
   SubscriptionDetails
 } from '@/types/subscription';
-import { getUser, updateUser, sql } from './db';
+import { getUser, updateUser, sql, query } from './db';
 
 // Database query result interfaces
 interface CountResult {
@@ -23,6 +23,14 @@ interface CountResult {
 export type { UserSubscriptionInfo, TrialStatusResponse, SubscriptionPlan };
 export type { LegacySubscription, LegacySubscriptionPlan, SubscriptionAccess, SubscriptionDetails };
 export { AccountStatus };
+
+/**
+ * RLS context interface (established pattern - passed from session)
+ */
+export interface RLSContext {
+  companyId: string;
+  userRole: 'user' | 'admin' | 'superadmin';
+}
 
 /**
  * Calculate user's subscription status
@@ -152,17 +160,39 @@ export function getTrialDaysRemaining(trial_expires_at: Date | undefined): numbe
 /**
  * Get subscription by company ID (legacy system)
  */
-export async function getSubscriptionByCompanyId(companyId: string): Promise<LegacySubscription | null> {
-  const result = await sql('SELECT * FROM subscriptions WHERE company_id = $1 ORDER BY created_at DESC LIMIT 1', [companyId]);
-  return result[0] as LegacySubscription || null;
+export async function getSubscriptionByCompanyId(companyId: string, rlsContext?: RLSContext): Promise<LegacySubscription | null> {
+  let result: LegacySubscription[];
+  if (rlsContext) {
+    const queryResult = await query<LegacySubscription>(
+      'SELECT * FROM subscriptions WHERE company_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [companyId],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    result = queryResult.rows;
+  } else {
+    result = await sql('SELECT * FROM subscriptions WHERE company_id = $1 ORDER BY created_at DESC LIMIT 1', [companyId]) as unknown as LegacySubscription[];
+  }
+  return result[0] || null;
 }
 
 /**
  * Get subscription plan by ID (legacy system)
  */
-export async function getSubscriptionPlan(planId: string): Promise<LegacySubscriptionPlan | null> {
-  const result = await sql('SELECT * FROM subscription_plans WHERE id = $1 LIMIT 1', [planId]);
-  return result[0] as LegacySubscriptionPlan || null;
+export async function getSubscriptionPlan(planId: string, rlsContext?: RLSContext): Promise<LegacySubscriptionPlan | null> {
+  let result: LegacySubscriptionPlan[];
+  if (rlsContext) {
+    const queryResult = await query<LegacySubscriptionPlan>(
+      'SELECT * FROM subscription_plans WHERE id = $1 LIMIT 1',
+      [planId],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    result = queryResult.rows;
+  } else {
+    result = await sql('SELECT * FROM subscription_plans WHERE id = $1 LIMIT 1', [planId]) as unknown as LegacySubscriptionPlan[];
+  }
+  return result[0] || null;
 }
 
 /**

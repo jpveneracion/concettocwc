@@ -34,7 +34,12 @@ export async function GET(req: NextRequest) {
       campaign_name: searchParams.get('campaign_name') || undefined
     };
 
-    const codes = await listActivationCodes(filters);
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
+    const codes = await listActivationCodes(filters, rlsContext);
 
     return NextResponse.json({ codes });
   } catch (error) {
@@ -71,8 +76,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const activationCode = await createActivationCode(body, userId);
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
 
+    const activationCode = await createActivationCode(body, userId, undefined, undefined, rlsContext);
     return NextResponse.json({
       success: true,
       code: activationCode
@@ -109,7 +118,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await deactivateActivationCode(parseInt(codeId));
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
+    await deactivateActivationCode(parseInt(codeId), rlsContext);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -147,12 +161,17 @@ export async function PUT(req: NextRequest) {
     // Import the update function
     const { updateActivationCode } = await import('@/lib/activation');
 
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
     await updateActivationCode(id, {
       is_active,
       expires_at: expires_at ? new Date(expires_at) : undefined,
       campaign_name,
       notes
-    });
+    }, rlsContext);
 
     return NextResponse.json({ success: true });
   } catch (error) {

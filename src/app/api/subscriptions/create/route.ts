@@ -8,6 +8,24 @@ import {
 import { resolvePlanIdentifier } from '@/lib/subscription-plans';
 
 /**
+ * RLS context interface (established pattern - passed from session)
+ */
+interface RLSContext {
+  companyId: string;
+  userRole: 'user' | 'admin' | 'superadmin';
+}
+
+/**
+ * Build RLS context from session (established pattern)
+ */
+function buildRLSContext(session: Session): RLSContext {
+  return {
+    companyId: session.companyId,
+    userRole: (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin',
+  };
+}
+
+/**
  * Subscription status constants
  */
 const SUBSCRIPTION_STATUS = {
@@ -129,6 +147,7 @@ export async function POST(req: Request) {
     }
 
     const { plan_id } = body!;
+    const rlsContext = buildRLSContext(session);
 
     // 3. Resolve plan identifier to UUID
     // The plan_id might be a billing period identifier (monthly/quarterly/annual)
@@ -141,7 +160,7 @@ export async function POST(req: Request) {
     if (!isUuidFormat) {
       // plan_id appears to be a billing period identifier, resolve it to UUID
       console.log(`plan_id '${plan_id}' is not a UUID format, attempting to resolve...`);
-      resolvedPlanId = await resolvePlanIdentifier(plan_id);
+      resolvedPlanId = await resolvePlanIdentifier(plan_id, rlsContext);
 
       if (!resolvedPlanId) {
         return NextResponse.json(
@@ -152,7 +171,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Validate plan exists
-    const plan = await getSubscriptionPlan(resolvedPlanId!);
+    const plan = await getSubscriptionPlan(resolvedPlanId!, rlsContext);
     if (!plan) {
       return NextResponse.json(
         { error: 'Invalid subscription plan' },
@@ -161,7 +180,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Duplicate Subscription Check
-    const existingSubscription = await getSubscriptionByCompanyId(session.companyId);
+    const existingSubscription = await getSubscriptionByCompanyId(session.companyId, rlsContext);
     if (existingSubscription) {
       // Check if existing subscription is still active
       const activeStatuses: Array<string> = [SUBSCRIPTION_STATUS.TRIALING, SUBSCRIPTION_STATUS.ACTIVE];

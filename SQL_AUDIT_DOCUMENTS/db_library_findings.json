@@ -1,0 +1,104 @@
+{
+  "file": "src/lib/db.ts",
+  "analysis_summary": {
+    "total_lines": 1668,
+    "sql_keywords_found": 113,
+    "exported_functions": 20,
+    "functions_with_sql": 12,
+    "analysis_priority": "HIGH - Core database operations file"
+  },
+  "key_functions_identified": [
+    {
+      "name": "query",
+      "line": 23,
+      "type": "generic_query_function",
+      "sql_operations": ["BEGIN", "COMMIT", "ROLLBACK", "SELECT set_config"],
+      "risk_level": "🟢 SAFE",
+      "purpose": "Core query function with RLS context management"
+    },
+    {
+      "name": "updateUser",
+      "line": 195,
+      "type": "user_update_function",
+      "sql_operations": ["UPDATE users"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Update user records"
+    },
+    {
+      "name": "getUser",
+      "line": 260,
+      "type": "user_retrieval_function",
+      "sql_operations": ["SELECT * FROM users"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Retrieve user data by ID"
+    },
+    {
+      "name": "createPaymentVerification",
+      "line": 350,
+      "type": "payment_verification_create",
+      "sql_operations": ["INSERT INTO payment_verifications"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Create payment verification records"
+    },
+    {
+      "name": "getPaymentVerificationById",
+      "line": 444,
+      "type": "payment_retrieval_function",
+      "sql_operations": ["SELECT * FROM payment_verifications"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Retrieve payment verification by ID"
+    },
+    {
+      "name": "updatePaymentVerificationStatus",
+      "line": 728,
+      "type": "payment_update_function",
+      "sql_operations": ["UPDATE payment_verifications"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Update payment verification status"
+    },
+    {
+      "name": "upsertGatewayHeartbeat",
+      "line": 1075,
+      "type": "gateway_heartbeat_function",
+      "sql_operations": ["INSERT INTO gateway_heartbeat", "UPDATE gateway_heartbeat"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Upsert gateway heartbeat data"
+    },
+    {
+      "name": "getPaymentSettings",
+      "line": 1283,
+      "type": "payment_settings_retrieval",
+      "sql_operations": ["SELECT * FROM payment_settings"],
+      "risk_level": "🟡 NEEDS REVIEW",
+      "purpose": "Retrieve payment method settings"
+    }
+  ],
+  "rls_context_functions": [
+    {
+      "name": "withRLSContext",
+      "line": 1419,
+      "purpose": "Execute function with RLS tenant context"
+    },
+    {
+      "name": "withAdminRLSContext",
+      "line": 1524,
+      "purpose": "Execute function with admin RLS context"
+    },
+    {
+      "name": "withSuperadminRLSContext",
+      "line": 1546,
+      "purpose": "Execute function with superadmin RLS context"
+    },
+    {
+      "name": "queryWithRLSBypass",
+      "line": 1631,
+      "purpose": "Execute query with RLS bypass (SECURITY DEFINER context)"
+    }
+  ],
+  "initial_security_assessment": {
+    "rls_context_management": "✅ COMPREHENSIVE - Multiple RLS context functions available",
+    "sql_injection_protection": "✅ PARAMETERIZED QUERIES - Uses parameterized queries throughout",
+    "direct_sql_execution": "⚠️ CONCERN - Some functions may use direct SQL execution",
+    "authorization_checks": "❓ NEEDS ANALYSIS - Authorization patterns unclear"
+  }
+}

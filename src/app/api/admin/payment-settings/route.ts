@@ -23,23 +23,7 @@ export async function GET(req: Request) {
 
     // Fetch from database using the existing row-based schema
     try {
-      const result = await sql`
-        SELECT
-          payment_method,
-          account_number,
-          account_name,
-          qr_code_url,
-          active,
-          gcash_monthly_qr_url,
-          gcash_quarterly_qr_url,
-          gcash_annual_qr_url,
-          gotyme_monthly_qr_url,
-          gotyme_quarterly_qr_url,
-          gotyme_annual_qr_url,
-          quarterly_discount_percent,
-          annual_discount_percent
-        FROM payment_settings
-      `;
+      const result = await sql('SELECT * FROM get_all_payment_settings()');
 
       // Convert row-based format to our API format
       const gcashRow = result.find(r => r.payment_method === 'gcash');
@@ -184,35 +168,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Try to save to database using the existing schema
+    // Try to save to database using SECURITY DEFINER functions
     try {
       // Insert or update GCash settings
-      await sql`
-        INSERT INTO payment_settings (payment_method, account_number, account_name, qr_code_url, active, quarterly_discount_percent, annual_discount_percent)
-        VALUES ('gcash', ${settings.mobile.gcash.number}, ${settings.mobile.gcash.accountName}, ${settings.mobile.gcash.qrCodeUrl}, ${settings.mobile.gcash.enabled}, ${settings.discounts.quarterly}, ${settings.discounts.annual})
-        ON CONFLICT (payment_method) DO UPDATE SET
-          account_number = EXCLUDED.account_number,
-          account_name = EXCLUDED.account_name,
-          qr_code_url = EXCLUDED.qr_code_url,
-          active = EXCLUDED.active,
-          quarterly_discount_percent = EXCLUDED.quarterly_discount_percent,
-          annual_discount_percent = EXCLUDED.annual_discount_percent,
-          updated_at = CURRENT_TIMESTAMP
-      `;
+      await sql(`
+        SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
+      `, ['gcash', settings.mobile.gcash.number, settings.mobile.gcash.accountName, settings.mobile.gcash.qrCodeUrl, settings.mobile.gcash.enabled, settings.discounts.quarterly, settings.discounts.annual]);
 
       // Insert or update GoTyme settings
-      await sql`
-        INSERT INTO payment_settings (payment_method, account_number, account_name, qr_code_url, active, quarterly_discount_percent, annual_discount_percent)
-        VALUES ('gotyme', ${settings.mobile.gotyme.number}, ${settings.mobile.gotyme.accountName}, ${settings.mobile.gotyme.qrCodeUrl}, ${settings.mobile.gotyme.enabled}, ${settings.discounts.quarterly}, ${settings.discounts.annual})
-        ON CONFLICT (payment_method) DO UPDATE SET
-          account_number = EXCLUDED.account_number,
-          account_name = EXCLUDED.account_name,
-          qr_code_url = EXCLUDED.qr_code_url,
-          active = EXCLUDED.active,
-          quarterly_discount_percent = EXCLUDED.quarterly_discount_percent,
-          annual_discount_percent = EXCLUDED.annual_discount_percent,
-          updated_at = CURRENT_TIMESTAMP
-      `;
+      await sql(`
+        SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
+      `, ['gotyme', settings.mobile.gotyme.number, settings.mobile.gotyme.accountName, settings.mobile.gotyme.qrCodeUrl, settings.mobile.gotyme.enabled, settings.discounts.quarterly, settings.discounts.annual]);
 
       console.log('Payment settings updated by admin:', session.userId);
       return NextResponse.json({

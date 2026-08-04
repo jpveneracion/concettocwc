@@ -14,16 +14,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    // Find valid reset token
-    const [resetToken] = await sql`
-      SELECT prt.user_id, prt.expires_at
-      FROM password_reset_tokens prt
-      WHERE prt.token = ${token}
-        AND prt.expires_at > NOW()
-        AND prt.used_at IS NULL
-      ORDER BY prt.created_at DESC
-      LIMIT 1
-    `;
+    // Find valid reset token using SECURITY DEFINER function
+    const result = await sql('SELECT validate_reset_token($1) as token_data', [token]);
+    const resetToken = result[0]?.token_data || null;
 
     if (!resetToken) {
       return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 });
@@ -32,19 +25,11 @@ export async function POST(req: Request) {
     // Hash new password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Update user password
-    await sql`
-      UPDATE users
-      SET password_hash = ${passwordHash}
-      WHERE id = ${resetToken.user_id}
-    `;
+    // Update user password using SECURITY DEFINER function
+    await sql('SELECT update_user_password($1::uuid, $2)', [resetToken.user_id, passwordHash]);
 
-    // Mark token as used
-    await sql`
-      UPDATE password_reset_tokens
-      SET used_at = NOW()
-      WHERE token = ${token}
-    `;
+    // Mark token as used using SECURITY DEFINER function
+    await sql('SELECT mark_reset_token_used($1)', [token]);
 
     return NextResponse.json({
       success: true,

@@ -67,12 +67,30 @@ export async function getUserRole(userId: string): Promise<UserRole> {
     console.log('getUserRole called for userId:', userId);
     const { sql } = await import('@/lib/db');
 
+    // Set role context for SECURITY DEFINER function
+    await sql('SELECT set_config($1, $2, true)', ['app.role', 'concetto_boms']);
+
+    // First check if user exists at all
+    const checkResult = await sql(`SELECT id, email, role, is_admin, company_id FROM users WHERE id = $1::uuid`, [userId]);
+    console.log('User exists check:', checkResult);
+
+    // Use LEFT JOIN to handle RLS blocking companies table
     const result = await sql(`
-      SELECT role, is_admin FROM users WHERE id = $1::uuid
+      SELECT u.id, u.email, u.role, u.is_admin, u.company_id, c.code as company_code
+      FROM users u
+      LEFT JOIN companies c ON c.id = u.company_id
+      WHERE u.id = $1::uuid
     `, [userId]);
 
-    console.log('Database result:', result);
-    const role = result[0]?.role || 'user';
+    console.log('Direct user query result:', result);
+
+    if (result.length === 0 || !result[0]) {
+      console.log('User not found');
+      return 'user';
+    }
+
+    const user = result[0];
+    const role = user.role || (user.is_admin === true ? 'admin' : 'user');
     console.log('Final role:', role);
     return role;
   } catch (error) {
@@ -85,16 +103,19 @@ export async function getUserRole(userId: string): Promise<UserRole> {
  * Require admin access - throws error if user is not admin
  */
 export async function requireAdmin(userId: string): Promise<UserRole> {
-  console.log('requireAdmin called for user:', userId);
-  const role = await getUserRole(userId);
-  console.log('User role result:', role);
+  const { getSession } = await import('@/lib/auth');
+  const session = await getSession();
+
+  if (!session) {
+    throw new Error('Unauthorized: No session found');
+  }
+
+  const role = session.role || 'user';
 
   if (role !== 'admin' && role !== 'superadmin') {
-    console.log('Access denied for role:', role);
     throw new Error('Forbidden: Admin access required');
   }
 
-  console.log('Access granted for role:', role);
   return role;
 }
 

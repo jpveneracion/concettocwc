@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VerificationForm from '@/components/payment/VerificationForm';
-import { getActiveSubscriptionPlansForAPI } from '@/lib/subscription-plans';
 
 interface Plan {
   id: string;
@@ -43,7 +42,11 @@ function VerificationContent() {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const plansData = await getActiveSubscriptionPlansForAPI();
+      const response = await fetch('/api/subscription-plans');
+      if (!response.ok) throw new Error('Failed to fetch plans');
+
+      const data = await response.json();
+      const plansData = data.plans || [];
       const activePlans = plansData.filter((plan: any) => plan.is_active);
       setPlans(activePlans as Plan[]);
 

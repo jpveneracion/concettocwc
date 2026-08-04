@@ -450,7 +450,7 @@ export async function sendPaymentApprovalNotification(params: NotificationParams
     // Generate email content
     const emailContent = await generateApprovalEmailContent(
       user.email,
-      user.name,
+      user.email,
       plan.name,
       formattedPrice,
       params.verificationId
@@ -521,7 +521,7 @@ export async function sendPaymentRejectionNotification(params: RejectionNotifica
     // Generate email content with rejection reason
     const emailContent = await generateRejectionEmailContent(
       user.email,
-      user.name,
+      user.email,
       plan.name,
       params.verificationId,
       params.reason

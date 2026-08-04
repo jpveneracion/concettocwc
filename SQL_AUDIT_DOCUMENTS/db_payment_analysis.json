@@ -1,0 +1,28 @@
+{
+  "file": "src/lib/db.ts",
+  "functions_analyzed": [
+    {
+      "function": "getPaymentVerificationById",
+      "line": 444,
+      "sql_pattern": "Direct SELECT on payment_verifications table",
+      "uses_security_definer": "❌ NO - Direct SQL query",
+      "rls_protection": "❓ DEPENDS - Relies on RLS policies for payment_verifications table",
+      "parameterization": "✅ SAFE - Uses parameterized query",
+      "authorization": "❓ UNCLEAR - No visible authorization checks before query"
+    },
+    {
+      "function": "getPaymentVerificationsByUserId",
+      "line": 468,
+      "sql_pattern": "Direct SELECT on payment_verifications with user_id filter",
+      "uses_security_definer": "❌ NO - Direct SQL query",
+      "rls_protection": "❓ DEPENDS - Relies on RLS policies for user data isolation",
+      "parameterization": "✅ SAFE - Uses parameterized query"
+    }
+  ],
+  "security_pattern": {
+    "mixed_approach": "Library functions mix direct SQL with SECURITY DEFINER function calls",
+    "inconsistency": "Some functions use SECURITY DEFINER bypass, others use direct SQL",
+    "risk": "Unclear which functions rely on RLS vs SECURITY DEFINER for security"
+  },
+  "audit_status": "🟡 NEEDS ANALYSIS - Working code but security model unclear"
+}

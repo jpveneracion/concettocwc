@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PriceCalculationResult } from '@/lib/pricing-service';
 
 interface PlanComparisonProps {
   onPlanSelect?: (planId: string) => void;
@@ -9,11 +8,23 @@ interface PlanComparisonProps {
 }
 
 /**
- * Response format from pricing service API
+ * Response format from subscription plans API
  */
-interface PricingServiceResponse {
-  success: boolean;
-  pricing: PriceCalculationResult;
+interface SubscriptionPlansResponse {
+  plans: SubscriptionPlanApi[];
+  count: number;
+}
+
+interface SubscriptionPlanApi {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: string;
+  discount_percent: number;
+  features: string[];
+  is_active: boolean;
 }
 
 /**
@@ -32,40 +43,60 @@ interface BillingPeriod {
 }
 
 /**
+ * Map DB interval to billing period identifier
+ */
+function intervalToBillingPeriod(interval: string): string {
+  switch (interval) {
+    case 'month': return 'monthly';
+    case 'quarter': return 'quarterly';
+    case 'year': return 'annual';
+    default: return interval;
+  }
+}
+
+/**
+ * Map DB interval to number of months
+ */
+function intervalToMonths(interval: string): number {
+  switch (interval) {
+    case 'month': return 1;
+    case 'quarter': return 3;
+    case 'year': return 12;
+    default: return 1;
+  }
+}
+
+/**
  * PlanComparison Component
  *
- * Displays billing periods using the new dynamic pricing system
+ * Displays billing periods from the subscription_plans table
+ * (the same plans managed in /admin/plans)
  */
 export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanComparisonProps) {
   const [plans, setPlans] = useState<BillingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch pricing data from the new pricing service
+  // Fetch subscription plans from the subscription_plans table
   useEffect(() => {
-    const fetchPricingData = async () => {
+    const fetchPlansData = async () => {
       try {
         setLoading(true);
 
-        // Fetch pricing for all plan types in parallel
-        const planTypes: ('monthly' | 'quarterly' | 'annual')[] = ['monthly', 'quarterly', 'annual'];
-        const pricingPromises = planTypes.map(planType =>
-          fetch(`/api/pricing?plan=${planType}`)
-        );
-
-        const responses = await Promise.all(pricingPromises);
-
-        // Check if all responses are successful
-        const allSuccessful = responses.every(response => response.ok);
-        if (!allSuccessful) {
+        const response = await fetch('/api/subscription-plans');
+        if (!response.ok) {
           throw new Error('Failed to fetch pricing data');
         }
 
-        const pricingData = await Promise.all(
-          responses.map(response => response.json() as Promise<PricingServiceResponse>)
+        const data = await response.json() as SubscriptionPlansResponse;
+        const activePlans = (data.plans || []).filter(plan => plan.is_active !== false);
+
+        // Sort plans by billing length (monthly, quarterly, annual)
+        const sortedPlans = [...activePlans].sort(
+          (a, b) => intervalToMonths(a.interval) - intervalToMonths(b.interval)
         );
 
-        // Define standard features for each billing period
+        // Define standard features as fallback when a plan has no features defined
         const standardFeatures: Record<string, string[]> = {
           monthly: [
             'Flexible monthly billing',
@@ -90,34 +121,35 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           ]
         };
 
-        // Transform pricing data to billing periods format
-        const billingPeriods: BillingPeriod[] = pricingData.map((data, index) => {
-          const planType = planTypes[index];
-          const pricing = data.pricing;
+        // Transform plan data to billing periods format
+        const billingPeriods: BillingPeriod[] = sortedPlans.map((plan, index) => {
+          const billingPeriodId = intervalToBillingPeriod(plan.interval);
 
           return {
-            id: pricing.billing_period,
-            name: planType === 'monthly' ? 'Monthly' : planType === 'quarterly' ? 'Quarterly' : 'Annual',
-            months: pricing.period_months,
-            basePrice: pricing.base_price,
-            periodDiscount: pricing.period_discount_percent,
-            finalPrice: pricing.final_price,
-            currency: 'PHP',
-            features: standardFeatures[planType] || [],
-            popular: planType === 'quarterly' // Quarterly is marked as most popular
+            id: billingPeriodId,
+            name: plan.name || (billingPeriodId === 'monthly' ? 'Monthly' : billingPeriodId === 'quarterly' ? 'Quarterly' : 'Annual'),
+            months: intervalToMonths(plan.interval),
+            basePrice: plan.price,
+            periodDiscount: plan.discount_percent || 0,
+            finalPrice: plan.price,
+            currency: plan.currency || 'PHP',
+            features: (plan.features && plan.features.length > 0)
+              ? plan.features
+              : (standardFeatures[billingPeriodId] || []),
+            popular: false
           };
         });
 
         setPlans(billingPeriods);
       } catch (err) {
-        console.error('Error fetching pricing data:', err);
+        console.error('Error fetching subscription plans:', err);
         setError('Failed to load pricing options');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPricingData();
+    fetchPlansData();
   }, []);
 
   const handlePlanClick = (planId: string) => {

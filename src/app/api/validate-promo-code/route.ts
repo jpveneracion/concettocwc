@@ -70,7 +70,11 @@ export async function POST(req: Request) {
     } else if (isValidUUID(plan_id)) {
       // UUID - look up plan and convert interval to enum
       try {
-        const plan = await getSubscriptionPlanById(plan_id);
+        const rlsContext = {
+          companyId: session.companyId,
+          userRole: (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin',
+        };
+        const plan = await getSubscriptionPlanById(plan_id, rlsContext);
         if (!plan) {
           return NextResponse.json(
             {
@@ -109,7 +113,11 @@ export async function POST(req: Request) {
 
     // Validate the promo code using enhanced validation
     // The validation function now handles both UUID and enum values
-    const validationResult = await validateActivationCodeWithDetails(code, plan_id);
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    };
+    const validationResult = await validateActivationCodeWithDetails(code, plan_id, rlsContext);
 
     if (!validationResult.valid) {
       return NextResponse.json(

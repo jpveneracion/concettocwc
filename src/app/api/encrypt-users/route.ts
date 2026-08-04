@@ -11,6 +11,8 @@ export async function POST() {
     }
 
     // Get all users that need encryption or have plaintext that needs deletion
+    // Note: This query should use a SECURITY DEFINER function for proper RLS bypass
+    // For now, using direct query - should be improved with: get_users_needing_encryption(company_id)
     const users = await sql`
       SELECT id, email, email_encrypted
       FROM users
@@ -38,6 +40,8 @@ export async function POST() {
         if (needsEncryption) {
           emailEncrypted = user.email ? encryptPII(user.email) : null;
 
+          // Note: This UPDATE should use a SECURITY DEFINER function
+          // Should be: update_user_email_encrypted(user_id, encrypted_email)
           await sql`
             UPDATE users
             SET email_encrypted = ${emailEncrypted}::bytea
@@ -88,6 +92,8 @@ export async function POST() {
     if (errors.length === 0 && userIds.length > 0) {
       try {
         console.log('Attempting to delete plaintext for users:', userIds);
+        // Note: This UPDATE should use a SECURITY DEFINER function
+        // Should be: batch_delete_user_email_plaintext(user_ids[])
         const result = await sql`
           UPDATE users
           SET email = CASE WHEN email IS NOT NULL THEN NULL ELSE email END

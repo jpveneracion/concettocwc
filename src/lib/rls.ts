@@ -9,11 +9,10 @@
  */
 
 import { sql } from './db';
+import type { RLSUserRole } from '@/types/roles';
 
-/**
- * User roles for RLS policies
- */
-export type RLSUserRole = 'user' | 'admin' | 'superadmin';
+// Re-export for backward compatibility
+export type { RLSUserRole };
 
 /**
  * RLS context information
@@ -27,7 +26,11 @@ export interface RLSContext {
  * Error thrown when RLS context operations fail
  */
 export class RLSContextError extends Error {
-  constructor(message: string, public readonly cause?: Error) {
+  constructor(
+    message: string,
+    public readonly mobileMessage: string,
+    public readonly cause?: Error
+  ) {
     super(message);
     this.name = 'RLSContextError';
   }
@@ -63,25 +66,41 @@ export async function setTenantContext(
   try {
     // Validate inputs before sending to database
     if (!companyId) {
-      throw new Error('Company ID is required');
+      throw new RLSContextError(
+        'Company ID is required',
+        'Session setup failed - please sign in again'
+      );
     }
 
     if (!userRole) {
-      throw new Error('User role is required');
+      throw new RLSContextError(
+        'User role is required',
+        'User role validation failed - please try again'
+      );
     }
 
     if (!['user', 'admin', 'superadmin'].includes(userRole)) {
-      throw new Error(`Invalid user role: ${userRole}`);
+      throw new RLSContextError(
+        `Invalid user role: ${userRole}`,
+        'Access denied - invalid user permissions'
+      );
     }
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(companyId)) {
-      throw new Error(`Invalid company ID format: ${companyId}`);
+      throw new RLSContextError(
+        `Invalid company ID format: ${companyId}`,
+        'Session setup failed - please sign in again'
+      );
     }
 
-    // Call the database function
-    await sql('SELECT set_tenant_context($1, $2)', [companyId, userRole]);
+    // Use direct transaction-based RLS setup to avoid function issues
+    const { query } = await import('./db');
+    await query(`
+      SELECT set_config('rls.current_company_id', $1, true),
+             set_config('rls.current_user_role', $2, true)
+    `, [companyId, userRole]);
 
     const duration = Date.now() - startTime;
 
@@ -111,6 +130,7 @@ export async function setTenantContext(
 
     throw new RLSContextError(
       `Failed to set tenant context: ${errorMessage}`,
+      'Session setup failed - please try again',
       error instanceof Error ? error : undefined
     );
   }
@@ -139,7 +159,8 @@ export async function resetTenantContext(): Promise<void> {
   const startTime = Date.now();
 
   try {
-    await sql('SELECT reset_tenant_context()');
+    const { query } = await import('./db');
+    await query('SELECT reset_tenant_context()');
 
     const duration = Date.now() - startTime;
 
@@ -165,6 +186,7 @@ export async function resetTenantContext(): Promise<void> {
 
     throw new RLSContextError(
       `Failed to reset tenant context: ${errorMessage}`,
+      'Session cleanup failed - please try again',
       error instanceof Error ? error : undefined
     );
   }
@@ -191,15 +213,16 @@ export async function getCurrentCompanyId(): Promise<string | null> {
   const startTime = Date.now();
 
   try {
-    const result = await sql('SELECT get_current_company_id() as company_id');
+    const { query } = await import('./db');
+    const result = await query('SELECT get_current_company_id() as company_id');
 
     const duration = Date.now() - startTime;
 
-    if (!result[0]) {
+    if (!result.rows[0]) {
       return null;
     }
 
-    const companyId = result[0].company_id;
+    const companyId = result.rows[0].company_id as string | null;
 
     // Log success
     console.log(JSON.stringify({
@@ -226,6 +249,7 @@ export async function getCurrentCompanyId(): Promise<string | null> {
 
     throw new RLSContextError(
       `Failed to get current company ID: ${errorMessage}`,
+      'Unable to verify session - please try again',
       error instanceof Error ? error : undefined
     );
   }
@@ -252,15 +276,16 @@ export async function getCurrentUserRole(): Promise<RLSUserRole | null> {
   const startTime = Date.now();
 
   try {
-    const result = await sql('SELECT get_current_user_role() as user_role');
+    const { query } = await import('./db');
+    const result = await query('SELECT get_current_user_role() as user_role');
 
     const duration = Date.now() - startTime;
 
-    if (!result[0]) {
+    if (!result.rows[0]) {
       return null;
     }
 
-    const userRole = result[0].user_role;
+    const userRole = result.rows[0].user_role;
 
     // Log success
     console.log(JSON.stringify({
@@ -287,6 +312,7 @@ export async function getCurrentUserRole(): Promise<RLSUserRole | null> {
 
     throw new RLSContextError(
       `Failed to get current user role: ${errorMessage}`,
+      'Unable to verify permissions - please try again',
       error instanceof Error ? error : undefined
     );
   }
@@ -465,7 +491,8 @@ export async function requireTenantContext(): Promise<void> {
 
   if (!companyId) {
     throw new RLSContextError(
-      'Tenant context not set. Call setTenantContext() first.'
+      'Tenant context not set. Call setTenantContext() first.',
+      'Session verification failed - please sign in again'
     );
   }
 }

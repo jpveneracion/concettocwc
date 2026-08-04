@@ -14,15 +14,15 @@ export async function GET() {
 
     const { sql } = await import('@/lib/db');
     const result = await sql`
-      SELECT role, is_admin FROM users WHERE id = ${session.userId}::uuid
+      SELECT get_user_admin_status(${session.userId}::uuid) as admin_data
     `;
 
-    const user = result[0];
-    const isAdmin = user?.role === 'admin' || user?.role === 'superadmin' || user?.is_admin === true;
+    const adminData = result[0].admin_data;
+    const isAdmin = adminData.is_admin === true;
 
     return NextResponse.json({
       isAdmin,
-      role: user?.role || 'user'
+      role: adminData.role || 'user'
     });
   } catch (err) {
     console.error('GET /api/auth/admin-status', err);

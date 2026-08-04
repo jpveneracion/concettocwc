@@ -1,0 +1,23 @@
+{
+  "file": "src/lib/db.ts",
+  "function": "getUser",
+  "line": 260,
+  "analysis": {
+    "sql_pattern": "Calls SECURITY DEFINER function find_user_by_id",
+    "sets_role_context": "✅ YES - Sets app.role context before calling function",
+    "uses_vulnerable_function": "❌ YES - Calls find_user_by_id which exposes password_hash",
+    "data_exposure": "❌ CRITICAL - Returns user_password_hash in result",
+    "security_context": "Sets role context but function still returns sensitive data"
+  },
+  "code_behavior": {
+    "step_1": "Sets app.role to 'concetto_boms'",
+    "step_2": "Calls find_user_by_id(userId)",
+    "step_3": "Returns full user data including password_hash"
+  },
+  "security_impact": {
+    "vulnerability": "Calls vulnerable migration 047 function",
+    "data_exposure": "Password hash returned to application layer",
+    "mitigation": "Role context is set, but function bypasses it"
+  },
+  "audit_status": "🔴 CRITICAL - Working code but calls vulnerable SECURITY DEFINER function"
+}

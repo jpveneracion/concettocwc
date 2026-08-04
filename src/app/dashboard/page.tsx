@@ -41,11 +41,12 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      if (data.currency) {
+      if (data && data.currency) {
         setCurrency(data.currency);
       }
     } catch (err) {
       console.error('Failed to fetch currency:', err);
+      // Keep default currency on error
     }
   }
 

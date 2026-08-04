@@ -5,12 +5,15 @@ import { requireAdmin } from '@/lib/permissions';
 
 export async function GET() {
   try {
-    const products = await sql`
-      SELECT id, code, collection, description, unit, active, created_at, updated_at
-      FROM products
-      WHERE active = true
-      ORDER BY code ASC
-    `;
+    // Set app role context for SECURITY DEFINER function
+    await sql('SELECT set_config($1, $2, true)', ['app.role', 'concetto_boms']);
+
+    const productsResult = await sql('SELECT get_active_products() as product');
+    const products = productsResult.map(row => row.product);
+    console.log(`GET /api/products returning ${products.length} products`);
+    if (products.length > 0) {
+      console.log('Sample product:', products[0]);
+    }
     return NextResponse.json(products);
   } catch (err) {
     console.error('GET /api/products', err);
@@ -28,6 +31,9 @@ export async function POST(req: Request) {
 
     await requireAdmin(session.userId);
 
+    // Set app role context for SECURITY DEFINER function
+    await sql('SELECT set_config($1, $2, true)', ['app.role', 'concetto_boms']);
+
     const body = await req.json();
     const { code, collection, description, unit } = body;
 
@@ -35,22 +41,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'code and description are required' }, { status: 400 });
     }
 
-    const [product] = await sql`
-      INSERT INTO products (code, collection, description, unit)
-      VALUES (
-        ${code.trim().toUpperCase()},
-        ${collection?.trim() ?? ''},
-        ${description.trim()},
-        ${unit ?? 'sqft'}
-      )
-      ON CONFLICT (code) DO UPDATE SET
-        collection   = EXCLUDED.collection,
-        description  = EXCLUDED.description,
-        unit         = EXCLUDED.unit,
-        updated_at   = now()
-      RETURNING id, code, collection, description, unit, active, created_at, updated_at
-    `;
-    return NextResponse.json(product, { status: 201 });
+    const [product] = await sql('SELECT upsert_product($1, $2, $3, $4) as product', [
+      code.trim().toUpperCase(),
+      collection?.trim() ?? '',
+      description.trim(),
+      unit ?? 'sqft'
+    ]);
+    const productData = product.product;
+
+    return NextResponse.json(productData, { status: 201 });
   } catch (err) {
     console.error('POST /api/products', err);
 

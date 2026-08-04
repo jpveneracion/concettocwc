@@ -1,5 +1,32 @@
 import { sql } from '@/lib/db';
 import type { OAuthAccount, OAuthProvider, OAuthUserInfo, AccountLinkRequest, PiUserInfo } from '@/types/oauth';
+import type { DatabaseRole } from '@/types/roles';
+
+// OAuth error interface for better error handling
+export interface OAuthError extends Error {
+  code: 'ACCOUNT_NOT_FOUND' | 'USER_NOT_FOUND' | 'COMPANY_NOT_FOUND' | 'ACCOUNT_CREATION_FAILED' | 'USER_CREATION_FAILED' | 'COMPANY_CREATION_FAILED' | 'VALIDATION_ERROR';
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+}
+
+class OAuthErrorImpl extends Error implements OAuthError {
+  code: OAuthError['code'];
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+
+  constructor(
+    code: OAuthError['code'],
+    message: string,
+    mobileMessage: string,
+    details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'OAuthError';
+    this.code = code;
+    this.mobileMessage = mobileMessage;
+    this.details = details;
+  }
+}
 
 // Simple string-based email hashing (Edge Runtime compatible)
 function hashEmail(email: string): string {
@@ -15,12 +42,13 @@ function hashEmail(email: string): string {
 }
 
 // User record interface for OAuth operations
-interface UserRecord {
+export interface UserRecord {
   id: string;
   email: string;
   email_hash: string;
   password_hash?: string;
   company_id: string;
+  role?: DatabaseRole; // User role with standardized type
 }
 
 // Company record interface
@@ -40,95 +68,288 @@ interface CompanyData {
   minimum_area_sqft?: number;
 }
 
-// Find existing OAuth account
+// Find existing OAuth account (uses SECURITY DEFINER function to bypass RLS for OAuth)
 export async function findOAuthAccount(provider: OAuthProvider, providerUserId: string): Promise<OAuthAccount | null> {
-  const results = await sql`
-    SELECT * FROM oauth_accounts
-    WHERE provider = ${provider} AND provider_user_id = ${providerUserId}
-  `;
-  if (!results[0]) return null;
+  try {
+    // Use SECURITY DEFINER function to bypass RLS during OAuth authentication
+    const { query } = await import('@/lib/db');
 
-  return results[0] as unknown as OAuthAccount;
+    const result = await query<{
+      oauth_account_id: string;
+      oauth_user_id: string;
+      oauth_provider: string;
+      oauth_provider_user_id: string;
+    }>(
+      'SELECT * FROM find_oauth_account_by_provider($1, $2)',
+      [provider, providerUserId]
+    );
+
+    if (!result.rows[0]) {
+      return null;
+    }
+
+    // Map the SECURITY DEFINER function result to OAuthAccount interface
+    return {
+      id: result.rows[0].oauth_account_id,
+      user_id: result.rows[0].oauth_user_id, // Map oauth_user_id to user_id
+      provider: result.rows[0].oauth_provider as OAuthProvider,
+      provider_user_id: result.rows[0].oauth_provider_user_id,
+      email: null,
+      username: null,
+      wallet_address: null,
+      access_token: null,
+      refresh_token: null,
+      expires_at: null,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'ACCOUNT_NOT_FOUND',
+      `Failed to find OAuth account: ${errorMessage}`,
+      'Unable to find OAuth account - please try again',
+      { provider, providerUserId, originalError: errorMessage }
+    );
+  }
 }
 
-// Find user by email
+// Find user by email (uses SECURITY DEFINER function to bypass RLS for OAuth)
 export async function findUserByEmail(email: string): Promise<UserRecord | null> {
-  const emailHash = hashEmail(email);
-  const results = await sql`
-    SELECT id, email, email_hash, password_hash, company_id
-    FROM users
-    WHERE email_hash = ${emailHash}
-  `;
-  return (results[0] as UserRecord) || null;
+  try {
+    const emailHash = hashEmail(email);
+
+    // Use SECURITY DEFINER function to bypass RLS during OAuth authentication
+    const { query } = await import('@/lib/db');
+
+    const result = await query<{
+      user_id: string;
+      user_email: string;
+      user_email_hash: string;
+      user_company_id: string;
+      user_role: string | null;
+    }>(
+      'SELECT * FROM find_user_by_email_hash($1)',
+      [emailHash]
+    );
+
+    if (!result.rows[0]) {
+      return null;
+    }
+
+    return {
+      id: result.rows[0].user_id,
+      email: result.rows[0].user_email,
+      email_hash: result.rows[0].user_email_hash,
+      company_id: result.rows[0].user_company_id,
+      role: result.rows[0].user_role as DatabaseRole | undefined
+    };
+  } catch (error) {
+    if (error instanceof OAuthErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'USER_NOT_FOUND',
+      `Failed to find user by email: ${errorMessage}`,
+      'Unable to find user account - please try again',
+      { email, originalError: errorMessage }
+    );
+  }
 }
 
-// Link OAuth account to existing user
+// Link OAuth account to existing user (uses SECURITY DEFINER function)
 export async function linkOAuthAccount(userId: string, accountData: AccountLinkRequest): Promise<OAuthAccount> {
-  const [account] = await sql`
-    INSERT INTO oauth_accounts (
-      user_id, provider, provider_user_id, email, username,
-      wallet_address, access_token, refresh_token, expires_at
-    ) VALUES (
-      ${userId}, ${accountData.provider}, ${accountData.provider_user_id},
-      ${accountData.email}, ${accountData.username || null},
-      ${accountData.wallet_address || null}, ${accountData.access_token || null},
-      ${accountData.refresh_token || null}, ${accountData.expires_at || null}
-    )
-    RETURNING *
-  `;
-  return account as unknown as OAuthAccount;
+  try {
+    // Use SECURITY DEFINER function for OAuth account creation during signup
+    const { query } = await import('@/lib/db');
+
+    const accountResult = await query<{
+      oauth_account_id: string;
+      oauth_user_id: string;
+      oauth_provider: string;
+    }>(
+      `SELECT * FROM create_oauth_account($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        userId,
+        accountData.provider,
+        accountData.provider_user_id,
+        accountData.email,
+        accountData.username || null,
+        accountData.access_token || null,
+        accountData.refresh_token || null,
+        accountData.expires_at || null
+      ]
+    );
+
+    if (!accountResult.rows[0]) {
+      throw new OAuthErrorImpl(
+        'ACCOUNT_CREATION_FAILED',
+        'Failed to create OAuth account',
+        'Unable to link OAuth account - please try again'
+      );
+    }
+
+    // Get the full OAuth account record to return
+    const fullAccount = await query<OAuthAccount>(
+      `SELECT * FROM oauth_accounts WHERE id = $1`,
+      [accountResult.rows[0].oauth_account_id]
+    );
+
+    if (!fullAccount.rows[0]) {
+      throw new OAuthErrorImpl(
+        'ACCOUNT_CREATION_FAILED',
+        'Failed to retrieve created OAuth account',
+        'Unable to retrieve OAuth account - please try again'
+      );
+    }
+
+    return fullAccount.rows[0];
+  } catch (error) {
+    if (error instanceof OAuthErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'ACCOUNT_CREATION_FAILED',
+      `Failed to link OAuth account: ${errorMessage}`,
+      'Unable to link OAuth account - please try again',
+      { userId, originalError: errorMessage }
+    );
+  }
 }
 
-// Create new user with OAuth account
+// Create new user with OAuth account (uses SECURITY DEFINER functions)
 export async function createUserWithOAuth(email: string, companyId: string, accountData: AccountLinkRequest): Promise<{ user: UserRecord; oauthAccount: OAuthAccount }> {
-  const emailHash = hashEmail(email);
+  try {
+    const emailHash = hashEmail(email);
 
-  // Create user without password_hash (OAuth users authenticate via OAuth providers)
-  const [user] = await sql`
-    INSERT INTO users (company_id, email, email_hash)
-    VALUES (${companyId}, ${email}, ${emailHash})
-    RETURNING id, email, company_id
-  `;
+    // Use SECURITY DEFINER function for initial user creation during OAuth signup
+    const { query } = await import('@/lib/db');
 
-  // Link OAuth account
-  const oauthAccount = await linkOAuthAccount(user.id, accountData);
+    const userResult = await query<{user_id: string, user_email: string, user_company_id: string, user_role: string}>(
+      `SELECT * FROM create_user_with_oauth($1, $2, $3)`,
+      [companyId, email, emailHash]
+    );
 
-  return { user: user as UserRecord, oauthAccount };
+    if (!userResult.rows[0]) {
+      throw new OAuthErrorImpl(
+        'USER_CREATION_FAILED',
+        'Failed to create user',
+        'Unable to create user account - please try again'
+      );
+    }
+
+    const user: UserRecord = {
+      id: userResult.rows[0].user_id,
+      email: userResult.rows[0].user_email,
+      email_hash: emailHash,
+      company_id: userResult.rows[0].user_company_id,
+      role: userResult.rows[0].user_role as DatabaseRole
+    };
+
+    // Link OAuth account using SECURITY DEFINER function
+    const oauthAccount = await linkOAuthAccount(user.id, accountData);
+
+    return { user, oauthAccount };
+  } catch (error) {
+    if (error instanceof OAuthErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'USER_CREATION_FAILED',
+      `Failed to create user with OAuth: ${errorMessage}`,
+      'Unable to create user account - please try again',
+      { email, companyId, originalError: errorMessage }
+    );
+  }
 }
 
 // Validate company code
 export async function validateCompanyCode(companyCode: string): Promise<CompanyRecord | null> {
-  const results = await sql`
-    SELECT id, code, name FROM companies
-    WHERE UPPER(code) = ${companyCode.toUpperCase()}
-  `;
-  return (results[0] as CompanyRecord) || null;
+  try {
+    const results = await sql`
+      SELECT id, code, name FROM companies
+      WHERE UPPER(code) = ${companyCode.toUpperCase()}
+    `;
+    return (results[0] as CompanyRecord) || null;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'COMPANY_NOT_FOUND',
+      `Failed to validate company code: ${errorMessage}`,
+      'Unable to validate company code - please try again',
+      { companyCode, originalError: errorMessage }
+    );
+  }
 }
 
-// Create new company
+// Create new company (uses SECURITY DEFINER function for OAuth signup)
 export async function createCompany(companyData: CompanyData): Promise<CompanyRecord> {
-  const minimumArea = Number.isFinite(companyData.minimum_area_sqft) && (companyData.minimum_area_sqft ?? 0) >= 0
-    ? (companyData.minimum_area_sqft as number)
-    : 15;
-  const [company] = await sql`
-    INSERT INTO companies (code, name, address, mobile, email, minimum_area_sqft)
-    VALUES (
-      ${companyData.code.toUpperCase()},
-      ${companyData.name},
-      ${companyData.address || ''},
-      ${companyData.mobile || ''},
-      ${companyData.email || ''},
-      ${minimumArea}
-    )
-    RETURNING id, code, name
-  `;
-  return company as CompanyRecord;
+  try {
+    const minimumArea = Number.isFinite(companyData.minimum_area_sqft) && (companyData.minimum_area_sqft ?? 0) >= 0
+      ? (companyData.minimum_area_sqft as number)
+      : 15;
+
+    // Use SECURITY DEFINER function for initial company creation during OAuth signup
+    // This follows the mypiroll pattern for RLS bypass during signup
+    const { query } = await import('@/lib/db');
+
+    const result = await query<{company_id: string, company_code: string, company_name: string}>(
+      `SELECT * FROM create_company_with_context($1, $2, $3, $4, $5, $6)`,
+      [
+        companyData.code.toUpperCase(),
+        companyData.name,
+        companyData.address || '',
+        companyData.mobile || '',
+        companyData.email || '',
+        minimumArea
+      ]
+    );
+
+    if (!result.rows[0]) {
+      throw new OAuthErrorImpl(
+        'COMPANY_CREATION_FAILED',
+        'Failed to create company',
+        'Unable to create company - please try again'
+      );
+    }
+
+    // Map SECURITY DEFINER function result to CompanyRecord interface
+    return {
+      id: result.rows[0].company_id,
+      code: result.rows[0].company_code,
+      name: result.rows[0].company_name
+    };
+  } catch (error) {
+    if (error instanceof OAuthErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'COMPANY_CREATION_FAILED',
+      `Failed to create company: ${errorMessage}`,
+      'Unable to create company - please try again',
+      { companyCode: companyData.code, originalError: errorMessage }
+    );
+  }
 }
 
 // Get OAuth accounts by user ID
 export async function getOAuthAccountsByUserId(userId: string): Promise<OAuthAccount[]> {
-  const results = await sql`
-    SELECT * FROM oauth_accounts WHERE user_id = ${userId} ORDER BY created_at
-  `;
-  return results as unknown as OAuthAccount[];
+  try {
+    const results = await sql`
+      SELECT * FROM oauth_accounts WHERE user_id = ${userId} ORDER BY created_at
+    `;
+    return results as unknown as OAuthAccount[];
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new OAuthErrorImpl(
+      'ACCOUNT_NOT_FOUND',
+      `Failed to get OAuth accounts: ${errorMessage}`,
+      'Unable to retrieve OAuth accounts - please try again',
+      { userId, originalError: errorMessage }
+    );
+  }
 }

@@ -23,21 +23,12 @@ export async function GET() {
       const access = await checkSubscriptionAccess(session);
 
       // Allow read access even in readonly mode
-      // RLS policies now handle company_id filtering automatically
-      const quotes = await sql`
-        SELECT id, quote_number, customer_name, customer_address,
-               customer_name_encrypted, customer_address_encrypted,
-               quote_date, our_ref, status,
-               installation_fee::float, delivery_fee::float,
-               subtotal::float, total::float,
-               total_area::float, panel_count,
-               created_at, updated_at
-        FROM quotes
-        ORDER BY created_at DESC
-      `;
+      // Get quotes using SECURITY DEFINER function
+      const quotesResult = await sql('SELECT get_company_quotes($1::uuid) as quote', [session.companyId]);
 
-      // Decrypt PII for response
-      const decryptedQuotes = quotes.map((q) => {
+      // Parse JSON results and decrypt PII for response
+      const decryptedQuotes = quotesResult.map((row) => {
+        const q = row.quote;
         let customerName = q.customer_name as string | null;
         let customerAddress = q.customer_address as string | null;
 
@@ -130,14 +121,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch company minimum billable area once (server-authoritative).
-    // We NEVER trust client-supplied retail_amount/supplier_amount/minimum_applied —
-    // they are recomputed here from the real area + price + company minimum.
-    const [company] = await sql`
-      SELECT minimum_area_sqft::float AS minimum_area_sqft
-      FROM companies WHERE id = ${session.companyId}
-    `;
-    const minimumArea = company?.minimum_area_sqft ?? 0;
+    // Fetch company minimum billable area using SECURITY DEFINER function
+    const [company] = await sql('SELECT get_company_minimum_area($1::uuid) as minimum_area_sqft', [session.companyId]);
+    const minimumArea = parseFloat(company?.minimum_area_sqft) || 0;
 
     const processedItems = items.map((item) => {
       const { retail_amount, supplier_amount, minimum_applied } = calcAmounts(
@@ -168,59 +154,50 @@ export async function POST(req: Request) {
       );
     }
 
-    const [quote] = await sql`
-      INSERT INTO quotes (
-        company_id, quote_number, customer_name, customer_address,
-        customer_name_encrypted, customer_address_encrypted,
-        quote_date, our_ref, installation_fee, delivery_fee,
-        subtotal, total, total_area, panel_count
-      ) VALUES (
-        ${session.companyId}, ${quote_number}, ${customer_name}, ${customer_address ?? ''},
-        decode(${customerNameEncrypted}, 'hex')::bytea, decode(${customerAddressEncrypted}, 'hex')::bytea,
-        ${quote_date}, ${our_ref ?? ''},
-        ${installation_fee}, ${delivery_fee},
-        ${subtotal}, ${total}, ${total_area}, ${panel_count}
-      )
-      RETURNING id, quote_number, customer_name, customer_address, created_at
-    `;
+    const [quote] = await sql(`
+      SELECT create_quote(
+        $1::uuid, $2, $3, $4,
+        $5::bytea, $6::bytea,
+        $7, $8, $9, $10,
+        $11, $12, $13, $14
+      ) as quote_data
+    `, [
+      session.companyId, quote_number, customer_name, customer_address ?? '',
+      Buffer.from(customerNameEncrypted, 'hex'), Buffer.from(customerAddressEncrypted, 'hex'),
+      quote_date, our_ref ?? '',
+      installation_fee, delivery_fee,
+      subtotal, total, total_area, panel_count
+    ]);
+    const quoteData = JSON.parse(quote.quote_data);
 
-    // Insert items (iterate processedItems so we persist server-computed amounts)
+    // Insert items using SECURITY DEFINER function
     for (let i = 0; i < processedItems.length; i++) {
       const item = processedItems[i];
-      await sql`
-        INSERT INTO quote_items (
-          quote_id, sort_order, location,
-          product_id, product_code, product_collection, product_description,
-          unit, is_fixed,
-          measured_width, measured_drop, final_width, final_drop,
-          area_sqft, retail_price_sqft, supplier_cost_sqft,
-          retail_amount, supplier_amount, minimum_applied
-        ) VALUES (
-          ${quote.id}, ${i},
-          ${item.location ?? ''},
-          ${item.product_id || null},
-          ${item.product_code ?? ''},
-          ${item.product_collection ?? ''},
-          ${item.product_description ?? ''},
-          ${item.unit}, ${item.is_fixed},
-          ${item.measured_width}, ${item.measured_drop},
-          ${item.final_width}, ${item.final_drop},
-          ${item.area_sqft},
-          ${item.retail_price_sqft}, ${item.supplier_cost_sqft},
-          ${item.retail_amount}, ${item.supplier_amount}, ${item.minimum_applied}
+      await sql(`
+        SELECT create_quote_item(
+          $1::uuid, $2, $3,
+          $4, $5, $6, $7,
+          $8, $9,
+          $10, $11, $12, $13,
+          $14, $15, $16,
+          $17, $18, $19
         )
-      `;
+      `, [
+        quoteData.id, i, item.location ?? '',
+        item.product_id || null, item.product_code ?? '', item.product_collection ?? '', item.product_description ?? '',
+        item.unit, item.is_fixed,
+        item.measured_width, item.measured_drop, item.final_width, item.final_drop,
+        item.area_sqft,
+        item.retail_price_sqft, item.supplier_cost_sqft,
+        item.retail_amount, item.supplier_amount, item.minimum_applied
+      ]);
     }
 
-    // After successful insert, delete plaintext columns immediately
-    await sql`
-      UPDATE quotes
-      SET customer_name = NULL, customer_address = NULL
-      WHERE id = ${quote.id}
-    `;
+    // Clear plaintext columns using SECURITY DEFINER function
+    await sql('SELECT clear_quote_plaintext($1::uuid)', [quoteData.id]);
 
       return NextResponse.json({
-        ...quote,
+        ...quoteData,
         customer_name,
         customer_address,
       }, { status: 201 });

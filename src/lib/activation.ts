@@ -7,7 +7,7 @@ import {
   SubscriptionPlan,
   StatusHistoryEntry
 } from '@/types/subscription';
-import { sql } from './db';
+import { sql, query } from './db';
 import { mapPlanIdToSubscriptionPlan } from './subscription-activation';
 
 /**
@@ -115,7 +115,8 @@ export async function createPromoCode(
   createdBy: string,
   qrCodes?: { gcash?: string; gotyme?: string },
   usageLimit?: number,
-  customCode?: string // Optional custom code
+  customCode?: string, // Optional custom code
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode> {
   const code = customCode || generateActivationCode();
   const now = new Date();
@@ -126,32 +127,40 @@ export async function createPromoCode(
     note: `Promo code created for campaign: ${campaignName || 'general'}`
   }];
 
-  const result = await sql(
-    `INSERT INTO activation_codes (
+  const sqlText = `INSERT INTO activation_codes (
       code, discount_percent, applicable_plans,
       created_by, expires_at, campaign_name, notes,
       status_history, gcash_qr_url, gotyme_qr_url, usage_limit, current_usage,
       payment_currency
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-    RETURNING *`,
-    [
-      code,
-      discountPercent,
-      JSON.stringify(applicablePlans),
-      createdBy,
-      expiresAt ? expiresAt.toISOString() : null,
-      campaignName || null,
-      notes || null,
-      JSON.stringify(status_history),
-      qrCodes?.gcash || null,
-      qrCodes?.gotyme || null,
-      usageLimit || 1, // Default to one-time use
-      0, // Start with 0 usage
-      'PHP' // Default currency for promo codes
-    ]
-  );
+    RETURNING *`;
 
-  return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
+  const sqlParams: any[] = [
+    code,
+    discountPercent,
+    JSON.stringify(applicablePlans),
+    createdBy,
+    expiresAt ? expiresAt.toISOString() : null,
+    campaignName || null,
+    notes || null,
+    JSON.stringify(status_history),
+    qrCodes?.gcash || null,
+    qrCodes?.gotyme || null,
+    usageLimit || 1, // Default to one-time use
+    0, // Start with 0 usage
+    'PHP' // Default currency for promo codes
+  ];
+
+  let row: ActivationCodeRecord;
+  if (rlsContext) {
+    const result = await query<ActivationCodeRecord>(sqlText, sqlParams, rlsContext.companyId, rlsContext.userRole);
+    row = result.rows[0] as ActivationCodeRecord;
+  } else {
+    const result = await sql(sqlText, sqlParams);
+    row = result[0] as ActivationCodeRecord;
+  }
+
+  return mapActivationCodeFromDb(row);
 }
 
 /**
@@ -161,7 +170,8 @@ export async function createActivationCode(
   request: GenerateActivationCodeRequest,
   createdBy: string,
   qrCodes?: { gcash?: string; gotyme?: string },
-  usageLimit?: number
+  usageLimit?: number,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode> {
   const code = generateActivationCode();
   const now = new Date();
@@ -172,37 +182,76 @@ export async function createActivationCode(
     note: `Generated for ${request.payment_method} payment ${request.payment_reference}`
   }];
 
-  const result = await sql(
-    `INSERT INTO activation_codes (
+  const sqlParams: any[] = [
+    code,
+    request.discount_percent,
+    JSON.stringify(request.applicable_plans),
+    request.payment_amount,
+    request.payment_currency,
+    request.payment_method,
+    request.payment_reference,
+    now.toISOString(),
+    createdBy,
+    request.expires_at ? request.expires_at.toISOString() : null,
+    request.campaign_name || null,
+    request.notes || null,
+    JSON.stringify(status_history),
+    qrCodes?.gcash || null,
+    qrCodes?.gotyme || null,
+    usageLimit || 1, // Default to one-time use
+    0 // Start with 0 usage
+  ];
+
+  let row: ActivationCodeRecord;
+  if (rlsContext) {
+    const result = await query<ActivationCodeRecord>(
+      `INSERT INTO activation_codes (
       code, discount_percent, applicable_plans,
       payment_amount, payment_currency, payment_method,
       payment_reference, payment_date,
       created_by, expires_at, campaign_name, notes,
       status_history, gcash_qr_url, gotyme_qr_url, usage_limit, current_usage
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     RETURNING *`,
-    [
-      code,
-      request.discount_percent,
-      JSON.stringify(request.applicable_plans),
-      request.payment_amount,
-      request.payment_currency,
-      request.payment_method,
-      request.payment_reference,
-      now.toISOString(),
-      createdBy,
-      request.expires_at ? request.expires_at.toISOString() : null,
-      request.campaign_name || null,
-      request.notes || null,
-      JSON.stringify(status_history),
-      qrCodes?.gcash || null,
-      qrCodes?.gotyme || null,
-      usageLimit || 1, // Default to one-time use
-      0 // Start with 0 usage
-    ]
-  );
+      sqlParams,
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    row = result.rows[0] as ActivationCodeRecord;
+  } else {
+    const result = await sql(
+      `INSERT INTO activation_codes (
+        code, discount_percent, applicable_plans,
+        payment_amount, payment_currency, payment_method,
+        payment_reference, payment_date,
+        created_by, expires_at, campaign_name, notes,
+        status_history, gcash_qr_url, gotyme_qr_url, usage_limit, current_usage
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING *`,
+      [
+        code,
+        request.discount_percent,
+        JSON.stringify(request.applicable_plans),
+        request.payment_amount,
+        request.payment_currency,
+        request.payment_method,
+        request.payment_reference,
+        now.toISOString(),
+        createdBy,
+        request.expires_at ? request.expires_at.toISOString() : null,
+        request.campaign_name || null,
+        request.notes || null,
+        JSON.stringify(status_history),
+        qrCodes?.gcash || null,
+        qrCodes?.gotyme || null,
+        usageLimit || 1, // Default to one-time use
+        0 // Start with 0 usage
+      ]
+    );
+    row = result[0] as ActivationCodeRecord;
+  }
 
-  return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
+  return mapActivationCodeFromDb(row);
 }
 
 /**
@@ -210,24 +259,45 @@ export async function createActivationCode(
  */
 export async function validateActivationCode(
   code: string,
-  plan: string | SubscriptionPlan
+  plan: string | SubscriptionPlan,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode | null> {
   // Resolve plan identifier to SubscriptionPlan enum
   const resolvedPlan = await resolvePlanIdentifier(plan);
 
-  const result = await sql(
-    `SELECT * FROM activation_codes
-     WHERE code = $1
-     AND is_active = true
-     AND (expires_at IS NULL OR expires_at > NOW())
-     AND (
-       -- One-time use codes (existing system)
-       (usage_limit IS NULL AND used_by IS NULL) OR
-       -- Usage-limited codes (new system)
-       (usage_limit IS NOT NULL AND current_usage < usage_limit)
-     )`,
-    [code]
-  );
+  let result;
+  if (rlsContext) {
+    const queryResult = await query<ActivationCodeRecord>(
+      `SELECT * FROM activation_codes
+       WHERE code = $1
+       AND is_active = true
+       AND (expires_at IS NULL OR expires_at > NOW())
+       AND (
+         -- One-time use codes (existing system)
+         (usage_limit IS NULL AND used_by IS NULL) OR
+         -- Usage-limited codes (new system)
+         (usage_limit IS NOT NULL AND current_usage < usage_limit)
+       )`,
+      [code],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    result = queryResult.rows;
+  } else {
+    result = await sql(
+      `SELECT * FROM activation_codes
+       WHERE code = $1
+       AND is_active = true
+       AND (expires_at IS NULL OR expires_at > NOW())
+       AND (
+         -- One-time use codes (existing system)
+         (usage_limit IS NULL AND used_by IS NULL) OR
+         -- Usage-limited codes (new system)
+         (usage_limit IS NOT NULL AND current_usage < usage_limit)
+       )`,
+      [code]
+    );
+  }
 
   if (result.length === 0) {
     return null;
@@ -248,15 +318,27 @@ export async function validateActivationCode(
  */
 export async function validateActivationCodeWithDetails(
   code: string,
-  plan: string | SubscriptionPlan
+  plan: string | SubscriptionPlan,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<{ valid: boolean; activationCode?: ActivationCode; error?: string }> {
   // Resolve plan identifier to SubscriptionPlan enum
   const resolvedPlan = await resolvePlanIdentifier(plan);
 
-  const result = await sql(
-    `SELECT * FROM activation_codes WHERE code = $1`,
-    [code]
-  );
+  let result;
+  if (rlsContext) {
+    const queryResult = await query<ActivationCodeRecord>(
+      `SELECT * FROM activation_codes WHERE code = $1`,
+      [code],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    result = queryResult.rows;
+  } else {
+    result = await sql(
+      `SELECT * FROM activation_codes WHERE code = $1`,
+      [code]
+    );
+  }
 
   if (result.length === 0) {
     return { valid: false, error: 'Promo code not found' };
@@ -302,9 +384,10 @@ export async function redeemActivationCode(
   code: string,
   userId: string,
   ipAddress: string,
-  plan: string | SubscriptionPlan
+  plan: string | SubscriptionPlan,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode> {
-  const validation = await validateActivationCodeWithDetails(code, plan);
+  const validation = await validateActivationCodeWithDetails(code, plan, rlsContext);
 
   if (!validation.valid) {
     throw new Error(validation.error || 'Invalid or expired activation code');
@@ -324,22 +407,48 @@ export async function redeemActivationCode(
 
   if (activationCode.usage_limit !== undefined) {
     // Usage-limited codes (new system)
-    result = await sql(
-      `UPDATE activation_codes
-       SET current_usage = current_usage + 1, status_history = $1
-       WHERE code = $2
-       RETURNING *`,
-      [JSON.stringify(statusHistory), code]
-    );
+    if (rlsContext) {
+      const queryResult = await query<ActivationCodeRecord>(
+        `UPDATE activation_codes
+         SET current_usage = current_usage + 1, status_history = $1
+         WHERE code = $2
+         RETURNING *`,
+        [JSON.stringify(statusHistory), code],
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(
+        `UPDATE activation_codes
+         SET current_usage = current_usage + 1, status_history = $1
+         WHERE code = $2
+         RETURNING *`,
+        [JSON.stringify(statusHistory), code]
+      );
+    }
   } else {
     // One-time use codes (existing system)
-    result = await sql(
-      `UPDATE activation_codes
-       SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
-       WHERE code = $5
-       RETURNING *`,
-      [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code]
-    );
+    if (rlsContext) {
+      const queryResult = await query<ActivationCodeRecord>(
+        `UPDATE activation_codes
+         SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
+         WHERE code = $5
+         RETURNING *`,
+        [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code],
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(
+        `UPDATE activation_codes
+         SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
+         WHERE code = $5
+         RETURNING *`,
+        [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code]
+      );
+    }
   }
 
   return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
@@ -369,7 +478,8 @@ export async function listActivationCodes(
     is_active?: boolean;
     used_by?: number;
     campaign_name?: string;
-  } = {}
+  } = {},
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode[]> {
   const conditions: string[] = [];
   const params: (string | number | boolean)[] = [];
@@ -394,22 +504,46 @@ export async function listActivationCodes(
     ? 'WHERE ' + conditions.join(' AND ')
     : '';
 
-  const result = await sql(
-    `SELECT * FROM activation_codes ${whereClause} ORDER BY created_at DESC`,
-    params
-  );
+  let rows: ActivationCodeRecord[];
+  if (rlsContext) {
+    // Run via db.query() so RLS context is set in the same transaction
+    const result = await query<ActivationCodeRecord>(
+      `SELECT * FROM activation_codes ${whereClause} ORDER BY created_at DESC`,
+      params,
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    rows = result.rows;
+  } else {
+    rows = await sql(
+      `SELECT * FROM activation_codes ${whereClause} ORDER BY created_at DESC`,
+      params
+    ) as unknown as ActivationCodeRecord[];
+  }
 
-  return result.map((row: unknown) => mapActivationCodeFromDb(row as ActivationCodeRecord));
+  return rows.map((row: unknown) => mapActivationCodeFromDb(row as ActivationCodeRecord));
 }
 
 /**
  * Deactivate activation code
  */
-export async function deactivateActivationCode(codeId: number): Promise<void> {
-  await sql(
-    'UPDATE activation_codes SET is_active = false WHERE id = $1',
-    [codeId]
-  );
+export async function deactivateActivationCode(
+  codeId: number,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
+): Promise<void> {
+  if (rlsContext) {
+    await query(
+      'UPDATE activation_codes SET is_active = false WHERE id = $1',
+      [codeId],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+  } else {
+    await sql(
+      'UPDATE activation_codes SET is_active = false WHERE id = $1',
+      [codeId]
+    );
+  }
 }
 
 /**
@@ -422,7 +556,8 @@ export async function updateActivationCode(
     expires_at?: Date;
     campaign_name?: string;
     notes?: string;
-  }
+  },
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<void> {
   const setParts: string[] = [];
   const params: (boolean | string | Date)[] = [];
@@ -454,10 +589,13 @@ export async function updateActivationCode(
 
   params.push(String(codeId));
 
-  await sql(
-    `UPDATE activation_codes SET ${setParts.join(', ')} WHERE id = $${paramIndex}`,
-    params
-  );
+  const sqlText = `UPDATE activation_codes SET ${setParts.join(', ')} WHERE id = $${paramIndex}`;
+
+  if (rlsContext) {
+    await query(sqlText, params, rlsContext.companyId, rlsContext.userRole);
+  } else {
+    await sql(sqlText, params);
+  }
 }
 
 /**

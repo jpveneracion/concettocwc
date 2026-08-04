@@ -164,7 +164,11 @@ export async function POST(
           verification.promo_code,
           verification.user_id,
           '127.0.0.1', // Admin approval IP (can be enhanced later)
-          planEnum
+          planEnum,
+          {
+            companyId: session.companyId,
+            userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+          }
         );
 
         console.log(`✅ Promo code ${verification.promo_code} redeemed successfully for user ${verification.user_id}`);

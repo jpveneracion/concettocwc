@@ -16,16 +16,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [product] = await sql`
-      SELECT
-        p.id, p.code, p.collection, p.description, p.unit,
-        COALESCE(cc.supplier_cost::float, 0) as supplier_cost,
-        COALESCE(cc.retail_price::float, 0) as retail_price
-      FROM products p
-      LEFT JOIN company_collections cc ON cc.collection = p.collection AND cc.company_id = ${session.companyId}
-      WHERE UPPER(p.code) = ${code} AND p.active = true
-    `;
-    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Use SECURITY DEFINER function for product lookup
+    const result = await sql(
+      'SELECT lookup_product_by_code($1::text, $2::uuid) as product',
+      [code, session.companyId]
+    );
+
+    if (result.length === 0 || !result[0].product) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const product = JSON.parse(result[0].product);
+    if (!product.code) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);
   } catch (err) {
     console.error('GET /api/products/lookup', err);

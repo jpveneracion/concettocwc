@@ -16,17 +16,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const products = await sql`
-      SELECT
-        p.code, p.collection, p.description, p.unit
-      FROM products p
-      WHERE
-        UPPER(p.code) LIKE ${query + '%'}
-        AND p.active = true
-      ORDER BY p.code
-      LIMIT 10
-    `;
+    // Use SECURITY DEFINER function for product search
+    const productsResult = await sql(
+      'SELECT search_products_autocomplete($1::text) as product',
+      [query]
+    );
 
+    const products = productsResult.map((row: any) => JSON.parse(row.product));
     return NextResponse.json(products);
   } catch (err) {
     console.error('GET /api/products/autocomplete', err);

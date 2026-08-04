@@ -71,24 +71,23 @@ export async function GET(
       );
     }
 
-    // 5. Get user and plan details for response
-    let userEmail: string | undefined, userName: string | undefined, planName: string | undefined, planAmount: number | undefined;
+    // 5. Get user and plan details for response using SECURITY DEFINER functions
+    let userEmail: string | undefined, planName: string | undefined, planAmount: number | undefined;
 
     try {
-      // Get user info
-      const userResult = await sql('SELECT email, name FROM users WHERE id = $1', [verification.user_id]);
+      // Get user info using SECURITY DEFINER function
+      const userResult = await sql('SELECT get_user_by_id($1::uuid) as user_data', [verification.user_id]);
       if (userResult.length > 0) {
-        const user = userResult[0];
-        userEmail = user.email;
-        userName = user.name;
+        const userData = JSON.parse(userResult[0].user_data);
+        userEmail = userData.email;
       }
 
-      // Get plan info
-      const planResult = await sql('SELECT name, amount FROM subscription_plans WHERE id = $1', [verification.plan_id]);
+      // Get plan info using SECURITY DEFINER function
+      const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [verification.plan_id]);
       if (planResult.length > 0) {
-        const plan = planResult[0];
-        planName = plan.name;
-        planAmount = parseFloat(plan.amount);
+        const planData = JSON.parse(planResult[0].plan_data);
+        planName = planData.name;
+        planAmount = planData.amount || planData.price;
       }
     } catch (error) {
       console.error('Error fetching joined data:', error);
@@ -97,7 +96,6 @@ export async function GET(
     // 6. Build response with gateway URL and proper type conversion
     const response: PaymentVerification & {
       user_email?: string;
-      user_name?: string;
       plan_name?: string;
       plan_amount?: number;
     } = {
@@ -115,7 +113,6 @@ export async function GET(
       created_at: new Date(verification.created_at),
       updated_at: new Date(verification.updated_at),
       user_email: userEmail,
-      user_name: userName,
       plan_name: planName,
       plan_amount: planAmount
     };

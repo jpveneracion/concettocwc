@@ -1,11 +1,31 @@
 // src/app/api/subscription-plans/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
 import {
   getSubscriptionPlanById,
   formatSubscriptionPlanForAPI,
-  resolvePlanIdentifier
+  resolvePlanIdentifier,
+  type RLSContext
 } from '@/lib/subscription-plans';
+
+/**
+ * Build RLS context from session if available (established pattern)
+ */
+async function getRLSContext(): Promise<RLSContext | undefined> {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return undefined;
+    }
+    return {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin',
+    };
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * GET - Get single subscription plan by ID (public endpoint)
@@ -41,10 +61,12 @@ export async function GET(
     // Check if ID looks like a UUID (has 36 characters with dashes)
     const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
+    const rlsContext = await getRLSContext();
+
     if (!isUuidFormat) {
       // ID appears to be a billing period identifier, resolve it to UUID
       console.log(`Plan ID '${id}' is not a UUID format, attempting to resolve...`);
-      resolvedPlanId = await resolvePlanIdentifier(id);
+      resolvedPlanId = await resolvePlanIdentifier(id, rlsContext);
 
       if (!resolvedPlanId) {
         return NextResponse.json(
@@ -58,7 +80,7 @@ export async function GET(
     }
 
     // Get plan from database using resolved UUID
-    const plan = await getSubscriptionPlanById(resolvedPlanId);
+    const plan = await getSubscriptionPlanById(resolvedPlanId, rlsContext);
 
     if (!plan) {
       return NextResponse.json(

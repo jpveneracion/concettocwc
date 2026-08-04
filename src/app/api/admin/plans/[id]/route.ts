@@ -7,8 +7,19 @@ import {
   getSubscriptionPlanById,
   updateSubscriptionPlan,
   deleteSubscriptionPlan,
-  formatSubscriptionPlanForAPI
+  formatSubscriptionPlanForAPI,
+  type RLSContext
 } from '@/lib/subscription-plans';
+
+/**
+ * Build RLS context from session (established pattern)
+ */
+function buildRLSContext(session: { companyId: string; role?: string; isAdmin?: boolean }): RLSContext {
+  return {
+    companyId: session.companyId,
+    userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+  };
+}
 
 /**
  * GET - Get single subscription plan by ID
@@ -28,8 +39,10 @@ export async function GET(
     // Use new permission system that checks database roles
     await requireAdmin(session.userId);
 
+    const rlsContext = buildRLSContext(session);
+
     // Get plan from database
-    const plan = await getSubscriptionPlanById(id);
+    const plan = await getSubscriptionPlanById(id, rlsContext);
 
     if (!plan) {
       return NextResponse.json(
@@ -96,8 +109,10 @@ export async function PUT(
       );
     }
 
+    const rlsContext = buildRLSContext(session);
+
     // Update plan in database
-    const updatedPlan = await updateSubscriptionPlan(id, updates);
+    const updatedPlan = await updateSubscriptionPlan(id, updates, rlsContext);
 
     if (!updatedPlan) {
       return NextResponse.json(
@@ -151,8 +166,10 @@ export async function DELETE(
     // Use new permission system that checks database roles
     await requireAdmin(session.userId);
 
+    const rlsContext = buildRLSContext(session);
+
     // Delete plan from database
-    const success = await deleteSubscriptionPlan(id);
+    const success = await deleteSubscriptionPlan(id, rlsContext);
 
     if (!success) {
       return NextResponse.json(

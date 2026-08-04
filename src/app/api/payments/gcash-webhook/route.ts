@@ -110,36 +110,64 @@ export async function POST(req: Request): Promise<NextResponse> {
       raw_webhook_payload: body.raw_data
     });
 
-    // 7. Query for pending verifications matching this transaction number
-    const pendingVerifications = await sql(`
-      SELECT * FROM payment_verifications
-      WHERE cleaned_reference_number = $1
-      AND status = 'pending'
-      AND automatic_verification_attempted = FALSE
-      ORDER BY submitted_at ASC
-    `, [cleanedReferenceNumber]) as any[];
+    // 7. Set app role context for SECURITY DEFINER function
+    await sql('SELECT set_config($1, $2, true)', ['app.role', 'concetto_boms']);
 
-    // 8. Process automatic verification for each pending verification (Trigger B)
+    // 8. Query for pending verifications matching this transaction number using SECURITY DEFINER function
+    const pendingVerificationsResult = await sql('SELECT * FROM get_pending_payment_verifications_by_reference($1)', [cleanedReferenceNumber]);
+
+    // Convert JSON results to array
+    const pendingVerifications = pendingVerificationsResult.map((row: any) => {
+      const verifications = typeof row === 'string' ? JSON.parse(row) : row;
+      return {
+        ...verifications,
+        submitted_at: new Date(verifications.submitted_at),
+        reviewed_at: verifications.reviewed_at ? new Date(verifications.reviewed_at) : undefined,
+        created_at: new Date(verifications.created_at),
+        updated_at: new Date(verifications.updated_at)
+      };
+    });
+
+    // 9. Process automatic verification for each pending verification (Trigger B)
     let autoApproved = 0;
     let flaggedForManual = 0;
 
-    // Convert lazily during iteration to avoid unnecessary upfront processing
-    for (const dbRecord of pendingVerifications) {
-      let verification: PaymentVerification | undefined;
+    // Process each verification with user and plan details already included
+    for (const verification of pendingVerifications) {
       try {
-        verification = {
-          ...dbRecord,
-          submitted_at: new Date(dbRecord.submitted_at as string),
-          reviewed_at: dbRecord.reviewed_at ? new Date(dbRecord.reviewed_at as string) : undefined,
-          created_at: new Date(dbRecord.created_at as string),
-          updated_at: new Date(dbRecord.updated_at as string)
+        // Convert to PaymentVerification format
+        const paymentVerification: PaymentVerification = {
+          id: verification.id,
+          user_id: verification.user_id,
+          plan_id: verification.plan_id,
+          screenshot_url: verification.screenshot_url,
+          reference_number: verification.reference_number,
+          cleaned_reference_number: verification.cleaned_reference_number,
+          notes: verification.notes,
+          status: verification.status,
+          admin_notes: verification.admin_notes,
+          admin_id: verification.admin_id,
+          submitted_at: verification.submitted_at,
+          reviewed_at: verification.reviewed_at,
+          created_at: verification.created_at,
+          updated_at: verification.updated_at,
+          automatic_verification_attempted: verification.automatic_verification_attempted,
+          automatic_verification_status: verification.automatic_verification_status,
+          verification_method: verification.verification_method,
+          webhook_data_id: verification.webhook_data_id,
+          // Include joined data for verification logic
+          user_email: verification.user_email,
+          user_name: verification.user_name,
+          plan_name: verification.plan_name,
+          plan_amount: verification.plan_amount,
+          plan_currency: verification.plan_currency
         } as PaymentVerification;
 
         // Check if this verification matches the webhook data
-        const matchResult = await checkAutomaticVerificationMatch(verification);
+        const matchResult = await checkAutomaticVerificationMatch(paymentVerification);
 
         // Update verification with automatic verification result
-        await updateVerificationWithAutomaticResult(verification.id, matchResult);
+        await updateVerificationWithAutomaticResult(paymentVerification.id, matchResult);
 
         // Track statistics
         if (matchResult.shouldAutoApprove) {
@@ -148,14 +176,14 @@ export async function POST(req: Request): Promise<NextResponse> {
           flaggedForManual++;
         }
 
-        console.log(`Processed verification ${verification.id}: ${matchResult.reason}`);
+        console.log(`Processed verification ${paymentVerification.id}: ${matchResult.reason}`);
       } catch (processingError) {
-        console.error(`Error processing verification ${verification?.id || 'unknown'}:`, processingError);
+        console.error(`Error processing verification ${verification.id || 'unknown'}:`, processingError);
         // Continue processing other verifications even if one fails
       }
     }
 
-    // 9. Return success response with processing statistics
+    // 10. Return success response with processing statistics
     return NextResponse.json({
       success: true,
       webhook_id: webhookData.id,

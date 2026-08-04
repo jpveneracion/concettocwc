@@ -12,6 +12,9 @@ export function requireSessionWithRLS(
 ) {
   return async (req: NextRequest) => {
     const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     await setTenantContext(session.companyId, session.role || 'user');
 
     try {
@@ -30,6 +33,9 @@ export function requireAdminWithRLS(
 ) {
   return async (req: NextRequest) => {
     const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     if (session.role !== 'admin' && session.role !== 'superadmin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
@@ -53,6 +59,9 @@ export function requireSuperadminWithRLS(
 ) {
   return async (req: NextRequest) => {
     const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     if (session.role !== 'superadmin') {
       return NextResponse.json({ error: 'Superadmin access required' }, { status: 403 });

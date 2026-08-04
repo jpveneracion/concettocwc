@@ -1,10 +1,36 @@
 // src/lib/subscription-plans.ts
 
-import { sql } from './db';
-
 // ============================================================================
 // TYPESCRIPT INTERFACES
 // ============================================================================
+
+/**
+ * Subscription plan error interface for better error handling
+ */
+export interface SubscriptionPlanError extends Error {
+  code: 'NOT_FOUND' | 'VALIDATION_ERROR' | 'OPERATION_FAILED' | 'INVALID_INTERVAL';
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+}
+
+class SubscriptionPlanErrorImpl extends Error implements SubscriptionPlanError {
+  code: SubscriptionPlanError['code'];
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+
+  constructor(
+    code: SubscriptionPlanError['code'],
+    message: string,
+    mobileMessage: string,
+    details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'SubscriptionPlanError';
+    this.code = code;
+    this.mobileMessage = mobileMessage;
+    this.details = details;
+  }
+}
 
 /**
  * Database subscription plan record interface (matches actual database schema)
@@ -15,7 +41,7 @@ export interface SubscriptionPlanRecord {
   price: string; // DECIMAL in database comes as string
   currency: string;
   interval: string;
-  features: Record<string, any>; // JSONB from database
+  features: Record<string, unknown>; // JSONB from database
   created_at: string; // TIMESTAMPTZ comes as string
   updated_at: string; // TIMESTAMPTZ comes as string
 }
@@ -31,7 +57,7 @@ export interface CreateSubscriptionPlanInput {
   currency?: string;
   interval: string;
   discount_percent?: number;
-  features?: Record<string, any>;
+  features?: Record<string, unknown>;
   is_active?: boolean;
 }
 
@@ -46,8 +72,16 @@ export interface UpdateSubscriptionPlanInput {
   currency?: string;
   interval?: string;
   discount_percent?: number;
-  features?: Record<string, any>;
+  features?: Record<string, unknown>;
   is_active?: boolean;
+}
+
+/**
+ * RLS context interface (established pattern - passed from session)
+ */
+export interface RLSContext {
+  companyId: string;
+  userRole: 'user' | 'admin' | 'superadmin';
 }
 
 /**
@@ -71,9 +105,22 @@ export interface SubscriptionPlanFilters {
  * Create new subscription plan
  */
 export async function createSubscriptionPlan(
-  planData: CreateSubscriptionPlanInput
+  planData: CreateSubscriptionPlanInput,
+  rlsContext?: RLSContext
 ): Promise<SubscriptionPlanRecord> {
   try {
+    // Validate plan data before creation
+    const validation = validateSubscriptionPlanData(planData);
+    if (!validation.valid) {
+      throw new SubscriptionPlanErrorImpl(
+        'VALIDATION_ERROR',
+        `Validation failed: ${validation.errors.join(', ')}`,
+        'Invalid subscription plan data',
+        { errors: validation.errors }
+      );
+    }
+
+    const { sql, query } = await import('./db');
     // Build features object with additional metadata
     const featuresObject = {
       description: planData.description || '',
@@ -83,7 +130,7 @@ export async function createSubscriptionPlan(
       features: Array.isArray(planData.features) ? planData.features : []
     };
 
-    const result = await sql`
+    const sqlText = `
       INSERT INTO subscription_plans (
         name,
         price,
@@ -91,23 +138,56 @@ export async function createSubscriptionPlan(
         interval,
         features
       ) VALUES (
-        ${planData.name},
-        ${planData.price.toFixed(2)},
-        ${planData.currency || 'PHP'},
-        ${planData.interval},
-        ${JSON.stringify(featuresObject)}::jsonb
+        $1,
+        $2,
+        $3,
+        $4,
+        $5::jsonb
       )
       RETURNING *
     `;
+    const params = [
+      planData.name,
+      planData.price.toFixed(2),
+      planData.currency || 'PHP',
+      planData.interval,
+      JSON.stringify(featuresObject)
+    ];
 
-    if (result.length === 0) {
-      throw new Error('Failed to create subscription plan');
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      // Run via db.query() so RLS context is set in the same transaction
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as SubscriptionPlanRecord[];
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    if (result.length === 0) {
+      throw new SubscriptionPlanErrorImpl(
+        'OPERATION_FAILED',
+        'Failed to create subscription plan',
+        'Unable to create subscription plan - please try again'
+      );
+    }
+
+    return result[0];
   } catch (error) {
-    console.error('Error creating subscription plan:', error);
-    throw new Error(`Failed to create subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof SubscriptionPlanErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to create subscription plan: ${errorMessage}`,
+      'Unable to create subscription plan - please try again',
+      { originalError: errorMessage }
+    );
   }
 }
 
@@ -115,106 +195,160 @@ export async function createSubscriptionPlan(
  * Get all subscription plans with optional filters
  */
 export async function getAllSubscriptionPlans(
-  filters?: SubscriptionPlanFilters
+  filters?: SubscriptionPlanFilters,
+  rlsContext?: RLSContext
 ): Promise<SubscriptionPlanRecord[]> {
   try {
-    let query = 'SELECT * FROM subscription_plans WHERE 1=1';
-    const params: any[] = [];
+    const { sql, query } = await import('./db');
+    let queryText = 'SELECT * FROM subscription_plans WHERE 1=1';
+    const params: (string | number | boolean)[] = [];
     let paramIndex = 1;
 
     if (filters) {
       if (filters.is_active !== undefined) {
-        query += ` AND (features->>'is_active')::boolean = $${paramIndex}`;
+        queryText += ` AND (features->>'is_active')::boolean = $${paramIndex}`;
         params.push(filters.is_active);
         paramIndex++;
       }
 
       if (filters.interval) {
-        query += ` AND interval = $${paramIndex}`;
+        queryText += ` AND interval = $${paramIndex}`;
         params.push(filters.interval);
         paramIndex++;
       }
 
       if (filters.currency) {
-        query += ` AND currency = $${paramIndex}`;
+        queryText += ` AND currency = $${paramIndex}`;
         params.push(filters.currency);
         paramIndex++;
       }
 
       if (filters.min_discount_percent !== undefined) {
-        query += ` AND CAST(features->>'discount_percent' AS DECIMAL) >= $${paramIndex}`;
+        queryText += ` AND CAST(features->>'discount_percent' AS DECIMAL) >= $${paramIndex}`;
         params.push(filters.min_discount_percent);
         paramIndex++;
       }
 
       if (filters.max_discount_percent !== undefined) {
-        query += ` AND CAST(features->>'discount_percent' AS DECIMAL) <= $${paramIndex}`;
+        queryText += ` AND CAST(features->>'discount_percent' AS DECIMAL) <= $${paramIndex}`;
         params.push(filters.max_discount_percent);
         paramIndex++;
       }
 
       if (filters.min_price !== undefined) {
-        query += ` AND CAST(price AS DECIMAL) >= $${paramIndex}`;
+        queryText += ` AND CAST(price AS DECIMAL) >= $${paramIndex}`;
         params.push(filters.min_price.toFixed(2));
         paramIndex++;
       }
 
       if (filters.max_price !== undefined) {
-        query += ` AND CAST(price AS DECIMAL) <= $${paramIndex}`;
+        queryText += ` AND CAST(price AS DECIMAL) <= $${paramIndex}`;
         params.push(filters.max_price.toFixed(2));
         paramIndex++;
       }
     }
 
-    query += ' ORDER BY created_at DESC';
+    queryText += ' ORDER BY created_at DESC';
 
-    const result = await sql(query, ...params);
-    return result as SubscriptionPlanRecord[];
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      // Run via db.query() so RLS context is set in the same transaction
+      const queryResult = await query<SubscriptionPlanRecord>(
+        queryText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(queryText, params) as unknown as SubscriptionPlanRecord[];
+    }
+
+    return result;
   } catch (error) {
-    console.error('Error fetching subscription plans:', error);
-    throw new Error(`Failed to fetch subscription plans: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to fetch subscription plans: ${errorMessage}`,
+      'Unable to load subscription plans - please try again',
+      { filters, originalError: errorMessage }
+    );
   }
 }
 
 /**
  * Get subscription plan by ID
  */
-export async function getSubscriptionPlanById(id: string): Promise<SubscriptionPlanRecord | null> {
+export async function getSubscriptionPlanById(id: string, rlsContext?: RLSContext): Promise<SubscriptionPlanRecord | null> {
   try {
-    const result = await sql`
-      SELECT * FROM subscription_plans
-      WHERE id = ${id}
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'SELECT * FROM subscription_plans WHERE id = $1';
+    const params = [id];
+
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as SubscriptionPlanRecord[];
+    }
 
     if (result.length === 0) {
       return null;
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    return result[0];
   } catch (error) {
-    console.error('Error fetching subscription plan by ID:', error);
-    throw new Error(`Failed to fetch subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to fetch subscription plan: ${errorMessage}`,
+      'Unable to load subscription plan - please try again',
+      { planId: id, originalError: errorMessage }
+    );
   }
 }
 
 /**
  * Get subscription plan by name
  */
-export async function getSubscriptionPlanByName(name: string): Promise<SubscriptionPlanRecord | null> {
+export async function getSubscriptionPlanByName(name: string, rlsContext?: RLSContext): Promise<SubscriptionPlanRecord | null> {
   try {
-    const result = await sql`
-      SELECT * FROM subscription_plans
-      WHERE UPPER(name) = UPPER(${name})
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'SELECT * FROM subscription_plans WHERE UPPER(name) = UPPER($1)';
+    const params = [name];
+
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as SubscriptionPlanRecord[];
+    }
 
     if (result.length === 0) {
       return null;
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    return result[0];
   } catch (error) {
-    console.error('Error fetching subscription plan by name:', error);
-    throw new Error(`Failed to fetch subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to fetch subscription plan: ${errorMessage}`,
+      'Unable to load subscription plan - please try again',
+      { planName: name, originalError: errorMessage }
+    );
   }
 }
 
@@ -223,13 +357,19 @@ export async function getSubscriptionPlanByName(name: string): Promise<Subscript
  */
 export async function updateSubscriptionPlan(
   id: string,
-  updates: UpdateSubscriptionPlanInput
+  updates: UpdateSubscriptionPlanInput,
+  rlsContext?: RLSContext
 ): Promise<SubscriptionPlanRecord | null> {
   try {
     // First get existing plan to preserve existing features
     const existingPlan = await getSubscriptionPlanById(id);
     if (!existingPlan) {
-      return null;
+      throw new SubscriptionPlanErrorImpl(
+        'NOT_FOUND',
+        'Subscription plan not found',
+        'Subscription plan not found - it may have been deleted',
+        { planId: id }
+      );
     }
 
     // Build updated features object
@@ -254,7 +394,7 @@ export async function updateSubscriptionPlan(
     }
 
     // Build dynamic SET clause and values array (proven working pattern from db.ts)
-    const updateFields: Record<string, any> = {};
+    const updateFields: Record<string, string | number> = {};
 
     if (updates.name !== undefined) updateFields.name = updates.name;
     if (updates.price !== undefined) updateFields.price = updates.price.toFixed(2);
@@ -267,53 +407,94 @@ export async function updateSubscriptionPlan(
 
     const baseValues = [id, ...Object.values(updateFields)];
     const values = [...baseValues, JSON.stringify(updatedFeatures)];
+    const featuresIndex = values.length;
 
-    const result = await sql(
-      `UPDATE subscription_plans
-       SET ${setClause}, features = $${values.length}::jsonb, updated_at = NOW()
+    const { sql, query } = await import('./db');
+    const sqlText = `UPDATE subscription_plans
+       SET ${setClause ? `${setClause}, ` : ''}features = $${featuresIndex}::jsonb, updated_at = NOW()
        WHERE id = $1
-       RETURNING *`,
-      values
-    );
+       RETURNING *`;
+
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        values,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, values) as unknown as SubscriptionPlanRecord[];
+    }
 
     if (result.length === 0) {
       return null;
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    return result[0];
   } catch (error) {
-    console.error('Error updating subscription plan:', error);
-    throw new Error(`Failed to update subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof SubscriptionPlanErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to update subscription plan: ${errorMessage}`,
+      'Unable to update subscription plan - please try again',
+      { planId: id, originalError: errorMessage }
+    );
   }
 }
 
 /**
  * Delete subscription plan
  */
-export async function deleteSubscriptionPlan(id: string): Promise<boolean> {
+export async function deleteSubscriptionPlan(id: string, rlsContext?: RLSContext): Promise<boolean> {
   try {
-    const result = await sql`
-      DELETE FROM subscription_plans
-      WHERE id = ${id}
-      RETURNING id
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'DELETE FROM subscription_plans WHERE id = $1 RETURNING id';
+    const params = [id];
+
+    let result: { id: string }[];
+    if (rlsContext) {
+      const queryResult = await query<{ id: string }>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as { id: string }[];
+    }
 
     return result.length > 0;
   } catch (error) {
-    console.error('Error deleting subscription plan:', error);
-    throw new Error(`Failed to delete subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to delete subscription plan: ${errorMessage}`,
+      'Unable to delete subscription plan - please try again',
+      { planId: id, originalError: errorMessage }
+    );
   }
 }
 
 /**
  * Activate subscription plan
  */
-export async function activateSubscriptionPlan(id: string): Promise<SubscriptionPlanRecord | null> {
+export async function activateSubscriptionPlan(id: string, rlsContext?: RLSContext): Promise<SubscriptionPlanRecord | null> {
   try {
     // First get existing plan
-    const existingPlan = await getSubscriptionPlanById(id);
+    const existingPlan = await getSubscriptionPlanById(id, rlsContext);
     if (!existingPlan) {
-      return null;
+      throw new SubscriptionPlanErrorImpl(
+        'NOT_FOUND',
+        'Subscription plan not found',
+        'Subscription plan not found - it may have been deleted',
+        { planId: id }
+      );
     }
 
     // Update features to set is_active to true
@@ -322,33 +503,56 @@ export async function activateSubscriptionPlan(id: string): Promise<Subscription
       is_active: true
     };
 
-    const result = await sql`
-      UPDATE subscription_plans
-      SET features = ${JSON.stringify(updatedFeatures)}::jsonb, updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'UPDATE subscription_plans SET features = $2::jsonb, updated_at = NOW() WHERE id = $1 RETURNING *';
+    const params = [id, JSON.stringify(updatedFeatures)];
+
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as SubscriptionPlanRecord[];
+    }
 
     if (result.length === 0) {
       return null;
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    return result[0];
   } catch (error) {
-    console.error('Error activating subscription plan:', error);
-    throw new Error(`Failed to activate subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof SubscriptionPlanErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to activate subscription plan: ${errorMessage}`,
+      'Unable to activate subscription plan - please try again',
+      { planId: id, originalError: errorMessage }
+    );
   }
 }
 
 /**
  * Deactivate subscription plan
  */
-export async function deactivateSubscriptionPlan(id: string): Promise<SubscriptionPlanRecord | null> {
+export async function deactivateSubscriptionPlan(id: string, rlsContext?: RLSContext): Promise<SubscriptionPlanRecord | null> {
   try {
     // First get existing plan
-    const existingPlan = await getSubscriptionPlanById(id);
+    const existingPlan = await getSubscriptionPlanById(id, rlsContext);
     if (!existingPlan) {
-      return null;
+      throw new SubscriptionPlanErrorImpl(
+        'NOT_FOUND',
+        'Subscription plan not found',
+        'Subscription plan not found - it may have been deleted',
+        { planId: id }
+      );
     }
 
     // Update features to set is_active to false
@@ -357,21 +561,39 @@ export async function deactivateSubscriptionPlan(id: string): Promise<Subscripti
       is_active: false
     };
 
-    const result = await sql`
-      UPDATE subscription_plans
-      SET features = ${JSON.stringify(updatedFeatures)}::jsonb, updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'UPDATE subscription_plans SET features = $2::jsonb, updated_at = NOW() WHERE id = $1 RETURNING *';
+    const params = [id, JSON.stringify(updatedFeatures)];
+
+    let result: SubscriptionPlanRecord[];
+    if (rlsContext) {
+      const queryResult = await query<SubscriptionPlanRecord>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as SubscriptionPlanRecord[];
+    }
 
     if (result.length === 0) {
       return null;
     }
 
-    return result[0] as SubscriptionPlanRecord;
+    return result[0];
   } catch (error) {
-    console.error('Error deactivating subscription plan:', error);
-    throw new Error(`Failed to deactivate subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof SubscriptionPlanErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionPlanErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to deactivate subscription plan: ${errorMessage}`,
+      'Unable to deactivate subscription plan - please try again',
+      { planId: id, originalError: errorMessage }
+    );
   }
 }
 
@@ -420,9 +642,9 @@ export function formatSubscriptionPlansForAPI(plans: SubscriptionPlanRecord[]): 
 /**
  * Get active subscription plans formatted for API
  */
-export async function getActiveSubscriptionPlansForAPI(): Promise<Record<string, any>[]> {
+export async function getActiveSubscriptionPlansForAPI(rlsContext?: RLSContext): Promise<Record<string, any>[]> {
   try {
-    const plans = await getAllSubscriptionPlans({ is_active: true });
+    const plans = await getAllSubscriptionPlans({ is_active: true }, rlsContext);
     return formatSubscriptionPlansForAPI(plans);
   } catch (error) {
     console.error('Error fetching active subscription plans for API:', error);
@@ -489,7 +711,8 @@ const BILLING_PERIOD_TO_INTERVAL_MAP: Record<string, string> = {
  * @returns Promise with plan UUID or null if not found
  */
 export async function resolvePlanIdentifier(
-  billingPeriod: string
+  billingPeriod: string,
+  rlsContext?: RLSContext
 ): Promise<string | null> {
   try {
     // Map billing period to database interval
@@ -501,12 +724,22 @@ export async function resolvePlanIdentifier(
     }
 
     // Query database for plan with matching interval
-    const result = await sql`
-      SELECT id
-      FROM subscription_plans
-      WHERE interval = ${interval}
-      LIMIT 1
-    `;
+    const { sql, query } = await import('./db');
+    const sqlText = 'SELECT id FROM subscription_plans WHERE interval = $1 LIMIT 1';
+    const params = [interval];
+
+    let result: { id: string }[];
+    if (rlsContext) {
+      const queryResult = await query<{ id: string }>(
+        sqlText,
+        params,
+        rlsContext.companyId,
+        rlsContext.userRole
+      );
+      result = queryResult.rows;
+    } else {
+      result = await sql(sqlText, params) as unknown as { id: string }[];
+    }
 
     if (result.length === 0) {
       console.error(`No subscription plan found for interval: ${interval}`);

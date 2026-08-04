@@ -23,8 +23,11 @@ interface TopCustomerRow {
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('=== DASHBOARD API START ===');
+
     // Read custom session cookie (the one that actually works in this system)
     const sessionCookie = req.cookies.get('session');
+    console.log('Session cookie found:', !!sessionCookie);
 
     if (!sessionCookie) {
       return NextResponse.json({ error: 'Unauthorized - no session' }, { status: 401 });
@@ -33,6 +36,7 @@ export async function GET(req: NextRequest) {
     let sessionData;
     try {
       sessionData = JSON.parse(sessionCookie.value);
+      console.log('Session data parsed:', { userId: sessionData.userId, companyId: sessionData.companyId });
     } catch {
       return NextResponse.json({ error: 'Unauthorized - invalid session' }, { status: 401 });
     }
@@ -43,8 +47,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - incomplete session' }, { status: 401 });
     }
 
+    // Use SECURITY DEFINER function (no role context needed)
+    // TEST: Use SECURITY DEFINER function like quotes API does
+    const quotesTest = await sql('SELECT get_company_quotes($1::uuid) as quote', [companyId]);
+    console.log('🧪 SECURITY DEFINER test:', quotesTest.length, 'quotes found');
+
     const searchParams = req.nextUrl.searchParams;
     const period = (searchParams.get('period') as 'month' | 'year' | 'custom' | 'all') || 'month';
+
+    console.log('📊 Dashboard API called for company:', companyId, 'period:', period);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
@@ -139,14 +150,15 @@ export async function GET(req: NextRequest) {
 // Helper functions with SQL queries
 
 async function getMonthlySales(companyId: string, startDate: string, endDate: string): Promise<number> {
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
-    SELECT COALESCE(SUM(total), 0) as sales
-    FROM quotes
-    WHERE company_id = $1
-      AND status IN ('delivered', 'sent')
-      AND quote_date >= $2
-      AND quote_date <= $3
+    SELECT COALESCE(SUM((data->>'total')::numeric), 0) as sales, COUNT(*) as count
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'status') = 'delivered'
+      AND (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
   `, [companyId, startDate, endDate]);
+  console.log('📈 Monthly Sales query:', { companyId, startDate, endDate, result: result[0] });
   return Number(result[0]?.sales || 0);
 }
 
@@ -156,14 +168,15 @@ async function getYearlySales(companyId: string): Promise<number> {
   const dateStart = firstDay.toISOString().split('T')[0];
   const dateEnd = now.toISOString().split('T')[0];
 
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
-    SELECT COALESCE(SUM(total), 0) as sales
-    FROM quotes
-    WHERE company_id = $1
-      AND status IN ('delivered', 'sent')
-      AND quote_date >= $2
-      AND quote_date <= $3
+    SELECT COALESCE(SUM((data->>'total')::numeric), 0) as sales
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'status') = 'delivered'
+      AND (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
   `, [companyId, dateStart, dateEnd]);
+  console.log('📊 Yearly Sales query:', { companyId, dateStart, dateEnd, result: result[0] });
   return Number(result[0]?.sales || 0);
 }
 
@@ -172,47 +185,50 @@ async function getProfitAndCost(
   startDate: string,
   endDate: string
 ): Promise<{ profit: number; profitMargin: number }> {
+  // Use SECURITY DEFINER function to bypass RLS for quote_items
   const result = await sql(`
     SELECT
-      COALESCE(SUM(retail_amount), 0) as revenue,
-      COALESCE(SUM(supplier_amount), 0) as cost
-    FROM quote_items qi
-    JOIN quotes q ON qi.quote_id = q.id
-    WHERE q.company_id = $1
-      AND q.status IN ('delivered', 'sent')
-      AND q.quote_date >= $2
-      AND q.quote_date <= $3
-  `, [companyId, startDate, endDate]);
+      COALESCE(SUM((data->>'retail_amount')::numeric), 0) as revenue,
+      COALESCE(SUM((data->>'supplier_amount')::numeric), 0) as cost
+    FROM get_company_quote_items($1::uuid) as data
+    WHERE data->>'quote_id' IN (
+      SELECT (quote_data->>'id')::text
+      FROM get_company_quotes($2::uuid) as quote_data
+      WHERE (quote_data->>'quote_date') >= $3
+        AND (quote_data->>'quote_date') <= $4
+    )
+  `, [companyId, companyId, startDate, endDate]);
 
   const revenue = Number(result[0]?.revenue || 0);
   const cost = Number(result[0]?.cost || 0);
   const profit = revenue - cost;
   const profitMargin = revenue > 0 ? profit / revenue : 0;
 
+  console.log('💰 Profit and Cost:', { companyId, revenue, cost, profit, profitMargin });
   return { profit, profitMargin };
 }
 
 async function getConversionRate(companyId: string, startDate: string, endDate: string): Promise<number> {
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
     SELECT
-      COUNT(*) FILTER (WHERE status = 'delivered')::FLOAT / NULLIF(COUNT(*), 0) as rate
-    FROM quotes
-    WHERE company_id = $1
-      AND quote_date >= $2
-      AND quote_date <= $3
+      COUNT(*) FILTER (WHERE (data->>'status') = 'delivered')::FLOAT / NULLIF(COUNT(*), 0) as rate
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
   `, [companyId, startDate, endDate]);
   return Number(result[0]?.rate || 0);
 }
 
 async function getAverageOrderValue(companyId: string, startDate: string, endDate: string): Promise<number> {
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
-    SELECT AVG(total) as avg_order
-    FROM quotes
-    WHERE company_id = $1
-      AND status IN ('delivered', 'sent')
-      AND quote_date >= $2
-      AND quote_date <= $3
+    SELECT AVG((data->>'total')::numeric) as avg_order
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
   `, [companyId, startDate, endDate]);
+  console.log('📊 Average Order Value:', { companyId, result: result[0] });
   return Number(result[0]?.avg_order || 0);
 }
 
@@ -223,18 +239,17 @@ async function getRevenueTrends(
   dateEnd: string
 ) {
   if (period === 'all') {
-    // One bucket per year, all time.
+    // One bucket per year, all time - Use SECURITY DEFINER function
     const result = await sql(`
       SELECT
-        EXTRACT(YEAR FROM quote_date)::TEXT as label,
-        EXTRACT(YEAR FROM quote_date) as sort_key,
-        SUM(total) as revenue
-      FROM quotes
-      WHERE company_id = $1
-        AND status IN ('delivered', 'sent')
+        EXTRACT(YEAR FROM (data->>'quote_date')::date)::TEXT as label,
+        EXTRACT(YEAR FROM (data->>'quote_date')::date) as sort_key,
+        SUM((data->>'total')::numeric) as revenue
+      FROM get_company_quotes($1::uuid) as data
       GROUP BY label, sort_key
       ORDER BY sort_key
     `, [companyId]);
+    console.log('📈 Revenue Trends (all time):', result.length, 'years');
     return result.map((row: Record<string, any>) => {
       const typedRow = row as RevenueTrendRow;
       return { label: typedRow.label, revenue: Number(typedRow.revenue) };
@@ -253,19 +268,19 @@ async function getRevenueTrends(
     end = now.toISOString().split('T')[0];
   }
 
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
     SELECT
-      TO_CHAR(quote_date, 'Mon') as label,
-      date_trunc('month', quote_date) as sort_key,
-      SUM(total) as revenue
-    FROM quotes
-    WHERE company_id = $1
-      AND status IN ('delivered', 'sent')
-      AND quote_date >= $2
-      AND quote_date <= $3
+      TO_CHAR((data->>'quote_date')::date, 'Mon') as label,
+      date_trunc('month', (data->>'quote_date')::date) as sort_key,
+      SUM((data->>'total')::numeric) as revenue
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
     GROUP BY label, sort_key
     ORDER BY sort_key
   `, [companyId, start, end]);
+  console.log('📈 Revenue Trends (monthly):', result.length, 'months');
   return result.map((row: Record<string, any>) => {
     const typedRow = row as RevenueTrendRow;
     return { label: typedRow.label, revenue: Number(typedRow.revenue) };
@@ -277,22 +292,25 @@ async function getPopularCollections(
   startDate: string,
   endDate: string
 ) {
+  // Use SECURITY DEFINER function to bypass RLS for quote_items
   const result = await sql(`
     SELECT
-      product_collection,
+      (data->>'product_collection') as product_collection,
       COUNT(*) as count,
-      SUM(qi.retail_amount) as revenue
-    FROM quote_items qi
-    JOIN quotes q ON qi.quote_id = q.id
-    WHERE q.company_id = $1
-      AND q.status IN ('delivered', 'sent')
-      AND q.quote_date >= $2
-      AND q.quote_date <= $3
-    GROUP BY product_collection
+      SUM((data->>'retail_amount')::numeric) as revenue
+    FROM get_company_quote_items($1::uuid) as data
+    WHERE data->>'quote_id' IN (
+      SELECT (quote_data->>'id')::text
+      FROM get_company_quotes($2::uuid) as quote_data
+      WHERE (quote_data->>'quote_date') >= $3
+        AND (quote_data->>'quote_date') <= $4
+    )
+    GROUP BY (data->>'product_collection')
     ORDER BY count DESC
     LIMIT 10
-  `, [companyId, startDate, endDate]);
+  `, [companyId, companyId, startDate, endDate]);
 
+  console.log('🏆 Popular Collections:', result.length, 'collections');
   return result.map((row: Record<string, any>) => {
     const typedRow = row as PopularCollectionRow;
     return {
@@ -304,27 +322,44 @@ async function getPopularCollections(
 }
 
 async function getTopCustomers(companyId: string, startDate: string, endDate: string) {
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
     SELECT
-      customer_name_encrypted,
-      SUM(total) as total_revenue,
+      (data->>'customer_name_encrypted') as customer_name_encrypted,
+      SUM((data->>'total')::numeric) as total_revenue,
       COUNT(*) as quote_count
-    FROM quotes
-    WHERE company_id = $1
-      AND status IN ('delivered', 'sent')
-      AND quote_date >= $2
-      AND quote_date <= $3
-    GROUP BY customer_name_encrypted
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
+    GROUP BY (data->>'customer_name_encrypted')
     ORDER BY total_revenue DESC
     LIMIT 10
   `, [companyId, startDate, endDate]);
 
+  console.log('👥 Top Customers:', result.length, 'customers');
   return result.map((row: Record<string, any>) => {
     const typedRow = row as TopCustomerRow;
+    let customerName = 'Unknown';
+    if (typedRow.customer_name_encrypted) {
+      try {
+        let encryptedData = typedRow.customer_name_encrypted;
+
+        // Fix PostgreSQL hex format - remove '\x' prefix if present
+        if (encryptedData.startsWith('\\x')) {
+          encryptedData = encryptedData.substring(2);
+        }
+
+        // Direct hex decryption (confirmed working method)
+        customerName = decryptPII(encryptedData);
+      } catch (error) {
+        console.warn('Failed to decrypt customer name:', error);
+        customerName = '[Decryption Failed]';
+      }
+    } else if (typedRow.customer_name_encrypted === null || typedRow.customer_name_encrypted === undefined) {
+      customerName = 'Unknown';
+    }
     return {
-      customerName: typedRow.customer_name_encrypted
-        ? decryptPII(Buffer.from(typedRow.customer_name_encrypted))
-        : 'Unknown',
+      customerName,
       totalRevenue: Number(typedRow.total_revenue),
       quoteCount: Number(typedRow.quote_count),
     };
@@ -332,15 +367,15 @@ async function getTopCustomers(companyId: string, startDate: string, endDate: st
 }
 
 async function getQuoteStats(companyId: string, startDate: string, endDate: string) {
+  // Use SECURITY DEFINER function to bypass RLS
   const result = await sql(`
     SELECT
       COUNT(*) as total,
-      COUNT(*) FILTER (WHERE status = 'delivered') as delivered,
-      COUNT(*) FILTER (WHERE status NOT IN ('delivered', 'cancelled')) as pending
-    FROM quotes
-    WHERE company_id = $1
-      AND quote_date >= $2
-      AND quote_date <= $3
+      COUNT(*) FILTER (WHERE (data->>'status') = 'delivered') as delivered,
+      COUNT(*) FILTER (WHERE (data->>'status') NOT IN ('delivered', 'cancelled')) as pending
+    FROM get_company_quotes($1::uuid) as data
+    WHERE (data->>'quote_date') >= $2
+      AND (data->>'quote_date') <= $3
   `, [companyId, startDate, endDate]);
 
   return {

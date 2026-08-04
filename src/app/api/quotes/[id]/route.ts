@@ -26,34 +26,14 @@ export async function GET(
       const access = await checkSubscriptionAccess(session);
 
       // Allow read access even in readonly mode
-      // RLS policies now handle company_id filtering automatically
-      const [quote] = await sql`
-        SELECT id, quote_number, customer_name, customer_address,
-               customer_name_encrypted, customer_address_encrypted,
-               quote_date, our_ref, status,
-               installation_fee::float, delivery_fee::float,
-               subtotal::float, total::float,
-               total_area::float, panel_count,
-               created_at, updated_at
-        FROM quotes
-        WHERE id = ${id}::uuid
-      `;
+      // Use SECURITY DEFINER function for quote lookup
+      const [quoteResult] = await sql('SELECT get_company_quote_by_id($1, $2) as quote', [session.companyId, id]);
+      const quote = quoteResult?.quote;
       if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    const items = await sql`
-      SELECT id, quote_id, sort_order, location,
-             product_id, product_code, product_collection, product_description,
-             unit, is_fixed,
-             measured_width::float, measured_drop::float,
-             final_width::float, final_drop::float,
-             area_sqft::float,
-             retail_price_sqft::float, supplier_cost_sqft::float,
-             retail_amount::float, supplier_amount::float,
-             minimum_applied
-      FROM quote_items
-      WHERE quote_id = ${id}::uuid
-      ORDER BY sort_order ASC
-    `;
+    // Use SECURITY DEFINER function for quote items lookup
+    const itemsResult = await sql('SELECT get_quote_items($1) as items', [id]);
+    const items = itemsResult.map(row => row.items);
 
     // Decrypt PII with error handling
     let customerName = quote.customer_name || '';
@@ -61,7 +41,12 @@ export async function GET(
 
     try {
       if (quote.customer_name_encrypted) {
-        customerName = decryptPII(quote.customer_name_encrypted);
+        if (typeof quote.customer_name_encrypted === 'string') {
+          // Handle hex string format from JSON
+          customerName = decryptPII(Buffer.from(quote.customer_name_encrypted, 'hex'));
+        } else {
+          customerName = decryptPII(quote.customer_name_encrypted);
+        }
       }
     } catch (err) {
       console.error(`Failed to decrypt customer_name for quote ${quote.id}:`, err);
@@ -69,7 +54,12 @@ export async function GET(
 
     try {
       if (quote.customer_address_encrypted) {
-        customerAddress = decryptPII(quote.customer_address_encrypted);
+        if (typeof quote.customer_address_encrypted === 'string') {
+          // Handle hex string format from JSON
+          customerAddress = decryptPII(Buffer.from(quote.customer_address_encrypted, 'hex'));
+        } else {
+          customerAddress = decryptPII(quote.customer_address_encrypted);
+        }
       }
     } catch (err) {
       console.error(`Failed to decrypt customer_address for quote ${quote.id}:`, err);
@@ -126,13 +116,9 @@ export async function PUT(
       status,
     } = body;
 
-    // Fetch company minimum billable area once (server-authoritative).
-    // Recompute retail_amount/supplier_amount/minimum_applied here, ignoring
-    // any client-supplied values — the DB never trusts them.
-    const [company] = await sql`
-      SELECT minimum_area_sqft::float AS minimum_area_sqft
-      FROM companies WHERE id = ${session.companyId}
-    `;
+    // Fetch company minimum billable area using SECURITY DEFINER function
+    const [companyResult] = await sql('SELECT get_company_settings($1) as company', [session.companyId]);
+    const company = companyResult?.company;
     const minimumArea = company?.minimum_area_sqft ?? 0;
 
     const processedItems = items.map((item) => {
@@ -172,84 +158,71 @@ export async function PUT(
       );
     }
 
-    await sql`
-      UPDATE quotes SET
-        customer_name             = ${customer_name},
-        customer_name_encrypted   = decode(${customerNameEncrypted}, 'hex')::bytea,
-        customer_address           = ${customer_address ?? ''},
-        customer_address_encrypted = decode(${customerAddressEncrypted}, 'hex')::bytea,
-        quote_date       = ${quote_date},
-        our_ref          = ${our_ref ?? ''},
-        installation_fee = ${installation_fee},
-        delivery_fee     = ${delivery_fee},
-        subtotal         = ${subtotal},
-        total            = ${total},
-        total_area       = ${total_area},
-        panel_count      = ${panel_count},
-        status           = ${status || 'draft'},
-        updated_at       = now()
-      WHERE id = ${id}::uuid
-    `;
+    // Update quote using SECURITY DEFINER function
+    // Fetch existing quote first to preserve quote_number
+    const [existingQuoteResult] = await sql('SELECT get_company_quote_by_id($1, $2) as quote', [session.companyId, id]);
+    const quote = existingQuoteResult?.quote;
+    if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    // After successful update, delete plaintext columns immediately
-    await sql`
-      UPDATE quotes SET
-        customer_name = NULL,
-        customer_address = NULL
-      WHERE id = ${id}::uuid
-    `;
+    await sql('SELECT update_quote($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)', [
+      id,
+      session.companyId,
+      quote.quote_number || '',
+      customer_name,
+      customer_address ?? '',
+      customerNameEncrypted, // Already in hex format from encryptPII
+      customerAddressEncrypted, // Already in hex format from encryptPII
+      quote_date,
+      our_ref ?? '',
+      status || 'draft',
+      installation_fee,
+      delivery_fee,
+      subtotal,
+      total,
+      total_area,
+      panel_count
+    ]);
 
-    // Replace items (iterate processedItems so we persist server-computed amounts)
-    await sql`DELETE FROM quote_items WHERE quote_id = ${id}::uuid`;
+    // Clear plaintext columns using SECURITY DEFINER function
+    await sql('SELECT clear_quote_plaintext($1)', [id]);
 
-    for (let i = 0; i < processedItems.length; i++) {
-      const item = processedItems[i];
-      await sql`
-        INSERT INTO quote_items (
-          quote_id, sort_order, location,
-          product_id, product_code, product_collection, product_description,
-          unit, is_fixed,
-          measured_width, measured_drop, final_width, final_drop,
-          area_sqft, retail_price_sqft, supplier_cost_sqft,
-          retail_amount, supplier_amount, minimum_applied
-        ) VALUES (
-          ${id}::uuid, ${i},
-          ${item.location ?? ''},
-          ${item.product_id ?? null},
-          ${item.product_code ?? ''},
-          ${item.product_collection ?? ''},
-          ${item.product_description ?? ''},
-          ${item.unit}, ${item.is_fixed},
-          ${item.measured_width}, ${item.measured_drop},
-          ${item.final_width}, ${item.final_drop},
-          ${item.area_sqft},
-          ${item.retail_price_sqft}, ${item.supplier_cost_sqft},
-          ${item.retail_amount}, ${item.supplier_amount}, ${item.minimum_applied}
-        )
-      `;
-    }
+    // Update quote items using SECURITY DEFINER function
+    await sql('SELECT update_quote_items($1, $2)', [
+      id,
+      JSON.stringify(processedItems.map((item, index) => ({
+        sort_order: index,
+        location: item.location ?? '',
+        product_id: item.product_id ?? null,
+        product_code: item.product_code ?? '',
+        product_collection: item.product_collection ?? '',
+        product_description: item.product_description ?? '',
+        unit: item.unit,
+        is_fixed: item.is_fixed,
+        measured_width: item.measured_width,
+        measured_drop: item.measured_drop,
+        final_width: item.final_width,
+        final_drop: item.final_drop,
+        area_sqft: item.area_sqft,
+        retail_price_sqft: item.retail_price_sqft,
+        supplier_cost_sqft: item.supplier_cost_sqft,
+        retail_amount: item.retail_amount,
+        supplier_amount: item.supplier_amount,
+        minimum_applied: item.minimum_applied
+      })))
+    ]);
 
-    // Fetch updated quote to return with decrypted values
-    const [quote] = await sql`
-      SELECT id, quote_number, customer_name, customer_address,
-             customer_name_encrypted, customer_address_encrypted,
-             quote_date, our_ref, status,
-             installation_fee::float, delivery_fee::float,
-             subtotal::float, total::float,
-             total_area::float, panel_count,
-             created_at, updated_at
-      FROM quotes
-      WHERE id = ${id}::uuid
-    `;
+    // Fetch updated quote using SECURITY DEFINER function
+    const [updatedQuoteResult] = await sql('SELECT get_company_quote_by_id($1, $2) as quote', [session.companyId, id]);
+    const updatedQuote = updatedQuoteResult?.quote;
 
     return NextResponse.json({
-      ...quote,
-      customer_name: quote.customer_name_encrypted
-        ? decryptPII(quote.customer_name_encrypted)
-        : quote.customer_name || '',
-      customer_address: quote.customer_address_encrypted
-        ? decryptPII(quote.customer_address_encrypted)
-        : quote.customer_address || '',
+      ...updatedQuote,
+      customer_name: updatedQuote.customer_name_encrypted
+        ? decryptPII(updatedQuote.customer_name_encrypted)
+        : updatedQuote.customer_name || '',
+      customer_address: updatedQuote.customer_address_encrypted
+        ? decryptPII(updatedQuote.customer_address_encrypted)
+        : updatedQuote.customer_address || '',
     });
     } finally {
       // Always reset RLS context
@@ -276,19 +249,22 @@ export async function DELETE(
     await setTenantContext(session.companyId, session.role || 'user');
 
     try {
-      // Check subscription access - require full access for quote deletion
-      const access = await checkSubscriptionAccess(session);
-      if (access.mode !== 'full') {
-        return NextResponse.json({
-          error: 'Active subscription required for quote deletion',
-          checkoutUrl: '/subscription/checkout',
-          mode: access.mode,
-          reason: access.reason
-        }, { status: 403 });
+      // Superadmins can delete any quote without subscription restrictions
+      if (session.role !== 'superadmin' && session.role !== 'admin') {
+        // Check subscription access - require full access for quote deletion
+        const access = await checkSubscriptionAccess(session);
+        if (access.mode !== 'full') {
+          return NextResponse.json({
+            error: 'Active subscription required for quote deletion',
+            checkoutUrl: '/subscription/checkout',
+            mode: access.mode,
+            reason: access.reason
+          }, { status: 403 });
+        }
       }
 
-      // RLS policies now handle company_id filtering automatically
-      await sql`DELETE FROM quotes WHERE id = ${id}::uuid`;
+      // Use SECURITY DEFINER function for quote deletion
+      await sql('SELECT delete_quote($1, $2)', [session.companyId, id]);
       return NextResponse.json({ success: true });
     } finally {
       // Always reset RLS context

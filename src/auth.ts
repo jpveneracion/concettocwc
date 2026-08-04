@@ -162,8 +162,7 @@ export const authOptions = {
           // Get user's company ID and role using SECURITY DEFINER function to bypass RLS
           const { sql } = await import('@/lib/db');
           console.log('🔍 Fetching user data using SECURITY DEFINER function...');
-          const [userJson] = await sql`SELECT find_user_by_id(${existingAccount.user_id}::uuid) as user_data`;
-          const userData = userJson?.user_data;
+          const [userData] = await sql`SELECT * FROM find_user_by_id(${existingAccount.user_id}::uuid)`;
           console.log('🔍 User data from SECURITY DEFINER function:', userData);
 
           if (userData) {
@@ -316,8 +315,7 @@ export const authOptions = {
             console.log('🔍 Fetching RLS info for userId:', token.userId);
             const { sql } = await import('@/lib/db');
 
-            const [userJson] = await sql`SELECT find_user_by_id(${token.userId}::uuid) as user_data`;
-            const userData = userJson?.user_data;
+            const [userData] = await sql`SELECT * FROM find_user_by_id(${token.userId}::uuid)`;
 
             console.log('🔍 Session callback: userData =', userData);
 
@@ -325,11 +323,11 @@ export const authOptions = {
               const normalizedRole = normalizeRoleForRLS(userData.user_role);
               (session as any).user.role = normalizedRole;
               (session as any).user.companyId = userData.user_company_id;
-              (session as any).user.companyCode = userData.company_code;
+              (session as any).user.companyCode = userData.company_code ?? undefined;
 
               // Set RLS context for this session
               try {
-                await setTenantContext(userAndCompany.company_id, normalizedRole);
+                await setTenantContext(userData.user_company_id, normalizedRole);
                 console.log('✅ RLS context set in session callback for user:', token.userId);
               } catch (rlsError) {
                 console.error('❌ Failed to set RLS context in session callback (authentication will proceed):', rlsError);

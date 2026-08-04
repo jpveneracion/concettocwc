@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
+import { setTenantContext } from '@/lib/rls';
 
 export async function DELETE(
   _req: Request,
@@ -20,11 +21,19 @@ export async function DELETE(
 
     await requireAdmin(session.userId);
 
-    await sql`
-      UPDATE products SET active = false, updated_at = now()
-      WHERE id = ${id}::uuid
-    `;
-    return NextResponse.json({ success: true });
+    // Set app role context for SECURITY DEFINER functions
+    await sql('SELECT set_config($1, $2, true)', ['app.role', 'concetto_boms']);
+
+    // Use SECURITY DEFINER function for deletion - NO direct SQL
+    const [result] = await sql('SELECT delete_product($1::uuid) as result', [id]);
+    console.log('Delete result:', result);
+
+    if (!result || !result.result || !result.result.success) {
+      console.log('WARNING: Delete failed for product ID:', id);
+      return NextResponse.json({ error: result?.result?.error || 'Product not found or already deleted' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, deletedProduct: result.result });
   } catch (err) {
     console.error('DELETE /api/products/[id]', err);
 
@@ -42,14 +51,15 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const [product] = await sql`
-      SELECT id, code, collection, description,
-             supplier_cost::float, retail_price::float, unit, active,
-             created_at, updated_at
-      FROM products
-      WHERE id = ${id}::uuid
-    `;
-    if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    // Use SECURITY DEFINER function for product lookup
+    const result = await sql('SELECT get_product_by_id($1::uuid) as product', [id]);
+
+    if (result.length === 0 || !result[0].product) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const product = JSON.parse(result[0].product);
+    if (!product.id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);
   } catch (err) {
     console.error('GET /api/products/[id]', err);

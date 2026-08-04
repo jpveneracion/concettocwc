@@ -1,6 +1,7 @@
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { neon } from '@neondatabase/serverless';
 import { VerificationStatus, PaymentVerification } from '@/types/payment';
+import type { DatabaseRole } from '@/types/roles';
 
 // Database error types for better error handling
 export interface DatabaseError extends Error {
@@ -328,7 +329,7 @@ export async function getUser(userId: string): Promise<UserRecord> {
       is_admin: result.rows[0].user_is_admin,
       password_hash: result.rows[0].user_password_hash,
       created_at: result.rows[0].user_created_at ? new Date(result.rows[0].user_created_at).toISOString() : new Date().toISOString(),
-      updated_at: undefined
+      updated_at: new Date().toISOString()
     };
   } catch (error) {
     if (error instanceof DatabaseErrorImpl) {
@@ -478,7 +479,7 @@ export async function getPaymentVerificationById(id: string): Promise<PaymentVer
   try {
     // Use query() with automatic RLS context instead of raw sql()
     const result = await query('SELECT * FROM payment_verifications WHERE id = $1', [id]);
-    return (result.rows[0] as PaymentVerificationRecord) || null;
+    return (result.rows[0] as unknown as PaymentVerificationRecord) || null;
   } catch (error) {
     throw new Error(`Failed to get payment verification: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -516,7 +517,7 @@ export async function getPaymentVerificationsByUserId(
 
     // Use query() with automatic RLS context
     const result = await query(sqlQuery, params);
-    return result.rows as PaymentVerificationRecord[];
+    return result.rows as unknown as PaymentVerificationRecord[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

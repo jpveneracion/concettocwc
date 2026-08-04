@@ -92,7 +92,7 @@ export async function mapPlanIdToSubscriptionPlan(planId: string): Promise<PlanI
     }
 
     // Extract discount percent from features
-    const discountPercent = plan.features?.discount_percent || 0;
+    const discountPercent = Number((plan.features as Record<string, unknown>)?.discount_percent) || 0;
 
     // Determine trial period based on plan characteristics
     // Higher discount plans get longer trial periods
@@ -170,7 +170,7 @@ export async function activateSubscriptionWithVerification(
     if (!plan) {
       throw new Error(`Plan details not found: ${planId}`);
     }
-    const discountPercent = plan.features?.discount_percent || 0;
+    const discountPercent = Number((plan.features as Record<string, unknown>)?.discount_percent) || 0;
 
     // 4. Generate activation code (if not provided)
     const activationCode = options.activationCode || generateActivationCode(userId, planId);

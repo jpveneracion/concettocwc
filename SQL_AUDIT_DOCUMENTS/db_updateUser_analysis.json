@@ -1,0 +1,34 @@
+{
+  "file": "src/lib/db.ts",
+  "function": "updateUser",
+  "line": 195,
+  "analysis": {
+    "sql_pattern": "UPDATE users with dynamic SET clause",
+    "sql_injection_protection": "✅ PARAMETERIZED QUERIES - Uses proper parameterization",
+    "dynamic_sql": "✅ SAFE - Dynamic column names mapped to parameters",
+    "authorization": "❓ UNCLEAR - No visible authorization checks",
+    "rls_context": "❓ UNCLEAR - Need to verify if RLS context is set"
+  },
+  "code_sample": {
+    "query_type": "UPDATE users",
+    "parameterization": "Uses parameterized queries with dynamic SET clause",
+    "safety_features": [
+      "Parameterized queries prevent SQL injection",
+      "Dynamic column mapping is safe",
+      "Proper error handling"
+    ]
+  },
+  "security_considerations": {
+    "concerns": [
+      "No visible authorization checks before UPDATE",
+      "No ownership verification visible",
+      "Need to verify RLS context is properly set"
+    ],
+    "positive_aspects": [
+      "SQL injection protection via parameterization",
+      "Proper error handling",
+      "Type-safe implementation"
+    ]
+  },
+  "audit_status": "🟡 NEEDS REVIEW - Working code but authorization unclear"
+}

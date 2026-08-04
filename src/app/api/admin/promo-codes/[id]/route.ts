@@ -24,39 +24,22 @@ export async function PATCH(
 
     await requireAdmin(session.userId);
 
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
     const { id } = await params;
     const promoCodeId = parseInt(id);
     const body = await req.json();
     const { gcash_qr_url, gotyme_qr_url, usage_limit, ...updates } = body;
 
-    // Handle QR code updates separately
-    if (gcash_qr_url !== undefined || gotyme_qr_url !== undefined) {
-      const updateFields: string[] = [];
-      const updateValues: (string | number | boolean | null)[] = [];
-      let paramIndex = 1;
-
-      if (gcash_qr_url !== undefined) {
-        updateFields.push(`gcash_qr_url = $${paramIndex++}`);
-        updateValues.push(gcash_qr_url);
-      }
-
-      if (gotyme_qr_url !== undefined) {
-        updateFields.push(`gotyme_qr_url = $${paramIndex++}`);
-        updateValues.push(gotyme_qr_url);
-      }
-
-      if (usage_limit !== undefined) {
-        updateFields.push(`usage_limit = $${paramIndex++}`);
-        updateValues.push(usage_limit);
-      }
-
-      if (updateFields.length > 0) {
-        updateValues.push(promoCodeId);
-        await sql(
-          `UPDATE activation_codes SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`,
-          updateValues
-        );
-      }
+    // Handle QR code updates using SECURITY DEFINER function
+    if (gcash_qr_url !== undefined || gotyme_qr_url !== undefined || usage_limit !== undefined) {
+      const result = await sql(
+        'SELECT update_activation_code_qr_urls($1::int, $2::text, $3::text, $4::int) as update_result',
+        [promoCodeId, gcash_qr_url || null, gotyme_qr_url || null, usage_limit || null]
+      );
     }
 
     // Handle other updates using existing function
@@ -67,7 +50,7 @@ export async function PATCH(
       if (updates.campaign_name !== undefined) updateData.campaign_name = updates.campaign_name;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
 
-      await updateActivationCode(promoCodeId, updateData);
+      await updateActivationCode(promoCodeId, updateData, rlsContext);
     }
 
     const updatedPromoCode = await getActivationCodeById(promoCodeId);
@@ -115,9 +98,14 @@ export async function DELETE(
 
     await requireAdmin(session.userId);
 
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
     const { id } = await params;
     const promoCodeId = parseInt(id);
-    await deactivateActivationCode(promoCodeId);
+    await deactivateActivationCode(promoCodeId, rlsContext);
 
     return NextResponse.json({
       success: true,
@@ -142,29 +130,29 @@ export async function DELETE(
 }
 
 /**
- * Helper function to get promo code by ID
+ * Helper function to get promo code by ID using SECURITY DEFINER function
  */
 async function getActivationCodeById(id: number) {
-  const result = await sql('SELECT * FROM activation_codes WHERE id = $1', [id]);
+  const result = await sql('SELECT get_activation_code_by_id($1::int) as promo_code', [id]);
 
   if (result.length === 0) {
     throw new Error('Promo code not found');
   }
 
-  const row = result[0];
+  const promoCodeData = JSON.parse(result[0].promo_code);
   return {
-    id: row.id,
-    code: row.code,
-    discount_percent: parseFloat(row.discount_percent),
-    applicable_plans: JSON.parse(row.applicable_plans),
-    gcash_qr_url: row.gcash_qr_url,
-    gotyme_qr_url: row.gotyme_qr_url,
-    usage_limit: row.usage_limit,
-    current_usage: row.current_usage,
-    expires_at: row.expires_at,
-    is_active: row.is_active,
-    campaign_name: row.campaign_name,
-    notes: row.notes,
-    created_at: row.created_at
+    id: promoCodeData.id,
+    code: promoCodeData.code,
+    discount_percent: promoCodeData.discount_percent,
+    applicable_plans: promoCodeData.applicable_plans,
+    gcash_qr_url: promoCodeData.gcash_qr_url,
+    gotyme_qr_url: promoCodeData.gotyme_qr_url,
+    usage_limit: promoCodeData.usage_limit,
+    current_usage: promoCodeData.current_usage,
+    expires_at: promoCodeData.expires_at,
+    is_active: promoCodeData.is_active,
+    campaign_name: promoCodeData.campaign_name,
+    notes: promoCodeData.notes,
+    created_at: promoCodeData.created_at
   };
 }

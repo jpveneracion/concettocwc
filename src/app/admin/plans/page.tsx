@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import SubscriptionPlanList from '@/components/admin/SubscriptionPlanList';
 import SubscriptionPlanForm from '@/components/admin/SubscriptionPlanForm';
@@ -234,12 +235,20 @@ export default function AdminPlansPage() {
             <div className="text-sm text-gray-600">
               {plans.length} {plans.length === 1 ? 'plan' : 'plans'} available
             </div>
-            <button
-              onClick={handleStartNewPlan}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 min-h-[44px]"
-            >
-              Create New Plan
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/payment-settings"
+                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 min-h-[44px]"
+              >
+                ⚙ Payment Settings
+              </Link>
+              <button
+                onClick={handleStartNewPlan}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 min-h-[44px]"
+              >
+                Create New Plan
+              </button>
+            </div>
           </div>
         )}
 

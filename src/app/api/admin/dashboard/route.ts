@@ -98,34 +98,28 @@ export async function GET(req: NextRequest) {
 async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytics> {
 
   try {
-    // Total payments by method
-    const paymentMethodResult = await sql(`
-      SELECT
-        payment_method,
-        COALESCE(SUM(payment_amount), 0) as total_amount,
-        COUNT(*) as count
-      FROM activation_codes
-      WHERE used_at IS NOT NULL
-      AND created_at >= $1
-      GROUP BY payment_method
-    `, [startDate]);
+    // Total payments by method using SECURITY DEFINER function
+    const paymentMethodResult = await sql(
+      'SELECT get_dashboard_payment_method_stats($1::timestamp with time zone) as stats',
+      [startDate]
+    );
 
-    const total_gcash_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'gcash')?.total_amount || 0;
-    const total_crypto_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'crypto')?.total_amount || 0;
-    const total_usd_payments = (paymentMethodResult as PaymentMethodRow[]).find((row: PaymentMethodRow) => row.payment_method === 'usd_bank')?.total_amount || 0;
+    let total_gcash_payments = 0, total_crypto_payments = 0, total_usd_payments = 0;
 
-    // Active subscriptions
-    const activeSubsResult = await sql(`
-      SELECT COUNT(*) FROM users WHERE subscription_activated = true
-    `);
-    const active_subscriptions = parseInt(activeSubsResult[0]?.count || '0');
+    if (paymentMethodResult.length > 0) {
+      const statsData = paymentMethodResult.map((row: any) => JSON.parse(row.stats));
+      total_gcash_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'gcash')?.total_amount || 0;
+      total_crypto_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'crypto')?.total_amount || 0;
+      total_usd_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'usd_bank')?.total_amount || 0;
+    }
 
-    // Pending codes
-    const pendingResult = await sql(`
-      SELECT COUNT(*) FROM activation_codes
-      WHERE is_active = true AND used_by IS NULL
-    `);
-    const pending_codes = parseInt(pendingResult[0]?.count || '0');
+    // Active subscriptions using SECURITY DEFINER function
+    const activeSubsResult = await sql('SELECT get_dashboard_active_subscriptions_count() as count');
+    const active_subscriptions = parseInt(activeSubsResult[0]?.count ? JSON.parse(activeSubsResult[0].count).count : '0');
+
+    // Pending codes using SECURITY DEFINER function
+    const pendingResult = await sql('SELECT get_dashboard_pending_codes_count() as count');
+    const pending_codes = parseInt(pendingResult[0]?.count ? JSON.parse(pendingResult[0].count).count : '0');
 
     // Average revenue per user
     const totalRevenue = total_gcash_payments + total_crypto_payments + total_usd_payments;
@@ -133,103 +127,71 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       ? totalRevenue / active_subscriptions
       : 0;
 
-    // Trial to conversion rate
-    const totalSignupsResult = await sql(`
-      SELECT COUNT(*) FROM users WHERE created_at >= $1
-    `, [startDate]);
-    const total_signups = parseInt(totalSignupsResult[0]?.count || '0');
+    // Trial to conversion rate using SECURITY DEFINER function
+    const totalSignupsResult = await sql(
+      'SELECT get_dashboard_signups_count($1::timestamp with time zone) as count',
+      [startDate]
+    );
+    const total_signups = parseInt(totalSignupsResult[0]?.count ? JSON.parse(totalSignupsResult[0].count).count : '0');
     const trial_to_conversion_rate = total_signups > 0
       ? (active_subscriptions / total_signups) * 100
       : 0;
 
-    // Payment method distribution
-    const paymentMethodDistribution = await sql(`
-      SELECT
-        payment_method,
-        COALESCE(SUM(payment_amount), 0) as amount,
-        COUNT(*) as count,
-        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage
-      FROM activation_codes
-      WHERE used_at IS NOT NULL
-      AND created_at >= $1
-      GROUP BY payment_method
-      ORDER BY amount DESC
-    `, [startDate]);
+    // Payment method distribution using SECURITY DEFINER function
+    const paymentMethodDistributionResult = await sql(
+      'SELECT get_dashboard_payment_method_distribution($1::timestamp with time zone) as distribution',
+      [startDate]
+    );
 
-    // Discount distribution
-    const discountDistribution = await sql(`
-      SELECT
-        discount_percent,
-        COUNT(*) as count,
-        COALESCE(SUM(payment_amount), 0) as total_amount
-      FROM activation_codes
-      WHERE used_at IS NOT NULL
-      AND created_at >= $1
-      GROUP BY discount_percent
-      ORDER BY discount_percent
-    `, [startDate]);
+    const paymentMethodDistribution = paymentMethodDistributionResult.map((row: any) => JSON.parse(row.distribution));
 
-    // Plan distribution
-    const planDistribution = await sql(`
-      SELECT
-        u.subscription_plan,
-        COUNT(*) as count,
-        COALESCE(SUM(ac.payment_amount_usd), 0) as revenue,
-        ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage
-      FROM users u
-      LEFT JOIN activation_codes ac ON u.activation_code = ac.code
-      WHERE u.subscription_activated = true
-      AND u.subscription_plan IS NOT NULL
-      AND u.created_at >= $1
-      GROUP BY u.subscription_plan
-      ORDER BY revenue DESC
-    `, [startDate]);
+    // Discount distribution using SECURITY DEFINER function
+    const discountDistributionResult = await sql(
+      'SELECT get_dashboard_discount_distribution($1::timestamp with time zone) as distribution',
+      [startDate]
+    );
 
-    // Revenue over time (daily)
-    const revenueOverTime = await sql(`
-      SELECT
-        DATE(created_at) as date,
-        COALESCE(SUM(CASE WHEN payment_method = 'gcash' THEN payment_amount ELSE 0 END), 0) as gcash,
-        COALESCE(SUM(CASE WHEN payment_method = 'crypto' THEN payment_amount ELSE 0 END), 0) as crypto,
-        COALESCE(SUM(CASE WHEN payment_method = 'usd_bank' THEN payment_amount ELSE 0 END), 0) as usd,
-        COALESCE(SUM(payment_amount), 0) as total
-      FROM activation_codes
-      WHERE used_at IS NOT NULL
-      AND created_at >= $1
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-      LIMIT 30
-    `, [startDate]);
+    const discountDistribution = discountDistributionResult.map((row: any) => JSON.parse(row.distribution));
 
-    // Activation usage over time
-    const usageOverTime = await sql(`
-      SELECT
-        DATE(created_at) as date,
-        COUNT(*) FILTER (WHERE used_by IS NULL) as generated,
-        COUNT(*) FILTER (WHERE used_by IS NOT NULL) as used,
-        COUNT(*) FILTER (WHERE used_by IS NULL) as pending
-      FROM activation_codes
-      WHERE created_at >= $1
-      GROUP BY DATE(created_at)
-      ORDER BY date DESC
-      LIMIT 30
-    `, [startDate]);
+    // Plan distribution using SECURITY DEFINER function
+    const planDistributionResult = await sql(
+      'SELECT get_dashboard_plan_distribution($1::timestamp with time zone) as distribution',
+      [startDate]
+    );
+
+    const planDistribution = planDistributionResult.map((row: any) => JSON.parse(row.distribution));
+
+    // Revenue over time using SECURITY DEFINER function
+    const revenueOverTimeResult = await sql(
+      'SELECT get_dashboard_revenue_over_time($1::timestamp with time zone) as revenue_data',
+      [startDate]
+    );
+
+    const revenueOverTime = revenueOverTimeResult.map((row: any) => JSON.parse(row.revenue_data));
+
+    // Activation usage over time using SECURITY DEFINER function
+    const usageOverTimeResult = await sql(
+      'SELECT get_dashboard_usage_over_time($1::timestamp with time zone) as usage_data',
+      [startDate]
+    );
+
+    const usageOverTime = usageOverTimeResult.map((row: any) => JSON.parse(row.usage_data));
 
     // Transform database results to proper typed interfaces
-    const paymentMethodStats: PaymentMethodStats[] = (paymentMethodDistribution as PaymentMethodDistributionRow[]).map((row: PaymentMethodDistributionRow) => ({
+    const paymentMethodStats: PaymentMethodStats[] = paymentMethodDistribution.map((row: any) => ({
       method: row.payment_method as PaymentMethod,
       amount: row.amount,
       count: row.count,
       percentage: row.percentage
     }));
 
-    const discountStats: DiscountStats[] = (discountDistribution as DiscountDistributionRow[]).map((row: DiscountDistributionRow) => ({
+    const discountStats: DiscountStats[] = discountDistribution.map((row: any) => ({
       discount_percent: row.discount_percent,
       count: row.count,
       total_amount: row.total_amount
     }));
 
-    const planDistributionTyped: PlanStats[] = (planDistribution as PlanDistributionRow[]).map((row: PlanDistributionRow) => ({
+    const planDistributionTyped: PlanStats[] = planDistribution.map((row: any) => ({
       plan: {
         id: row.subscription_plan,
         name: row.subscription_plan,
@@ -250,7 +212,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       percentage: row.percentage
     }));
 
-    const revenueOverTimeTyped: RevenueDataPoint[] = (revenueOverTime as RevenueOverTimeRow[]).map((row: RevenueOverTimeRow) => ({
+    const revenueOverTimeTyped: RevenueDataPoint[] = revenueOverTime.map((row: any) => ({
       date: row.date,
       gcash: row.gcash,
       crypto: row.crypto,
@@ -258,7 +220,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       total: row.total
     }));
 
-    const usageOverTimeTyped: UsageDataPoint[] = (usageOverTime as UsageOverTimeRow[]).map((row: UsageOverTimeRow) => ({
+    const usageOverTimeTyped: UsageDataPoint[] = usageOverTime.map((row: any) => ({
       date: row.date,
       generated: row.generated,
       used: row.used,

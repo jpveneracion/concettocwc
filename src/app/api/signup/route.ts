@@ -34,46 +34,44 @@ export async function POST(req: Request) {
     const userEmail = user.email.toLowerCase().trim();
     const emailHash = hashEmailForSearch(userEmail);
 
-    // Check if company code already exists
-    const existingCompany = await sql`
-      SELECT id FROM companies WHERE UPPER(code) = ${companyCode}
-    `;
-    if (existingCompany.length > 0) {
+    // Check if company code already exists using SECURITY DEFINER function
+    const existingCompany = await sql('SELECT check_company_exists($1) as exists', [companyCode]);
+    if (existingCompany.length > 0 && existingCompany[0].exists) {
       return NextResponse.json({ error: 'Company code already exists' }, { status: 409 });
     }
 
-    // Check if user email already exists using email_hash
-    const existingUser = await sql`
-      SELECT id FROM users WHERE email_hash = ${emailHash}
-    `;
-    if (existingUser.length > 0) {
+    // Check if user email already exists using email_hash via SECURITY DEFINER function
+    const existingUser = await sql('SELECT check_user_exists_by_email_hash($1) as exists', [emailHash]);
+    if (existingUser.length > 0 && existingUser[0].exists) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
     // Hash password
     const passwordHash = await bcrypt.hash(user.password, 10);
 
-    // Create company
-    const [newCompany] = await sql`
-      INSERT INTO companies (code, name, address, mobile, email, prepared_by, minimum_area_sqft)
-      VALUES (
-        ${companyCode},
-        ${company.name.trim()},
-        ${company.address?.trim() ?? ''},
-        ${company.mobile?.trim() ?? ''},
-        ${company.email?.trim() ?? ''},
-        ${company.prepared_by?.trim() ?? ''},
-        ${minimumArea}
-      )
-      RETURNING id, code, name
-    `;
+    // Create company using SECURITY DEFINER function
+    const [companyResult] = await sql('SELECT create_company($1, $2, $3, $4, $5, $6, $7) as company', [
+      companyCode,
+      company.name.trim(),
+      company.address?.trim() ?? '',
+      company.mobile?.trim() ?? '',
+      company.email?.trim() ?? '',
+      company.prepared_by?.trim() ?? '',
+      minimumArea
+    ]);
 
-    // Create user linked to company with email_hash for authentication
-    const [newUser] = await sql`
-      INSERT INTO users (company_id, email, email_hash, password_hash)
-      VALUES (${newCompany.id}, ${userEmail}, ${emailHash}, ${passwordHash})
-      RETURNING id, email
-    `;
+    const newCompany = companyResult.company;
+
+    // Create user linked to company with email_hash for authentication using SECURITY DEFINER function
+    const [userResult] = await sql('SELECT create_user($1, $2, $3, $4, $5) as user', [
+      userEmail,
+      passwordHash,
+      emailHash,
+      newCompany.id,
+      'user'
+    ]);
+
+    const newUser = userResult.user;
 
     // Activate 3-day trial for new user
     await setTrialExpiration(newUser.id, 3);

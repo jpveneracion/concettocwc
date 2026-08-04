@@ -1,0 +1,34 @@
+{
+  "table": "products",
+  "has_rls": true,
+  "rls_migration_file": "migrations/036_enable_rls_products.sql",
+  "policy_count": 6,
+  "policy_conditions": {
+    "read_access": "Global read access for all authenticated users (concetto_boms role)",
+    "write_access": "Superadmin only (is_current_user_superadmin() check)",
+    "delete_protection": "Superadmin only + product not in use check",
+    "structure_protection": "Prevents changing critical identifiers (id, code, unit)",
+    "code_immutable": "Product code changes restricted",
+    "active_status_protection": "Active status changes restricted to superadmin"
+  },
+  "security_definer_functions": {
+    "get_active_products": {
+      "exists": true,
+      "location": "migrations/047_broken_security_definer_functions.sql.bak",
+      "returns": "SETOF json",
+      "risk_level": "🟢 SAFE",
+      "security_analysis": "Read-only function, no authorization issues, properly uses RLS bypass for catalog access"
+    },
+    "upsert_product": {
+      "exists": true,
+      "location": "migrations/047_broken_security_definer_functions.sql.bak",
+      "returns": "json",
+      "risk_level": "🟡 NEEDS REVIEW",
+      "security_analysis": "INSERT/UPDATE function that needs authorization verification - requires security review"
+    }
+  },
+  "rls_assessment": "✅ PROPERLY CONFIGURED - Comprehensive RLS policies with global catalog model",
+  "index_coverage": 4,
+  "test_coverage": "Comprehensive test function available (test_products_rls)",
+  "audit_function": "Available (audit_products_security)"
+}

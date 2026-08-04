@@ -14,57 +14,40 @@ export async function GET(req: Request) {
     const collection = searchParams.get('collection');
 
     if (collection) {
-      // Get pricing for specific collection
-      const [pricing] = await sql`
-        SELECT supplier_cost::float, retail_price::float
-        FROM company_collections
-        WHERE company_id = ${session.companyId} AND collection = ${collection}
-      `;
-      return NextResponse.json(pricing || { supplier_cost: 0, retail_price: 0 });
+      // Get pricing for specific collection using SECURITY DEFINER function
+      const [pricing] = await sql('SELECT get_company_collection_pricing($1::uuid, $2) as pricing', [session.companyId, collection]);
+      const pricingData = pricing?.pricing ? JSON.parse(pricing.pricing) : { supplier_cost: 0, retail_price: 0 };
+      return NextResponse.json(pricingData);
     }
 
-    // Get all collections with pricing
-    const collections = await sql`
-      SELECT collection, supplier_cost::float, retail_price::float
-      FROM company_collections
-      WHERE company_id = ${session.companyId}
-      ORDER BY collection ASC
-    `;
+    // Get all collections with pricing using SECURITY DEFINER function
+    const collectionsResult = await sql('SELECT get_company_collections($1::uuid) as collection', [session.companyId]);
+    const collections = collectionsResult.map(row => {
+      const collectionData = row.collection;
+      return {
+        collection: collectionData.collection,
+        supplier_cost: parseFloat(collectionData.supplier_cost),
+        retail_price: parseFloat(collectionData.retail_price)
+      };
+    });
 
-    // Get all unique collections from both products (global) and company_product_definitions (company-specific)
+    // Get all unique collections using SECURITY DEFINER function
     let allCollections;
 
     if (session.isAdmin) {
       // Admins see all collections from both tables
-      allCollections = await sql`
-        SELECT DISTINCT collection
-        FROM products
-        WHERE collection IS NOT NULL AND collection != ''
-        UNION
-        SELECT DISTINCT collection
-        FROM company_product_definitions
-        WHERE collection IS NOT NULL AND collection != ''
-        ORDER BY collection ASC
-      `;
+      allCollections = await sql('SELECT get_all_collections_for_admin()');
     } else {
       // Non-admins see global collections + their own company's collections
-      allCollections = await sql`
-        SELECT DISTINCT collection
-        FROM products
-        WHERE collection IS NOT NULL AND collection != ''
-        UNION
-        SELECT DISTINCT collection
-        FROM company_product_definitions
-        WHERE collection IS NOT NULL AND collection != '' AND company_id = ${session.companyId}
-        ORDER BY collection ASC
-      `;
+      allCollections = await sql('SELECT get_company_collections_with_products($1::uuid)', [session.companyId]);
     }
 
     // Merge to show which collections have pricing and which don't
     const merged = allCollections.map((c) => {
-      const pricing = collections.find((p) => p.collection === c.collection);
+      const collectionData = JSON.parse(Object.values(c)[0]);
+      const pricing = collections.find((p) => p.collection === collectionData.collection);
       return {
-        collection: c.collection,
+        collection: collectionData.collection,
         supplier_cost: pricing?.supplier_cost || 0,
         retail_price: pricing?.retail_price || 0,
         has_pricing: !!pricing,
@@ -97,16 +80,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'supplier_cost and retail_price are required' }, { status: 400 });
     }
 
-    const [pricing] = await sql`
-      INSERT INTO company_collections (company_id, collection, supplier_cost, retail_price)
-      VALUES (${session.companyId}, ${collection}, ${supplier_cost}, ${retail_price})
-      ON CONFLICT (company_id, collection) DO UPDATE SET
-        supplier_cost = EXCLUDED.supplier_cost,
-        retail_price = EXCLUDED.retail_price
-      RETURNING collection, supplier_cost::float, retail_price::float
-    `;
+    const [pricing] = await sql('SELECT upsert_company_collection($1::uuid, $2, $3, $4) as collection', [session.companyId, collection, supplier_cost, retail_price]);
+    const pricingData = pricing?.collection || {
+      collection: collection,
+      supplier_cost: parseFloat(supplier_cost),
+      retail_price: parseFloat(retail_price)
+    };
 
-    return NextResponse.json(pricing);
+    return NextResponse.json(pricingData);
   } catch (err) {
     console.error('POST /api/company-collections', err);
     return NextResponse.json({ error: 'Failed to save pricing' }, { status: 500 });

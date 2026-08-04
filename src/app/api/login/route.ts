@@ -41,37 +41,33 @@ export async function POST(req: Request) {
     console.log('📧 Looking up user:', email);
     const emailHash = hashEmailForSearch(email);
 
-    // Find user with company using SECURITY DEFINER function for user lookup
-    let users = await sql`
-      SELECT
-        u.user_id,
-        u.user_email as email,
-        u.email_hash,
-        u.user_password_hash as password_hash,
-        u.company_id,
-        c.code as company_code
-      FROM find_user_by_email_hash(${emailHash}) u
-      JOIN companies c ON c.id = u.company_id
-    `;
+    // Find user with company using SECURITY DEFINER function for user lookup.
+    // Spread columns (SELECT * FROM fn) so the driver returns an object, not a composite string.
+    let userResult = await sql`SELECT * FROM find_user_by_email_hash(${emailHash})`;
+
+    let users: any[] = [];
+    if (userResult.length > 0 && userResult[0].user_id) {
+      users = [
+        {
+          id: userResult[0].user_id,
+          email: userResult[0].user_email,
+          email_hash: userResult[0].user_email_hash,
+          company_id: userResult[0].user_company_id,
+          role: userResult[0].user_role,
+        },
+      ];
+    }
 
     // Fallback to email search if email_hash not found (for users without email_hash populated)
     let foundViaEmailFallback = false;
     if (users.length === 0) {
       console.log('🔍 Email hash not found, trying email fallback with SECURITY DEFINER function...');
 
-      users = await sql`
-        SELECT
-          u.id as user_id,
-          u.email,
-          u.email_encrypted,
-          u.email_hash,
-          u.password_hash,
-          c.id as company_id,
-          c.code as company_code
-        FROM find_user_by_email(${email.toLowerCase().trim()}) u
-        JOIN companies c ON c.id = u.company_id
-      `;
-      foundViaEmailFallback = users.length > 0;
+      userResult = await sql`SELECT find_user_by_email(${email.toLowerCase().trim()}) as user_json`;
+      if (userResult.length > 0 && userResult[0].user_json) {
+        users = [userResult[0].user_json];
+        foundViaEmailFallback = users.length > 0;
+      }
     }
 
     if (users.length === 0) {
@@ -80,7 +76,7 @@ export async function POST(req: Request) {
     }
 
     const user = users[0];
-    console.log('✅ User found:', user.user_id);
+    console.log('✅ User found:', user.id);
 
     // Verify password
     console.log('🔑 Verifying password...');
@@ -95,8 +91,8 @@ export async function POST(req: Request) {
     if (foundViaEmailFallback && user.email && !user.email_hash) {
       console.log('🔧 Auto-populating email_hash using SECURITY DEFINER function...');
       const autoEmailHash = hashEmailForSearch(user.email);
-      await sql('SELECT update_user_email_hash($1, $2)', [user.user_id, autoEmailHash]);
-      console.log(`Auto-populated email_hash for user ${user.user_id} (${user.email})`);
+      await sql('SELECT update_user_email_hash($1, $2)', [user.id, autoEmailHash]);
+      console.log(`Auto-populated email_hash for user ${user.id} (${user.email})`);
     }
 
     // Check if using default password
@@ -109,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     // FIXED: Get user role FIRST, before setting context
-    const [userRoleResult] = await sql('SELECT get_user_admin_status($1) as user_status', [user.user_id]);
+    const [userRoleResult] = await sql('SELECT get_user_admin_status($1) as user_status', [user.id]);
     const userRole = userRoleResult?.user_status;
 
     // Normalize role for RLS (handle 'super_admin' -> 'superadmin' conversion)
@@ -123,7 +119,7 @@ export async function POST(req: Request) {
     // FIXED: Establish RLS context BEFORE dependent operations
     try {
       await setTenantContext(user.company_id, normalizedRole);
-      console.log('✅ RLS context established for user:', user.user_id, 'company:', user.company_id, 'role:', normalizedRole);
+      console.log('✅ RLS context established for user:', user.id, 'company:', user.company_id, 'role:', normalizedRole);
     } catch (rlsError) {
       console.error('❌ Failed to establish RLS context (authentication will proceed):', rlsError);
       // Don't fail login if RLS context establishment fails
@@ -149,7 +145,7 @@ export async function POST(req: Request) {
     console.log('🍪 Setting session cookie...');
     const cookieStore = await cookies();
     cookieStore.set('session', JSON.stringify({
-      userId: user.user_id,
+      userId: user.id,
       companyId: user.company_id,
       companyCode: user.company_code,
       email: sessionEmail,

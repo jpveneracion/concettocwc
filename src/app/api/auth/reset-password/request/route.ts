@@ -15,15 +15,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Find user by email
-    const [user] = await sql`
-      SELECT u.id, u.email, u.company_id, c.name as company_name
-      FROM users u
-      JOIN companies c ON c.id = u.company_id
-      WHERE LOWER(u.email) = ${email.toLowerCase()}
-    `;
+    // Find user by email using SECURITY DEFINER function
+    const result = await sql('SELECT find_user_by_email($1) as user_data', [email.toLowerCase()]);
+    const userJson = result[0]?.user_data || null;
 
-    if (!user) {
+    if (!userJson) {
       // Don't reveal if email exists or not (security best practice)
       // But still return success to prevent email enumeration
       return NextResponse.json({
@@ -32,15 +28,30 @@ export async function POST(req: Request) {
       });
     }
 
+    const user = typeof userJson === 'string' ? JSON.parse(userJson) : userJson;
+
     // Generate reset token
     const token = generateResetToken();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
-    // Store reset token
-    await sql`
-      INSERT INTO password_reset_tokens (user_id, token, expires_at)
-      VALUES (${user.id}, ${token}, ${expiresAt})
-    `;
+    // Store reset token using SECURITY DEFINER function
+    const tokenResult = await sql(
+      'SELECT create_password_reset_token($1::uuid, $2, $3) as token_data',
+      [user.id, token, expiresAt]
+    );
+
+    if (!tokenResult || tokenResult.length === 0) {
+      console.error('Failed to create password reset token');
+      return NextResponse.json({
+        success: true,
+        message: 'If an account exists, a reset link will be sent to your email.'
+      });
+    }
+
+    const tokenData = JSON.parse(tokenResult[0].token_data);
+    if (!tokenData.success) {
+      console.error('Password reset token creation failed:', tokenData.error);
+    }
 
     // TODO: Send email with reset link
     // For now, log the reset link to console

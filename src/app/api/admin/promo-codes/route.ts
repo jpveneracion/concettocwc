@@ -38,7 +38,12 @@ export async function GET(req: Request) {
       filters.campaign_name = campaign_name;
     }
 
-    const promoCodes = await listActivationCodes(filters);
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
+    const promoCodes = await listActivationCodes(filters, rlsContext);
 
     return NextResponse.json(promoCodes);
 
@@ -117,6 +122,11 @@ export async function POST(req: Request) {
     }
 
     // Create promo code
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+    };
+
     const promoCode = await createPromoCode(
       discount_percent,
       applicable_plans,
@@ -129,7 +139,8 @@ export async function POST(req: Request) {
         gotyme: gotyme_qr_url
       },
       usage_limit,
-      code // Pass custom code if provided
+      code, // Pass custom code if provided
+      rlsContext
     );
 
     return NextResponse.json({

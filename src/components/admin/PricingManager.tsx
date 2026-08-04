@@ -24,7 +24,11 @@ export default function PricingManager() {
       const response = await fetch('/api/admin/pricing');
       if (response.ok) {
         const data = await response.json();
-        setPricing(data);
+        const apiData = data.data;
+        setPricing({
+          current_pricing: apiData?.current || null,
+          scheduled_changes: apiData?.scheduled || []
+        });
       } else {
         const errorData = await response.json();
         showMessage('error', errorData.error || 'Failed to load pricing');

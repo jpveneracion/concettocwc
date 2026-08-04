@@ -5,6 +5,7 @@ node_modules/
 
 # testing
 coverage/
+src/__tests__/
 
 # next.js
 .next/
@@ -38,3 +39,31 @@ yarn-error.log*
 next-env.d.ts
 .env
 .gstack/
+
+# one-off DB/RLS scripts (root level, run manually via ts-node/tsx, not part of app)
+/apply-*.ts
+/check-*.ts
+/test-*.ts
+/fix-*.ts
+/verify-*.ts
+/recreate-*.ts
+/run-*.ts
+/debug-*.ts
+/diagnostic-*.ts
+/proper-*.ts
+/working-*.ts
+/simple-*.ts
+/comprehensive-*.ts
+/end-to-end-*.ts
+/find-*.ts
+/database-*.ts
+/explore-*.ts
+/show-*.ts
+/cleanup-*.ts
+/compare-*.ts
+/exact-*.ts
+/final-*.ts
+/add-*.ts
+/analyze-*.ts
+/update-*.ts
+/_*.ts

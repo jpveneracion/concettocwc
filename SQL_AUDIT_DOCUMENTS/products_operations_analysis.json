@@ -1,0 +1,44 @@
+{
+  "file": "src/app/api/products/route.ts",
+  "operations_analyzed": [
+    {
+      "line": 9,
+      "query_type": "SELECT",
+      "tables_affected": [],
+      "raw_query": "SELECT set_app_role($1)",
+      "operation_context": "role_context_setting",
+      "function_called": "set_app_role",
+      "purpose": "Set application role context for database operations"
+    },
+    {
+      "line": 11,
+      "query_type": "SELECT",
+      "tables_affected": ["products"],
+      "raw_query": "SELECT get_active_products() as product",
+      "operation_context": "product_retrieval",
+      "function_called": "get_active_products",
+      "purpose": "Retrieve active products for display"
+    },
+    {
+      "line": 31,
+      "query_type": "SELECT",
+      "tables_affected": [],
+      "raw_query": "SELECT set_app_role($1)",
+      "operation_context": "role_context_setting",
+      "function_called": "set_app_role",
+      "purpose": "Set application role context for database operations"
+    },
+    {
+      "line": 40,
+      "query_type": "SELECT",
+      "tables_affected": ["products"],
+      "raw_query": "SELECT upsert_product($1, $2, $3, $4) as product",
+      "operation_context": "product_creation_update",
+      "function_called": "upsert_product",
+      "purpose": "Create or update product records"
+    }
+  ],
+  "analysis_timestamp": "2026-08-01T16:30:00Z",
+  "total_operations": 4,
+  "unique_functions": ["set_app_role", "get_active_products", "upsert_product"]
+}

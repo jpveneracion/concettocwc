@@ -12,6 +12,32 @@ import type {
   ProductPromotionResult
 } from '@/types/company-product';
 
+// Company product error interface for better error handling
+export interface CompanyProductError extends Error {
+  code: 'NOT_FOUND' | 'DUPLICATE' | 'CANNOT_MODIFY' | 'VALIDATION_ERROR' | 'OPERATION_FAILED';
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+}
+
+class CompanyProductErrorImpl extends Error implements CompanyProductError {
+  code: CompanyProductError['code'];
+  mobileMessage: string;
+  details?: Record<string, unknown>;
+
+  constructor(
+    code: CompanyProductError['code'],
+    message: string,
+    mobileMessage: string,
+    details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'CompanyProductError';
+    this.code = code;
+    this.mobileMessage = mobileMessage;
+    this.details = details;
+  }
+}
+
 /**
  * Get company products with filtering
  */
@@ -20,33 +46,24 @@ export async function getCompanyProducts(
   status?: 'all' | 'pending' | 'approved',
   search?: string
 ): Promise<CompanyProductDefinition[]> {
-  let query = `
-    SELECT id, company_id, code, collection, description, unit,
-           submitted_by, is_approved_for_global, global_product_id,
-           created_at, updated_at
-    FROM company_product_definitions
-    WHERE company_id = $1::uuid
-  `;
+  try {
+    const statusFilter = status || 'all';
+    const searchTerm = search ? `%${search}%` : null;
 
-  const params: (string | boolean)[] = [companyId];
-  let paramIndex = 2;
+    const result = await sql(`
+      SELECT get_company_products($1::uuid, $2, $3) as product
+    `, [companyId, statusFilter, searchTerm]);
 
-  if (status === 'pending') {
-    query += ` AND is_approved_for_global = false`;
-  } else if (status === 'approved') {
-    query += ` AND is_approved_for_global = true`;
+    return result.map(row => row.product) as CompanyProductDefinition[];
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to get company products: ${errorMessage}`,
+      'Unable to load products - please try again',
+      { companyId, status, search }
+    );
   }
-
-  if (search) {
-    query += ` AND (code ILIKE $${paramIndex} OR description ILIKE $${paramIndex} OR collection ILIKE $${paramIndex})`;
-    params.push(`%${search}%`);
-    paramIndex++;
-  }
-
-  query += ` ORDER BY created_at DESC`;
-
-  const result = await sql(query, params);
-  return result as CompanyProductDefinition[];
 }
 
 /**
@@ -56,36 +73,43 @@ export async function getCompanyProductById(
   id: string,
   companyId: string
 ): Promise<CompanyProductDefinition | null> {
-  const result = await sql(`
-    SELECT id, company_id, code, collection, description, unit,
-           submitted_by, is_approved_for_global, global_product_id,
-           created_at, updated_at
-    FROM company_product_definitions
-    WHERE id = $1::uuid AND company_id = $2::uuid
-  `, [id, companyId]);
+  try {
+    const result = await sql(`
+      SELECT get_company_product_by_id($1::uuid, $2::uuid) as product
+    `, [id, companyId]);
 
-  return result.length > 0 ? result[0] as CompanyProductDefinition : null;
+    return result.length > 0 ? result[0].product as CompanyProductDefinition : null;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to get company product: ${errorMessage}`,
+      'Unable to load product details - please try again',
+      { productId: id, companyId }
+    );
+  }
 }
 
 /**
  * Check if product code exists for company
  */
 export async function companyProductCodeExists(companyId: string, code: string, excludeId?: string): Promise<boolean> {
-  let query = `
-    SELECT COUNT(*) as count
-    FROM company_product_definitions
-    WHERE company_id = $1::uuid AND UPPER(code) = UPPER($2)
-  `;
+  try {
+    const query = excludeId
+      ? `SELECT check_company_product_code_exists($1::uuid, $2, $3::uuid) as exists`
+      : `SELECT check_company_product_code_exists($1::uuid, $2, NULL) as exists`;
 
-  const params: (string | number)[] = [companyId, code];
+    const params = excludeId
+      ? [companyId, code, excludeId]
+      : [companyId, code];
 
-  if (excludeId) {
-    query += ` AND id != $3::uuid`;
-    params.push(excludeId);
+    const result = await sql(query, params);
+    return result[0].exists === true;
+  } catch (error) {
+    // Return false on error for safe fallback
+    console.warn('Failed to check product code existence:', error instanceof Error ? error.message : 'Unknown error');
+    return false;
   }
-
-  const result = await sql(query, params);
-  return parseInt(result[0].count) > 0;
 }
 
 /**
@@ -96,23 +120,50 @@ export async function createCompanyProduct(
   companyId: string,
   userId: string
 ): Promise<CompanyProductDefinition> {
-  const result = await sql(`
-    INSERT INTO company_product_definitions
-    (code, collection, description, unit, company_id, submitted_by)
-    VALUES ($1, $2, $3, $4, $5::uuid, $6::uuid)
-    RETURNING id, company_id, code, collection, description, unit,
-              submitted_by, is_approved_for_global, global_product_id,
-              created_at, updated_at
-  `, [
-    product.code.trim().toUpperCase(),
-    product.collection?.trim() || null,
-    product.description.trim(),
-    product.unit || 'sqft',
-    companyId,
-    userId
-  ]);
+  try {
+    const result = await sql(`
+      SELECT create_company_product_definition($1, $2, $3, $4, $5::uuid, $6::uuid) as product
+    `, [
+      product.code.trim().toUpperCase(),
+      product.collection?.trim() || null,
+      product.description.trim(),
+      product.unit || 'sqft',
+      companyId,
+      userId
+    ]);
 
-  return result[0] as CompanyProductDefinition;
+    const productResult = result[0].product;
+
+    if (productResult.error) {
+      if (productResult.error === 'duplicate') {
+        throw new CompanyProductErrorImpl(
+          'DUPLICATE',
+          'A product with this code already exists',
+          'A product with this code already exists',
+          { code: product.code, companyId }
+        );
+      }
+      throw new CompanyProductErrorImpl(
+        'OPERATION_FAILED',
+        productResult.message || 'Product creation failed',
+        'Failed to create product - please try again',
+        { code: product.code, error: productResult.error }
+      );
+    }
+
+    return productResult as CompanyProductDefinition;
+  } catch (error) {
+    if (error instanceof CompanyProductErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Product creation failed: ${errorMessage}`,
+      'Failed to create product - please try again',
+      { code: product.code, companyId, userId }
+    );
+  }
 }
 
 /**
@@ -123,73 +174,125 @@ export async function updateCompanyProduct(
   companyId: string,
   updates: UpdateCompanyProductRequest
 ): Promise<CompanyProductDefinition> {
-  const currentProduct = await getCompanyProductById(id, companyId);
-  if (!currentProduct) {
-    throw new Error('Product not found');
+  try {
+    const result = await sql(`
+      SELECT update_company_product_definition($1::uuid, $2::uuid, $3, $4, $5) as product
+    `, [
+      id,
+      companyId,
+      updates.collection?.trim() || null,
+      updates.description?.trim() || null,
+      updates.unit || null
+    ]);
+
+    const product = result[0].product;
+
+    if (product.error) {
+      if (product.error === 'not_found') {
+        throw new CompanyProductErrorImpl(
+          'NOT_FOUND',
+          'Product not found',
+          'Product not found - it may have been deleted',
+          { productId: id, companyId }
+        );
+      } else if (product.error === 'cannot_update') {
+        throw new CompanyProductErrorImpl(
+          'CANNOT_MODIFY',
+          'Cannot update promoted products',
+          'This product cannot be modified - it has been promoted',
+          { productId: id, companyId }
+        );
+      }
+      throw new CompanyProductErrorImpl(
+        'OPERATION_FAILED',
+        product.message || 'Update failed',
+        'Failed to update product - please try again',
+        { productId: id, error: product.error }
+      );
+    }
+
+    return product as CompanyProductDefinition;
+  } catch (error) {
+    if (error instanceof CompanyProductErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Product update failed: ${errorMessage}`,
+      'Failed to update product - please try again',
+      { productId: id, companyId }
+    );
   }
-
-  if (currentProduct.is_approved_for_global) {
-    throw new Error('Cannot update promoted products');
-  }
-
-  const result = await sql(`
-    UPDATE company_product_definitions
-    SET
-      collection = COALESCE($2, collection),
-      description = COALESCE($3, description),
-      unit = COALESCE($4, unit),
-      updated_at = NOW()
-    WHERE id = $1::uuid AND company_id = $5::uuid
-    RETURNING id, company_id, code, collection, description, unit,
-              submitted_by, is_approved_for_global, global_product_id,
-              created_at, updated_at
-  `, [
-    id,
-    updates.collection?.trim() || null,
-    updates.description?.trim() || null,
-    updates.unit || null,
-    companyId
-  ]);
-
-  return result[0] as CompanyProductDefinition;
 }
 
 /**
  * Delete company product
  */
 export async function deleteCompanyProduct(id: string, companyId: string): Promise<void> {
-  const product = await getCompanyProductById(id, companyId);
-  if (!product) {
-    throw new Error('Product not found');
-  }
+  try {
+    const result = await sql(`
+      SELECT delete_company_product_definition($1::uuid, $2::uuid) as result
+    `, [id, companyId]);
 
-  if (product.is_approved_for_global) {
-    throw new Error('Cannot delete promoted products');
-  }
+    const response = result[0].result;
 
-  await sql(`
-    DELETE FROM company_product_definitions
-    WHERE id = $1::uuid AND company_id = $2::uuid
-  `, [id, companyId]);
+    if (response.error) {
+      if (response.error === 'not_found') {
+        throw new CompanyProductErrorImpl(
+          'NOT_FOUND',
+          'Product not found',
+          'Product not found - it may have been deleted',
+          { productId: id, companyId }
+        );
+      } else if (response.error === 'cannot_delete') {
+        throw new CompanyProductErrorImpl(
+          'CANNOT_MODIFY',
+          'Cannot delete promoted products',
+          'This product cannot be deleted - it has been promoted',
+          { productId: id, companyId }
+        );
+      }
+      throw new CompanyProductErrorImpl(
+        'OPERATION_FAILED',
+        response.message || 'Delete failed',
+        'Failed to delete product - please try again',
+        { productId: id, error: response.error }
+      );
+    }
+  } catch (error) {
+    if (error instanceof CompanyProductErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Product deletion failed: ${errorMessage}`,
+      'Failed to delete product - please try again',
+      { productId: id, companyId }
+    );
+  }
 }
 
 /**
  * Get all company products awaiting admin promotion
  */
 export async function getPendingPromotionProducts(): Promise<CompanyProductDefinition[]> {
-  const result = await sql(`
-    SELECT cpd.id, cpd.company_id, cpd.code, cpd.collection, cpd.description,
-           cpd.unit, cpd.submitted_by, cpd.is_approved_for_global, cpd.global_product_id,
-           cpd.created_at, cpd.updated_at,
-           c.name as company_name,
-           c.code as company_code
-    FROM company_product_definitions cpd
-    JOIN companies c ON cpd.company_id = c.id
-    WHERE cpd.is_approved_for_global = false
-    ORDER BY cpd.created_at ASC
-  `);
+  try {
+    const result = await sql(`
+      SELECT get_pending_promotion_products() as product
+    `);
 
-  return result as CompanyProductDefinition[];
+    return result.map(row => row.product) as CompanyProductDefinition[];
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to get pending promotion products: ${errorMessage}`,
+      'Unable to load pending products - please try again',
+      { originalError: errorMessage }
+    );
+  }
 }
 
 /**
@@ -199,62 +302,46 @@ export async function promoteCompanyProduct(
   companyProductId: string,
   adminId: string
 ): Promise<ProductPromotionResult> {
-  // Get company product
-  const companyProductResult = await sql(`
-    SELECT id, company_id, code, collection, description, unit
-    FROM company_product_definitions
-    WHERE id = $1::uuid AND is_approved_for_global = false
-  `, [companyProductId]);
+  try {
+    const result = await sql(`
+      SELECT promote_company_product($1::uuid, $2::uuid) as promotion_result
+    `, [companyProductId, adminId]);
 
-  const companyProduct = companyProductResult[0];
-  if (!companyProduct) {
-    throw new Error('Company product not found or already promoted');
+    const promotionResult = result[0].promotion_result;
+
+    if (promotionResult.error) {
+      throw new CompanyProductErrorImpl(
+        'OPERATION_FAILED',
+        promotionResult.message || 'Promotion failed',
+        'Failed to promote product - please try again',
+        { productId: companyProductId, error: promotionResult.error }
+      );
+    }
+
+    return {
+      company_product: promotionResult.company_product as CompanyProductDefinition,
+      global_product: promotionResult.global_product as {
+        id: string;
+        code: string;
+        collection: string | null;
+        description: string;
+        unit: string;
+        active: boolean;
+      },
+      promoted_at: new Date(promotionResult.promoted_at)
+    };
+  } catch (error) {
+    if (error instanceof CompanyProductErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Product promotion failed: ${errorMessage}`,
+      'Failed to promote product - please try again',
+      { productId: companyProductId, adminId }
+    );
   }
-
-  // Insert into global products table
-  const globalProductResult = await sql(`
-    INSERT INTO products (code, collection, description, unit, active)
-    VALUES ($1, $2, $3, $4, true)
-    ON CONFLICT (code) DO UPDATE SET
-      collection = EXCLUDED.collection,
-      description = EXCLUDED.description,
-      unit = EXCLUDED.unit,
-      updated_at = NOW()
-    RETURNING id, code, collection, description, unit, active, created_at, updated_at
-  `, [
-    companyProduct.code,
-    companyProduct.collection,
-    companyProduct.description,
-    companyProduct.unit
-  ]);
-
-  const globalProduct = globalProductResult[0];
-
-  // Update company product with global reference
-  const updatedResult = await sql(`
-    UPDATE company_product_definitions
-    SET
-      is_approved_for_global = true,
-      global_product_id = $1::uuid,
-      updated_at = NOW()
-    WHERE id = $2::uuid
-    RETURNING id, company_id, code, collection, description, unit,
-              submitted_by, is_approved_for_global, global_product_id,
-              created_at, updated_at
-  `, [globalProduct.id, companyProductId]);
-
-  return {
-    company_product: updatedResult[0] as CompanyProductDefinition,
-    global_product: globalProduct as {
-      id: string;
-      code: string;
-      collection: string | null;
-      description: string;
-      unit: string;
-      active: boolean;
-    },
-    promoted_at: new Date()
-  };
 }
 
 /**
@@ -265,31 +352,52 @@ export async function rejectCompanyProduct(
   adminId: string,
   reviewNotes?: string
 ): Promise<void> {
-  // For company products, rejection means deleting the product definition
-  // since companies can recreate it if needed
-  await sql(`
-    DELETE FROM company_product_definitions
-    WHERE id = $1::uuid AND is_approved_for_global = false
-  `, [companyProductId]);
+  try {
+    const result = await sql(`
+      SELECT reject_company_product($1::uuid, $2::uuid) as result
+    `, [companyProductId, adminId]);
+
+    const response = result[0].result;
+
+    if (response.error) {
+      throw new CompanyProductErrorImpl(
+        'OPERATION_FAILED',
+        response.message || 'Rejection failed',
+        'Failed to reject product - please try again',
+        { productId: companyProductId, error: response.error }
+      );
+    }
+  } catch (error) {
+    if (error instanceof CompanyProductErrorImpl) {
+      throw error;
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Product rejection failed: ${errorMessage}`,
+      'Failed to reject product - please try again',
+      { productId: companyProductId, adminId }
+    );
+  }
 }
 
 /**
  * Get company product usage statistics
  */
 export async function getCompanyProductUsage(companyId: string): Promise<CompanyProductUsage[]> {
-  const result = await sql(`
-    SELECT
-      cpd.id as product_id,
-      cpd.code,
-      cpd.description,
-      COUNT(qi.id) as usage_count,
-      MAX(qi.created_at) as last_used
-    FROM company_product_definitions cpd
-    LEFT JOIN quote_items qi ON qi.pending_product_id = cpd.id
-    WHERE cpd.company_id = $1::uuid
-    GROUP BY cpd.id, cpd.code, cpd.description
-    ORDER BY usage_count DESC
-  `, [companyId]);
+  try {
+    const result = await sql(`
+      SELECT get_company_product_usage($1::uuid) as usage
+    `, [companyId]);
 
-  return result as CompanyProductUsage[];
+    return result.map(row => row.usage) as CompanyProductUsage[];
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new CompanyProductErrorImpl(
+      'OPERATION_FAILED',
+      `Failed to get company product usage: ${errorMessage}`,
+      'Unable to load product usage - please try again',
+      { companyId, originalError: errorMessage }
+    );
+  }
 }

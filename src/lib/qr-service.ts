@@ -167,7 +167,8 @@ export async function testDiscountCalculations(): Promise<void> {
  */
 export async function validatePromoCode(
   promoCode: string,
-  planPrice: number
+  planPrice: number,
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ValidationResult> {
   try {
     // Import the enhanced validation function
@@ -196,7 +197,8 @@ export async function validatePromoCode(
 
     const validationResult = await validateActivationCodeWithDetails(
       promoCode,
-      plan.toUpperCase() as any
+      plan.toUpperCase() as any,
+      rlsContext
     );
 
     if (!validationResult.valid || !validationResult.activationCode) {

@@ -1,0 +1,65 @@
+{
+  "operations": [
+    {
+      "operation": "src/app/api/products/route.ts:9",
+      "query_type": "SELECT",
+      "tables": [],
+      "function_called": "set_app_role",
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "Foundation security function - sets role context for database operations",
+      "rls_bypass_method": "N/A - Role context setting",
+      "needs_fix": false,
+      "security_status": "Critical security infrastructure - properly implemented"
+    },
+    {
+      "operation": "src/app/api/products/route.ts:11",
+      "query_type": "SELECT",
+      "tables": ["products"],
+      "function_called": "get_active_products",
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "Read-only function accessing global product catalog - properly secured",
+      "rls_bypass_method": "SECURITY DEFINER function with RLS bypass",
+      "needs_fix": false,
+      "security_status": "Catalog read function - no sensitive data exposure"
+    },
+    {
+      "operation": "src/app/api/products/route.ts:31",
+      "query_type": "SELECT",
+      "tables": [],
+      "function_called": "set_app_role",
+      "risk_level": "🟢 SAFE",
+      "risk_reasoning": "Foundation security function - sets role context for database operations",
+      "rls_bypass_method": "N/A - Role context setting",
+      "needs_fix": false,
+      "security_status": "Critical security infrastructure - properly implemented"
+    },
+    {
+      "operation": "src/app/api/products/route.ts:40",
+      "query_type": "SELECT",
+      "tables": ["products"],
+      "function_called": "upsert_product",
+      "risk_level": "🟡 NEEDS REVIEW",
+      "risk_reasoning": "INSERT/UPDATE function needs authorization verification - must ensure superadmin-only access",
+      "rls_bypass_method": "SECURITY DEFINER function with RLS bypass",
+      "needs_fix": true,
+      "security_status": "REQUIRES SECURITY REVIEW - Verify proper authorization controls"
+    }
+  ],
+  "overall_assessment": {
+    "total_operations": 4,
+    "safe_count": 3,
+    "needs_review_count": 1,
+    "critical_count": 0,
+    "overall_risk_level": "🟡 LOW-MEDIUM RISK",
+    "main_concern": "upsert_product function requires security verification",
+    "recommendation": "Review and secure upsert_product function authorization"
+  },
+  "products_table_security": {
+    "rls_status": "✅ PROPERLY CONFIGURED",
+    "policy_count": 6,
+    "write_restrictions": "Superadmin only",
+    "read_access": "Global (all authenticated users)",
+    "structural_protections": "Product code and identifiers protected",
+    "catalog_model": "Global shared catalog"
+  }
+}

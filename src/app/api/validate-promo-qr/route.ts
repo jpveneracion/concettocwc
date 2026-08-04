@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validatePromoCode } from '@/lib/qr-service';
+import { getSession } from '@/lib/auth';
 
 /**
  * POST /api/validate-promo-qr
@@ -17,7 +18,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const validation = await validatePromoCode(promo_code, parseFloat(plan_price));
+    const session = await getSession();
+    const rlsContext = session
+      ? {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        }
+      : undefined;
+
+    const validation = await validatePromoCode(promo_code, parseFloat(plan_price), rlsContext);
 
     return NextResponse.json(validation);
 

@@ -1,0 +1,26 @@
+{
+  "file": "src/app/api/products/route.ts",
+  "sql_operations_found": [
+    {
+      "line": 9,
+      "pattern": "sql(",
+      "context": "await sql('SELECT set_app_role($1)', ['concetto_bioms'])"
+    },
+    {
+      "line": 11,
+      "pattern": "sql(",
+      "context": "await sql('SELECT get_active_products() as product')"
+    },
+    {
+      "line": 31,
+      "pattern": "sql(",
+      "context": "await sql('SELECT set_app_role($1)', ['concetto_bioms'])"
+    },
+    {
+      "line": 40,
+      "pattern": "sql(",
+      "context": "await sql('SELECT upsert_product($1, $2, $3, $4) as product', [...])"
+    }
+  ],
+  "total_count": 4
+}

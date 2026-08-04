@@ -10,6 +10,23 @@ export interface Session {
   isAdmin?: boolean;
 }
 
+export interface AuthError extends Error {
+  code: 'SESSION_NOT_FOUND' | 'PARSE_ERROR' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'CONTEXT_ERROR';
+  mobileMessage: string;
+}
+
+class AuthErrorImpl extends Error implements AuthError {
+  code: AuthError['code'];
+  mobileMessage: string;
+
+  constructor(code: AuthError['code'], message: string, mobileMessage: string) {
+    super(message);
+    this.name = 'AuthError';
+    this.code = code;
+    this.mobileMessage = mobileMessage;
+  }
+}
+
 export async function getSession(): Promise<Session | null> {
   try {
     const cookieStore = await cookies();
@@ -21,7 +38,12 @@ export async function getSession(): Promise<Session | null> {
 
     const session = JSON.parse(sessionCookie.value) as Session;
     return session;
-  } catch {
+  } catch (error) {
+    // Log parse errors but return null for graceful degradation
+    if (error instanceof SyntaxError) {
+      console.warn('Session parse error - clearing invalid cookie');
+      // Could clear invalid cookie here if needed
+    }
     return null;
   }
 }
@@ -30,7 +52,11 @@ export async function requireSession(): Promise<Session> {
   const session = await getSession();
 
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new AuthErrorImpl(
+      'UNAUTHORIZED',
+      'Authentication required',
+      'Please sign in to continue'
+    );
   }
 
   return session;
@@ -43,17 +69,21 @@ export async function getCompanyId(): Promise<string> {
 
 /**
  * Check if user has admin privileges
- * For production: Verify against database role field
- * For now: Check against admin user IDs (temporary solution)
+ * Uses role-based access control from Session
  */
-const ADMIN_USER_IDS: Set<string> = new Set(['1']); // User ID 1 is admin
-
 export async function requireAdmin(): Promise<Session> {
   const session = await requireSession();
 
-  // Check if user is in admin set (temporary solution)
-  if (!ADMIN_USER_IDS.has(session.userId)) {
-    throw new Error('Forbidden: Admin access required');
+  // Use role-based check instead of hardcoded IDs
+  const userRole = session.role || 'user';
+  const hasAdminPrivileges = userRole === 'admin' || userRole === 'superadmin' || session.isAdmin === true;
+
+  if (!hasAdminPrivileges) {
+    throw new AuthErrorImpl(
+      'FORBIDDEN',
+      'Admin access required',
+      'Admin access required for this action'
+    );
   }
 
   return session;
@@ -64,8 +94,13 @@ export async function requireAdmin(): Promise<Session> {
  */
 export async function isAdmin(): Promise<boolean> {
   try {
-    const session = await requireSession();
-    return ADMIN_USER_IDS.has(session.userId);
+    const session = await getSession();
+    if (!session) {
+      return false;
+    }
+
+    const userRole = session.role || 'user';
+    return userRole === 'admin' || userRole === 'superadmin' || session.isAdmin === true;
   } catch {
     return false;
   }
@@ -88,9 +123,10 @@ export async function getSessionWithRLS(): Promise<Session | null> {
   try {
     const userRole = session.role || 'user';
     await setTenantContext(session.companyId, userRole);
-    console.log('✅ RLS context set for session:', session.userId, 'company:', session.companyId, 'role:', userRole);
+    // Success - context set silently without console spam
   } catch (error) {
-    console.error('❌ Failed to set RLS context for session:', error);
+    // Log but don't fail - allow graceful degradation
+    console.warn('RLS context warning:', error instanceof Error ? error.message : 'Unknown error');
     // Don't fail session if RLS context setting fails
   }
 
@@ -102,7 +138,7 @@ export async function getSessionWithRLS(): Promise<Session | null> {
  * Ensures user is authenticated and RLS context is properly set
  *
  * @returns Session with RLS context established
- * @throws Error if not authenticated or RLS context fails
+ * @throws AuthError if not authenticated or RLS context fails
  */
 export async function requireSessionWithRLS(): Promise<Session> {
   const session = await requireSession();
@@ -111,10 +147,14 @@ export async function requireSessionWithRLS(): Promise<Session> {
   try {
     const userRole = session.role || 'user';
     await setTenantContext(session.companyId, userRole);
-    console.log('✅ RLS context set for required session:', session.userId, 'company:', session.companyId, 'role:', userRole);
+    // Success - context set silently
   } catch (error) {
-    console.error('❌ Failed to set RLS context for required session:', error);
-    throw new Error('Failed to establish tenant context');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown context error';
+    throw new AuthErrorImpl(
+      'CONTEXT_ERROR',
+      `Failed to establish tenant context: ${errorMessage}`,
+      'Session setup failed - please try again'
+    );
   }
 
   return session;
@@ -129,7 +169,9 @@ export async function requireSessionWithRLS(): Promise<Session> {
  */
 export function validateSessionRole(session: Session): Session {
   // If no role or invalid role, default to 'user'
-  if (!session.role || !['user', 'admin', 'superadmin'].includes(session.role)) {
+  const validRoles: RLSUserRole[] = ['user', 'admin', 'superadmin'];
+
+  if (!session.role || !validRoles.includes(session.role)) {
     return {
       ...session,
       role: 'user'
@@ -141,7 +183,6 @@ export function validateSessionRole(session: Session): Session {
 
 /**
  * Check if session has admin role (modern version using role field)
- * This replaces the temporary ADMIN_USER_IDS check
  *
  * @returns true if user has admin or superadmin role
  */
@@ -184,9 +225,9 @@ export async function hasSuperadminRole(): Promise<boolean> {
 export async function resetSessionContext(): Promise<void> {
   try {
     await resetTenantContext();
-    console.log('✅ Session context reset');
+    // Silent success - no console spam
   } catch (error) {
-    console.error('❌ Failed to reset session context:', error);
-    // Don't throw - this is cleanup code
+    // Log but don't throw - this is cleanup code that shouldn't break requests
+    console.warn('Session context reset warning:', error instanceof Error ? error.message : 'Unknown error');
   }
 }

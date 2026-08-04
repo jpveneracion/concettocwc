@@ -1,32 +1,35 @@
-// src/app/api/admin/company-products/pending-promotion/route.ts
-
-import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
-import { requireAdmin } from '@/lib/permissions';
-import { getPendingPromotionProducts } from '@/lib/company-product-queries';
-
 /**
  * GET /api/admin/company-products/pending-promotion
  *
- * Get all company products awaiting admin promotion to global catalog
+ * Get all company products awaiting admin promotion to global catalog with RLS context management
  *
- * Authentication: Required session
- * Authorization: Admin or superadmin role required
+ * Authentication: Required session with RLS context
+ * Authorization: Superadmin role required for cross-company access
+ * RLS: Establishes superadmin context for reading pending products from all companies
  *
  * Returns: JSON with products array and total count
  */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { requireSuperadmin } from '@/lib/api-middleware';
+import { getPendingPromotionProducts } from '@/lib/company-product-queries';
+
+/**
+ * Get pending promotion products with RLS middleware
+ * Uses requireSuperadmin to establish proper RLS context for cross-company read access
+ */
 export async function GET(req: NextRequest) {
   try {
-    // Check authentication
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check authorization - must be admin or superadmin
-    await requireAdmin(session.userId);
+    // Establish RLS context with superadmin role for promotion workflow
+    // This ensures:
+    // 1. Proper authentication and authorization
+    // 2. RLS tenant context set for superadmin cross-company access
+    // 3. Automatic context cleanup after operation
+    const session = await requireSuperadmin();
 
     // Get all pending promotion products
+    // This query now runs with proper superadmin RLS context
+    // allowing read access to company_product_definitions from all companies
     const products = await getPendingPromotionProducts();
 
     // Return response with products and total count
@@ -40,7 +43,10 @@ export async function GET(req: NextRequest) {
 
     // Handle authorization errors specifically
     if (error instanceof Error && error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Forbidden: Superadmin access required for promotion workflow' },
+        { status: 403 }
+      );
     }
 
     // Handle other errors

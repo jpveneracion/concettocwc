@@ -82,21 +82,36 @@ export async function POST(req: Request) {
     const tempPassword = crypto.randomBytes(32).toString('hex');
     const passwordHash = await bcrypt.hash(tempPassword, 10);
 
-    // Create user with password
-    const [user] = await sql`
-      INSERT INTO users (company_id, email, email_hash, password_hash)
-      VALUES (${companyId}, ${data.email}, ${emailHash}, ${passwordHash})
-      RETURNING id, email, company_id
+    // Create user with password using security definer function
+    const userResult = await sql`
+      SELECT create_user(
+        ${data.email},
+        ${passwordHash},
+        ${emailHash},
+        ${companyId}::uuid,
+        'user'
+      ) as user_data
     `;
 
+    if (!userResult || userResult.length === 0) {
+      throw new Error('User creation failed');
+    }
+
+    const user = JSON.parse(userResult[0].user_data);
+    const userData = {
+      id: user.id,
+      email: user.email,
+      company_id: user.company_id
+    };
+
     // Link OAuth account
-    await linkOAuthAccount(user.id, accountData);
+    await linkOAuthAccount(userData.id, accountData);
 
     // Set session cookie
     cookieStore.set('session', JSON.stringify({
-      userId: user.id,
-      companyId: user.company_id,
-      email: user.email,
+      userId: userData.id,
+      companyId: userData.company_id,
+      email: userData.email,
       provider: tempProvider
     }), {
       httpOnly: true,
@@ -121,8 +136,10 @@ export async function POST(req: Request) {
 // Generate unique company code
 async function generateUniqueCompanyCode(): Promise<string> {
   const code = crypto.randomBytes(4).toString('hex').toUpperCase();
-  const existing = await sql`SELECT id FROM companies WHERE code = ${code}`;
-  if (existing.length > 0) {
+  const existing = await sql`
+    SELECT check_company_exists(${code}) as exists
+  `;
+  if (existing.length > 0 && existing[0].exists) {
     return generateUniqueCompanyCode(); // Retry if collision
   }
   return code;

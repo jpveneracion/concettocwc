@@ -38,7 +38,11 @@ export async function POST(req: NextRequest) {
         code,
         userId,
         ipAddress,
-        subscription_plan
+        subscription_plan,
+        {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        }
       );
 
       // Activate user subscription

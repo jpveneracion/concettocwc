@@ -3,6 +3,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
+import type { RLSContext } from '@/lib/subscription-plans';
+
+/**
+ * Build RLS context from session (established pattern)
+ */
+function buildRLSContext(session: { companyId: string; role?: string; isAdmin?: boolean }): RLSContext {
+  return {
+    companyId: session.companyId,
+    userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',
+  };
+}
 
 // GET - Get available subscription plans
 export async function GET(req: NextRequest) {
@@ -21,9 +32,12 @@ export async function GET(req: NextRequest) {
     // Import subscription plans utility
     const { getAllSubscriptionPlans, formatSubscriptionPlansForAPI } = await import('@/lib/subscription-plans');
 
+    const rlsContext = buildRLSContext(session);
+
     // Fetch plans with appropriate filter
     const plans = await getAllSubscriptionPlans(
-      includeInactive ? {} : { is_active: true }
+      includeInactive ? {} : { is_active: true },
+      rlsContext
     );
 
     return NextResponse.json({ plans: formatSubscriptionPlansForAPI(plans) });
@@ -52,6 +66,8 @@ export async function POST(req: NextRequest) {
 
     // Import subscription plans utility
     const { createSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
+
+    const rlsContext = buildRLSContext(session);
 
     // Basic validation
     if (!name || !name.trim()) {
@@ -85,7 +101,7 @@ export async function POST(req: NextRequest) {
       discount_percent: discount_percent || 0,
       features: features || [],
       is_active: is_active !== undefined ? is_active : true
-    });
+    }, rlsContext);
 
     return NextResponse.json({
       success: true,
@@ -124,6 +140,8 @@ export async function PUT(req: NextRequest) {
     // Import subscription plans utility
     const { updateSubscriptionPlan, formatSubscriptionPlanForAPI } = await import('@/lib/subscription-plans');
 
+    const rlsContext = buildRLSContext(session);
+
     // Build updates object (only include defined fields)
     const updates: { name?: string; description?: string; price?: number; currency?: string; interval?: string; discount_percent?: number; features?: Record<string, unknown>; is_active?: boolean } = {};
     if (name !== undefined) updates.name = name;
@@ -136,7 +154,7 @@ export async function PUT(req: NextRequest) {
     if (is_active !== undefined) updates.is_active = is_active;
 
     // Update plan
-    const updatedPlan = await updateSubscriptionPlan(id, updates);
+    const updatedPlan = await updateSubscriptionPlan(id, updates, rlsContext);
 
     if (!updatedPlan) {
       return NextResponse.json(
@@ -182,8 +200,10 @@ export async function DELETE(req: NextRequest) {
     // Import subscription plans utility
     const { deleteSubscriptionPlan } = await import('@/lib/subscription-plans');
 
+    const rlsContext = buildRLSContext(session);
+
     // Delete plan
-    const success = await deleteSubscriptionPlan(id);
+    const success = await deleteSubscriptionPlan(id, rlsContext);
 
     if (!success) {
       return NextResponse.json(
