@@ -67,3 +67,7 @@ next-env.d.ts
 /analyze-*.ts
 /update-*.ts
 /_*.ts
+
+# one-off debug scripts (may contain local credentials)
+/simple-table-list.js
+
