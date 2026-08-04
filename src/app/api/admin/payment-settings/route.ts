@@ -24,11 +24,13 @@ export async function GET(req: Request) {
 
     // Fetch from database using the existing row-based schema
     try {
-      const result = await sql('SELECT * FROM get_all_payment_settings()');
+      const userRole = (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin';
+      const result = await query('SELECT * FROM get_all_payment_settings()', [], session.companyId, userRole);
+      const rows = result.rows;
 
       // Convert row-based format to our API format
-      const gcashRow = result.find(r => r.payment_method === 'gcash');
-      const gotymeRow = result.find(r => r.payment_method === 'gotyme');
+      const gcashRow = rows.find((r: any) => r.payment_method === 'gcash');
+      const gotymeRow = rows.find((r: any) => r.payment_method === 'gotyme');
 
       const settings = {
         mobile: {

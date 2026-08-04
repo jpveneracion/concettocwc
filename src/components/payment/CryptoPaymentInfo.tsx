@@ -17,9 +17,9 @@ export default function CryptoPaymentInfo({ amount, planName }: CryptoPaymentInf
     fetchPaymentSettings();
   }, []);
 
-  const fetchPaymentSettings = async () => {
+const fetchPaymentSettings = async () => {
     try {
-      const response = await fetch('/api/admin/payment-settings');
+      const response = await fetch('/api/payment-settings');
       if (response.ok) {
         const settings = await response.json();
         setPaymentSettings(settings);
@@ -29,10 +29,12 @@ export default function CryptoPaymentInfo({ amount, planName }: CryptoPaymentInf
     }
   };
 
-  const cryptoInfo = paymentSettings?.crypto?.[selectedCrypto.toLowerCase()] || {
-    network: selectedCrypto === 'USDC' ? 'Polygon (MATIC)' : 'Tron (TRC20)',
-    address: '0x1234567890123456789012345678901234567890',
-    usdRate: 1.0
+  const rawCryptoInfo = paymentSettings?.crypto?.[selectedCrypto.toLowerCase()] || {};
+
+  const cryptoInfo = {
+    network: rawCryptoInfo.network || (selectedCrypto === 'USDC' ? 'Polygon (MATIC)' : 'Tron (TRC20)'),
+    address: rawCryptoInfo.address || rawCryptoInfo.polygonAddress || rawCryptoInfo.tronAddress || '0x1234567890123456789012345678901234567890',
+    usdRate: rawCryptoInfo.usdRate || 1.0
   };
 
   const phpToUsdRate = paymentSettings?.rates?.phpToUsd || 0.018;
