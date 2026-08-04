@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
-import { sql } from '@/lib/db';
+import { sql, query } from '@/lib/db';
 
 /**
  * GET /api/admin/payment-settings
@@ -170,15 +170,17 @@ export async function POST(req: Request) {
 
     // Try to save to database using SECURITY DEFINER functions
     try {
+      const userRole = (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin';
+
       // Insert or update GCash settings
-      await sql(`
+      await query(`
         SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
-      `, ['gcash', settings.mobile.gcash.number, settings.mobile.gcash.accountName, settings.mobile.gcash.qrCodeUrl, settings.mobile.gcash.enabled, settings.discounts.quarterly, settings.discounts.annual]);
+      `, ['gcash', settings.mobile.gcash.number, settings.mobile.gcash.accountName, settings.mobile.gcash.qrCodeUrl, settings.mobile.gcash.enabled, settings.discounts.quarterly, settings.discounts.annual], session.companyId, userRole);
 
       // Insert or update GoTyme settings
-      await sql(`
+      await query(`
         SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
-      `, ['gotyme', settings.mobile.gotyme.number, settings.mobile.gotyme.accountName, settings.mobile.gotyme.qrCodeUrl, settings.mobile.gotyme.enabled, settings.discounts.quarterly, settings.discounts.annual]);
+      `, ['gotyme', settings.mobile.gotyme.number, settings.mobile.gotyme.accountName, settings.mobile.gotyme.qrCodeUrl, settings.mobile.gotyme.enabled, settings.discounts.quarterly, settings.discounts.annual], session.companyId, userRole);
 
       console.log('Payment settings updated by admin:', session.userId);
       return NextResponse.json({
