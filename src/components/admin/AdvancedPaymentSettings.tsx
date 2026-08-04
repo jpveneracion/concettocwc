@@ -25,16 +25,11 @@ interface PaymentSettings {
     gotyme_quarterly?: string;
     gotyme_annual?: string;
   };
-  business: {
-    name: string;
-    supportEmail: string;
-    verificationTime: string;
-  };
 }
 
 export default function AdvancedPaymentSettings() {
   const [settings, setSettings] = useState<PaymentSettings | null>(null);
-  const [activeTab, setActiveTab] = useState<'payment-methods' | 'plan-qrcodes' | 'promo-qrcodes'>('payment-methods');
+  const [activeTab, setActiveTab] = useState<'payment-methods' | 'plan-qrcodes'>('payment-methods');
   const [loading, setLoading] = useState(true);
   const [qrCodesLoading, setQrCodesLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,7 +38,6 @@ export default function AdvancedPaymentSettings() {
 
   useEffect(() => {
     fetchSettings();
-    fetchQrCodes();
   }, []);
 
   const fetchSettings = async () => {
@@ -59,6 +53,7 @@ export default function AdvancedPaymentSettings() {
       showMessage('error', 'Failed to load payment settings');
     } finally {
       setLoading(false);
+      fetchQrCodes();
     }
   };
 
@@ -145,17 +140,22 @@ export default function AdvancedPaymentSettings() {
   const saveSettings = async () => {
     try {
       setSaving(true);
+
+      // Persist account settings
       const response = await fetch('/api/admin/payment-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
 
-      if (response.ok) {
-        showMessage('success', 'Payment settings saved successfully!');
-      } else {
-        throw new Error('Save failed');
+      if (!response.ok) throw new Error('Save failed');
+
+      // Persist plan QR codes (uploads auto-save; paste-URL edits need this too)
+      if (settings?.planQrCodes) {
+        await savePlanQrCodes(settings.planQrCodes);
       }
+
+      showMessage('success', 'Payment settings saved successfully!');
     } catch (error) {
       console.error('Save error:', error);
       showMessage('error', 'Failed to save payment settings');
@@ -213,8 +213,7 @@ export default function AdvancedPaymentSettings() {
         <nav className="flex space-x-8">
           {[
             { id: 'payment-methods', label: 'Payment Methods' },
-            { id: 'plan-qrcodes', label: 'Plan-Specific QR Codes' },
-            { id: 'promo-qrcodes', label: 'Promo QR Codes' }
+            { id: 'plan-qrcodes', label: 'Billing Period QR Codes' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -419,23 +418,6 @@ export default function AdvancedPaymentSettings() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {activeTab === 'promo-qrcodes' && (
-        <div className="bg-white rounded-lg border p-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="font-semibold text-blue-900 mb-2">Promo QR Codes</h4>
-            <p className="text-sm text-blue-700">
-              Promo codes with fixed-amount QR codes are managed through the promo code system.
-              These QR codes automatically apply discounts and expire based on usage limits.
-            </p>
-          </div>
-
-          <div className="text-center py-8 text-gray-500">
-            <p>Promo QR codes are managed per-promo-code.</p>
-            <p className="text-sm mt-2">Use the promo code management interface to set up promo-specific QR codes.</p>
-          </div>
         </div>
       )}
 

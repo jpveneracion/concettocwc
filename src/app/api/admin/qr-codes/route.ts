@@ -21,25 +21,27 @@ export async function GET(req: Request) {
 
     await requireAdmin(session.userId);
 
-    // Fetch plan QR codes from both gcash and gotyme payment settings rows
+    // Fetch plan QR codes from the normalized payment_qr_codes table
     const result = await sql`
-      SELECT payment_method, gcash_monthly_qr_url, gcash_quarterly_qr_url, gcash_annual_qr_url,
-             gotyme_monthly_qr_url, gotyme_quarterly_qr_url, gotyme_annual_qr_url
-      FROM payment_settings
-      WHERE payment_method IN ('gcash', 'gotyme')
+      SELECT payment_method, billing_period, qr_url
+      FROM payment_qr_codes
     `;
 
-    const gcashRow = result.find(r => r.payment_method === 'gcash');
-    const gotymeRow = result.find(r => r.payment_method === 'gotyme');
-
-    const planQrCodes = {
-      gcash_monthly: gcashRow?.gcash_monthly_qr_url || null,
-      gcash_quarterly: gcashRow?.gcash_quarterly_qr_url || null,
-      gcash_annual: gcashRow?.gcash_annual_qr_url || null,
-      gotyme_monthly: gotymeRow?.gotyme_monthly_qr_url || null,
-      gotyme_quarterly: gotymeRow?.gotyme_quarterly_qr_url || null,
-      gotyme_annual: gotymeRow?.gotyme_annual_qr_url || null
+    const planQrCodes: Record<string, string | null> = {
+      gcash_monthly: null,
+      gcash_quarterly: null,
+      gcash_annual: null,
+      gotyme_monthly: null,
+      gotyme_quarterly: null,
+      gotyme_annual: null
     };
+
+    result.forEach((row) => {
+      const key = `${row.payment_method}_${row.billing_period}`;
+      if (key in planQrCodes) {
+        planQrCodes[key] = row.qr_url || null;
+      }
+    });
 
     return NextResponse.json(planQrCodes);
 
@@ -80,7 +82,11 @@ export async function POST(req: Request) {
     const { type, ...qrData } = await req.json();
 
     if (type === 'plan') {
-      const success = await updatePlanQrCodes(qrData);
+      const userRole = (session.role || (session.isAdmin ? 'superadmin' : 'user')) as 'user' | 'admin' | 'superadmin';
+      const success = await updatePlanQrCodes(qrData, {
+        companyId: session.companyId,
+        userRole
+      });
       if (success) {
         return NextResponse.json({
           success: true,

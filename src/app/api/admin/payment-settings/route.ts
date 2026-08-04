@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { sql, query } from '@/lib/db';
+import { getCurrentPricing } from '@/lib/pricing-service';
 
 /**
  * GET /api/admin/payment-settings
@@ -44,14 +45,6 @@ export async function GET(req: Request) {
             enabled: gotymeRow?.active ?? true
           }
         },
-        planQrCodes: {
-          gcash_monthly: gcashRow?.gcash_monthly_qr_url || '',
-          gcash_quarterly: gcashRow?.gcash_quarterly_qr_url || '',
-          gcash_annual: gcashRow?.gcash_annual_qr_url || '',
-          gotyme_monthly: gotymeRow?.gotyme_monthly_qr_url || '',
-          gotyme_quarterly: gotymeRow?.gotyme_quarterly_qr_url || '',
-          gotyme_annual: gotymeRow?.gotyme_annual_qr_url || ''
-        },
         crypto: {
           usdc: {
             polygonAddress: process.env.USDC_POLYGON_ADDRESS || '0x1234567890123456789012345678901234567890',
@@ -65,10 +58,6 @@ export async function GET(req: Request) {
         rates: {
           phpToUsd: parseFloat(process.env.PHP_TO_USD_RATE || '0.018')
         },
-        discounts: {
-          quarterly: parseFloat(result[0]?.quarterly_discount_percent || '5.00'),
-          annual: parseFloat(result[0]?.annual_discount_percent || '8.00')
-        },
         business: {
           name: process.env.BUSINESS_NAME || 'Concetto Inc.',
           supportEmail: process.env.SUPPORT_EMAIL || 'support@concetto.com',
@@ -76,7 +65,14 @@ export async function GET(req: Request) {
         }
       };
 
-      return NextResponse.json(settings);
+      // Discounts come from pricing_config (single source of truth, managed at /admin/pricing)
+      const currentPricing = await getCurrentPricing();
+      const discounts = {
+        quarterly: currentPricing?.quarterly_discount_percent ?? 5.0,
+        annual: currentPricing?.annual_discount_percent ?? 8.0
+      };
+
+      return NextResponse.json({ ...settings, discounts });
     } catch (dbError) {
       console.error('Database error:', dbError);
     }
@@ -174,13 +170,13 @@ export async function POST(req: Request) {
 
       // Insert or update GCash settings
       await query(`
-        SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
-      `, ['gcash', settings.mobile.gcash.number, settings.mobile.gcash.accountName, settings.mobile.gcash.qrCodeUrl, settings.mobile.gcash.enabled, settings.discounts.quarterly, settings.discounts.annual], session.companyId, userRole);
+        SELECT upsert_payment_settings($1, $2, $3, $4, $5)
+      `, ['gcash', settings.mobile.gcash.number, settings.mobile.gcash.accountName, settings.mobile.gcash.qrCodeUrl, settings.mobile.gcash.enabled], session.companyId, userRole);
 
       // Insert or update GoTyme settings
       await query(`
-        SELECT upsert_payment_settings($1, $2, $3, $4, $5, $6, $7)
-      `, ['gotyme', settings.mobile.gotyme.number, settings.mobile.gotyme.accountName, settings.mobile.gotyme.qrCodeUrl, settings.mobile.gotyme.enabled, settings.discounts.quarterly, settings.discounts.annual], session.companyId, userRole);
+        SELECT upsert_payment_settings($1, $2, $3, $4, $5)
+      `, ['gotyme', settings.mobile.gotyme.number, settings.mobile.gotyme.accountName, settings.mobile.gotyme.qrCodeUrl, settings.mobile.gotyme.enabled], session.companyId, userRole);
 
       console.log('Payment settings updated by admin:', session.userId);
       return NextResponse.json({

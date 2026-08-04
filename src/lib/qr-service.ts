@@ -1,7 +1,7 @@
 // src/lib/qr-service.ts
 
-import { sql } from './db';
-import { getPricingThresholds } from './pricing-service';
+import { sql, query } from './db';
+import { getPricingThresholds, getCurrentPricing } from './pricing-service';
 
 // ============================================================================
 // TYPES
@@ -53,21 +53,19 @@ interface QrCodeResult {
 // ============================================================================
 
 /**
- * Get payment settings from database for discount calculations
+ * Get payment settings from database for discount calculations.
+ *
+ * Discounts are now sourced from the single source of truth: pricing_config
+ * (managed at /admin/pricing). They were previously duplicated on every
+ * payment_settings row.
  */
 async function getPaymentSettings(): Promise<PaymentSettings> {
   try {
-    const result = await sql`
-      SELECT quarterly_discount_percent, annual_discount_percent
-      FROM payment_settings
-      WHERE payment_method = 'gcash' OR payment_method = 'gotyme'
-      LIMIT 1
-    `;
-
-    if (result.length > 0) {
+    const currentPricing = await getCurrentPricing();
+    if (currentPricing) {
       return {
-        quarterly_discount_percent: parseFloat(result[0].quarterly_discount_percent) || 5.0,
-        annual_discount_percent: parseFloat(result[0].annual_discount_percent) || 8.0
+        quarterly_discount_percent: currentPricing.quarterly_discount_percent || 5.0,
+        annual_discount_percent: currentPricing.annual_discount_percent || 8.0
       };
     }
   } catch (error) {
@@ -283,12 +281,11 @@ async function getPlanQrCode(
       return null;
     }
 
-    const column = `${paymentMethod}_${billingPeriod}_qr_url`;
-
-    const result = await sql(
-      `SELECT ${column} as qr_url FROM payment_settings WHERE payment_method = $1 LIMIT 1`,
-      [paymentMethod]
-    );
+    const result = await sql(`
+      SELECT qr_url FROM payment_qr_codes
+      WHERE payment_method = $1 AND billing_period = $2
+      LIMIT 1
+    `, [paymentMethod, billingPeriod]);
 
     return result[0]?.qr_url || null;
   } catch (error) {
@@ -407,52 +404,55 @@ export async function getPaymentQrCode(
 
 /**
  * Update plan QR codes
- * Uses monthly/quarterly/annual naming convention matching current business logic
+ * Uses monthly/quarterly/annual naming convention matching current business logic.
+ *
+ * QR codes live in the normalized payment_qr_codes table, one row per
+ * (payment_method, billing_period). Each field in the payload maps to exactly
+ * one row, so updating one field can never wipe another.
+ *
+ * Writes go through SECURITY DEFINER functions with the session RLS context so
+ * the superadmin-only policy on payment_qr_codes is satisfied.
  */
-export async function updatePlanQrCodes(settings: {
-  gcash_monthly?: string;
-  gcash_quarterly?: string;
-  gcash_annual?: string;
-  gotyme_monthly?: string;
-  gotyme_quarterly?: string;
-  gotyme_annual?: string;
-}): Promise<boolean> {
+export async function updatePlanQrCodes(
+  settings: {
+    gcash_monthly?: string;
+    gcash_quarterly?: string;
+    gcash_annual?: string;
+    gotyme_monthly?: string;
+    gotyme_quarterly?: string;
+    gotyme_annual?: string;
+  },
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
+): Promise<boolean> {
   try {
-    // Build a dynamic SET clause that only updates fields present in the payload,
-    // so saving one field never wipes previously stored values for other fields.
-    const buildSet = (prefix: 'gcash' | 'gotyme') => {
-      const assignments: string[] = [];
-      const params: string[] = [];
+    const mapping = [
+      ['gcash', 'monthly'],
+      ['gcash', 'quarterly'],
+      ['gcash', 'annual'],
+      ['gotyme', 'monthly'],
+      ['gotyme', 'quarterly'],
+      ['gotyme', 'annual']
+    ] as const;
 
-      (['monthly', 'quarterly', 'annual'] as const).forEach((period) => {
-        const value = settings[`${prefix}_${period}`];
-        if (value !== undefined) {
-          params.push(value);
-          assignments.push(`${prefix}_${period}_qr_url = $${params.length}`);
+    for (const [method, period] of mapping) {
+      const value = settings[`${method}_${period}`];
+      if (value === undefined) continue;
+
+      if (rlsContext) {
+        const fn = value === ''
+          ? 'SELECT clear_payment_qr_code($1, $2)'
+          : 'SELECT upsert_payment_qr_code($1, $2, $3)';
+        const params = value === ''
+          ? [method, period]
+          : [method, period, value];
+        await query(fn, params, rlsContext.companyId, rlsContext.userRole);
+      } else {
+        if (value === '') {
+          await sql('SELECT clear_payment_qr_code($1, $2)', [method, period]);
+        } else {
+          await sql('SELECT upsert_payment_qr_code($1, $2, $3)', [method, period, value]);
         }
-      });
-
-      return { assignments, params };
-    };
-
-    const gcash = buildSet('gcash');
-    if (gcash.assignments.length > 0) {
-      await sql(
-        `UPDATE payment_settings
-         SET ${gcash.assignments.join(', ')}, updated_at = CURRENT_TIMESTAMP
-         WHERE payment_method = 'gcash'`,
-        gcash.params
-      );
-    }
-
-    const gotyme = buildSet('gotyme');
-    if (gotyme.assignments.length > 0) {
-      await sql(
-        `UPDATE payment_settings
-         SET ${gotyme.assignments.join(', ')}, updated_at = CURRENT_TIMESTAMP
-         WHERE payment_method = 'gotyme'`,
-        gotyme.params
-      );
+      }
     }
 
     return true;
