@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
 import { getUTCMidnight, toUTCMidnight, isFutureUTCDate, isPastDatedQuote } from '@/lib/utc-utils';
@@ -34,6 +34,9 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateWarning, setDateWarning] = useState<string | null>(null);
 
+  // Track previous data to avoid infinite loop with setStepData
+  const prevDataRef = useRef<CustomerData | null>(null);
+
   useEffect(() => {
     const data: CustomerData = {
       customer_name: customer,
@@ -43,7 +46,20 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
       status,
       quote_number: quoteNumberValue,
     };
-    setStepData('customer', data);
+
+    // Only call setStepData if data actually changed to avoid infinite loop
+    if (
+      prevDataRef.current === null ||
+      prevDataRef.current.customer_name !== data.customer_name ||
+      prevDataRef.current.customer_address !== data.customer_address ||
+      prevDataRef.current.quote_date !== data.quote_date ||
+      prevDataRef.current.our_ref !== data.our_ref ||
+      prevDataRef.current.status !== data.status ||
+      prevDataRef.current.quote_number !== data.quote_number
+    ) {
+      prevDataRef.current = data;
+      setStepData('customer', data);
+    }
 
     // Check for future date restrictions
     if (!restrictionsLoading && date) {
