@@ -18,8 +18,10 @@ export default function QRCodeDisplay({ method, amount, planName, promoCode }: Q
 
   useEffect(() => {
     fetchPaymentSettings();
-    fetchQrCode();
-  }, [method, amount, promoCode]);
+    if (amount > 0 && planName) {
+      fetchQrCode();
+    }
+  }, [method, amount, promoCode, planName]);
 
   const fetchPaymentSettings = async () => {
     try {
@@ -38,6 +40,10 @@ export default function QRCodeDisplay({ method, amount, planName, promoCode }: Q
   };
 
   const fetchQrCode = async () => {
+    if (!amount || amount <= 0 || !planName) {
+      setLoadingQr(false);
+      return;
+    }
     try {
       setLoadingQr(true);
       const response = await fetch('/api/payment-qr', {
