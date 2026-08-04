@@ -1,5 +1,5 @@
 'use client';
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useEffect, useCallback, useMemo } from 'react';
 import useLocalStorage, { useClearLocalStorage } from '../hooks/useLocalStorage';
 import { WizardState, WIZARD_DRAFT_KEY, MeasureUnit } from '../types/wizard';
 import { clearDraft } from '../lib/wizardStorage';
@@ -161,7 +161,7 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
   const currentStepIndex = STEP_ORDER.indexOf(currentStep);
   const CurrentStepComponent = STEP_COMPONENTS[currentStep];
 
-  const setStepData = (step: WizardStep, data: unknown) => {
+  const setStepData = useCallback((step: WizardStep, data: unknown) => {
     // Update local state
     setStepDataState((prev) => ({ ...prev, [step]: data }));
 
@@ -171,9 +171,9 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
       [step]: data,
       lastUpdated: new Date().toISOString(),
     }));
-  };
+  }, []);
 
-  const getStepData = (step: WizardStep) => stepData[step];
+  const getStepData = useCallback((step: WizardStep) => stepData[step], [stepData]);
 
   const validateCurrentStep = (): boolean => {
     // Try to call the step's validation function if it exists

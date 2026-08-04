@@ -134,6 +134,9 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   const [companySettings, setCompanySettings] = useState<CompanySettings>({});
   const [productModalState, setProductModalState] = useState<{[key: string]: {isOpen: boolean, code: string}}>({});
 
+  // Track previous rows to avoid infinite loop with setStepData
+  const prevRowsRef = useRef<ItemRow[] | null>(null);
+
   // Currency symbol mapping
   const currencySymbols: Record<string, string> = {
     'USD': '$',
@@ -175,7 +178,38 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
         quote_id: '',
       })),
     };
-    setStepData('measurements', data);
+
+    // Only call setStepData if rows actually changed to avoid infinite loop
+    const rowsChanged = prevRowsRef.current === null ||
+      prevRowsRef.current.length !== rows.length ||
+      rows.some((row, idx) => {
+        const prev = prevRowsRef.current?.[idx];
+        return !prev ||
+          prev._key !== row._key ||
+          prev.location !== row.location ||
+          prev.product_id !== row.product_id ||
+          prev.product_code !== row.product_code ||
+          prev.product_collection !== row.product_collection ||
+          prev.product_description !== row.product_description ||
+          prev.unit !== row.unit ||
+          prev.is_fixed !== row.is_fixed ||
+          prev.measured_width !== row.measured_width ||
+          prev.measured_drop !== row.measured_drop ||
+          prev.final_width !== row.final_width ||
+          prev.final_drop !== row.final_drop ||
+          prev.area_sqft !== row.area_sqft ||
+          prev.retail_price_sqft !== row.retail_price_sqft ||
+          prev.supplier_cost_sqft !== row.supplier_cost_sqft ||
+          prev.retail_amount !== row.retail_amount ||
+          prev.supplier_amount !== row.supplier_amount ||
+          prev.minimum_applied !== row.minimum_applied ||
+          prev.sort_order !== row.sort_order;
+      });
+
+    if (rowsChanged) {
+      prevRowsRef.current = rows;
+      setStepData('measurements', data);
+    }
   }, [rows, setStepData]);
 
   function validate(): boolean {

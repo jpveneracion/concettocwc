@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem } from '@/types';
 import { phpFormat } from '@/lib/calc';
@@ -31,6 +31,9 @@ export default function ReviewStep() {
 
   const customerData = getStepData('customer') as CustomerData | undefined;
   const measurementsData = getStepData('measurements') as MeasurementData | undefined;
+
+  // Track previous data to avoid infinite loop with setStepData
+  const prevReviewRef = useRef<{ installation: number; delivery: number } | null>(null);
 
   const [items, setItems] = useState<QuoteItem[]>(
     measurementsData?.items?.map((item, index) => ({
@@ -72,8 +75,18 @@ export default function ReviewStep() {
     };
     // This data will be available for the onComplete callback
     (window as any).__reviewStepData = reviewData;
-    // Store data in wizard step data for proper submission
-    setStepData('review', { installation_fee: installation, delivery_fee: delivery });
+
+    // Only call setStepData if data actually changed to avoid infinite loop
+    const newData = { installation: installation, delivery: delivery };
+    if (
+      prevReviewRef.current === null ||
+      prevReviewRef.current.installation !== newData.installation ||
+      prevReviewRef.current.delivery !== newData.delivery
+    ) {
+      prevReviewRef.current = newData;
+      // Store data in wizard step data for proper submission
+      setStepData('review', newData);
+    }
   }, [items, installation, delivery, customerData, setStepData]);
 
   if (!customerData || !measurementsData) {
