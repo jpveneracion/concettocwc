@@ -418,27 +418,42 @@ export async function updatePlanQrCodes(settings: {
   gotyme_annual?: string;
 }): Promise<boolean> {
   try {
-    // Update GCash payment settings row
-    await sql`
-      UPDATE payment_settings
-      SET
-        gcash_monthly_qr_url = ${settings.gcash_monthly || null},
-        gcash_quarterly_qr_url = ${settings.gcash_quarterly || null},
-        gcash_annual_qr_url = ${settings.gcash_annual || null},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE payment_method = 'gcash'
-    `;
+    // Build a dynamic SET clause that only updates fields present in the payload,
+    // so saving one field never wipes previously stored values for other fields.
+    const buildSet = (prefix: 'gcash' | 'gotyme') => {
+      const assignments: string[] = [];
+      const params: string[] = [];
 
-    // Update GoTyme payment settings row
-    await sql`
-      UPDATE payment_settings
-      SET
-        gotyme_monthly_qr_url = ${settings.gotyme_monthly || null},
-        gotyme_quarterly_qr_url = ${settings.gotyme_quarterly || null},
-        gotyme_annual_qr_url = ${settings.gotyme_annual || null},
-        updated_at = CURRENT_TIMESTAMP
-      WHERE payment_method = 'gotyme'
-    `;
+      (['monthly', 'quarterly', 'annual'] as const).forEach((period) => {
+        const value = settings[`${prefix}_${period}`];
+        if (value !== undefined) {
+          params.push(value);
+          assignments.push(`${prefix}_${period}_qr_url = $${params.length}`);
+        }
+      });
+
+      return { assignments, params };
+    };
+
+    const gcash = buildSet('gcash');
+    if (gcash.assignments.length > 0) {
+      await sql(
+        `UPDATE payment_settings
+         SET ${gcash.assignments.join(', ')}, updated_at = CURRENT_TIMESTAMP
+         WHERE payment_method = 'gcash'`,
+        gcash.params
+      );
+    }
+
+    const gotyme = buildSet('gotyme');
+    if (gotyme.assignments.length > 0) {
+      await sql(
+        `UPDATE payment_settings
+         SET ${gotyme.assignments.join(', ')}, updated_at = CURRENT_TIMESTAMP
+         WHERE payment_method = 'gotyme'`,
+        gotyme.params
+      );
+    }
 
     return true;
   } catch (error) {
