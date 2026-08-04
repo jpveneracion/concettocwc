@@ -34,7 +34,10 @@ export async function GET() {
 
         try {
           if (q.customer_name_encrypted) {
-            customerName = decryptPII(q.customer_name_encrypted as string);
+            const decrypted = decryptPII(q.customer_name_encrypted as string);
+            if (decrypted !== '[Protected Data]') {
+              customerName = decrypted;
+            }
           }
         } catch (err) {
           console.error(`Failed to decrypt customer_name for quote ${q.id}:`, err);
@@ -42,7 +45,10 @@ export async function GET() {
 
         try {
           if (q.customer_address_encrypted) {
-            customerAddress = decryptPII(q.customer_address_encrypted as string);
+            const decrypted = decryptPII(q.customer_address_encrypted as string);
+            if (decrypted !== '[Protected Data]') {
+              customerAddress = decrypted;
+            }
           }
         } catch (err) {
           console.error(`Failed to decrypt customer_address for quote ${q.id}:`, err);
