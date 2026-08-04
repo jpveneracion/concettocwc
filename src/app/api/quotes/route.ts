@@ -34,7 +34,12 @@ export async function GET() {
 
         try {
           if (q.customer_name_encrypted) {
-            const decrypted = decryptPII(q.customer_name_encrypted as string);
+            let encryptedData = q.customer_name_encrypted as string;
+            // Fix PostgreSQL bytea format - remove '\x' prefix if present
+            if (encryptedData.startsWith('\\x')) {
+              encryptedData = encryptedData.substring(2);
+            }
+            const decrypted = decryptPII(encryptedData);
             if (decrypted !== '[Protected Data]') {
               customerName = decrypted;
             }
@@ -45,7 +50,12 @@ export async function GET() {
 
         try {
           if (q.customer_address_encrypted) {
-            const decrypted = decryptPII(q.customer_address_encrypted as string);
+            let encryptedData = q.customer_address_encrypted as string;
+            // Fix PostgreSQL bytea format - remove '\x' prefix if present
+            if (encryptedData.startsWith('\\x')) {
+              encryptedData = encryptedData.substring(2);
+            }
+            const decrypted = decryptPII(encryptedData);
             if (decrypted !== '[Protected Data]') {
               customerAddress = decrypted;
             }
