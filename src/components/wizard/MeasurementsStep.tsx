@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem, MeasureUnit } from '@/types';
 import { calcFinalSize, calcAreaSqft, calcAmounts } from '@/lib/calc';
 import { isPastDatedQuote as computeIsPastDated } from '@/lib/utc-utils';
+import ProductCreationModal from '@/components/ProductCreationModal';
 
 interface MeasurementData {
   items: QuoteItem[];
@@ -131,6 +132,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
   const [autocompleteState, setAutocompleteState] = useState<AutocompleteState>({});
   const autocompleteRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [companySettings, setCompanySettings] = useState<CompanySettings>({});
+  const [productModalState, setProductModalState] = useState<{[key: string]: {isOpen: boolean, code: string}}>({});
 
   // Currency symbol mapping
   const currencySymbols: Record<string, string> = {
@@ -267,6 +269,33 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
       setLookupStatus((prev) => ({ ...prev, [key]: 'notfound' }));
     }
   };
+
+  const openProductModal = useCallback((key: string, code: string) => {
+    setProductModalState(prev => ({ ...prev, [key]: { isOpen: true, code } }));
+  }, []);
+
+  const closeProductModal = useCallback((key: string) => {
+    setProductModalState(prev => ({ ...prev, [key]: { isOpen: false, code: '' } }));
+  }, []);
+
+  const handleProductCreated = useCallback((key: string, productData: {
+    product_id: string;
+    product_code: string;
+    product_collection: string;
+    product_description: string;
+    retail_price_sqft: number;
+    supplier_cost_sqft: number;
+  }) => {
+    updateRow(key, {
+      product_id: productData.product_id,
+      product_code: productData.product_code,
+      product_collection: productData.product_collection,
+      product_description: productData.product_description,
+      retail_price_sqft: productData.retail_price_sqft,
+      supplier_cost_sqft: productData.supplier_cost_sqft,
+    });
+    setLookupStatus(prev => ({ ...prev, [key]: 'found' }));
+  }, [updateRow]);
 
   const fetchAutocompleteSuggestions = async (key: string, query: string) => {
     if (query.length < 2) {
@@ -504,9 +533,18 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   {lookupStatus[row._key] === 'found' && (
                     <p className="text-xs text-green-600 mt-1">✓ {row.product_collection} - {row.product_description}</p>
                   )}
-                  {lookupStatus[row._key] === 'notfound' && (
-                    <p className="text-xs text-red-500 mt-1">Product code not found. Try typing partial code for suggestions.</p>
-                  )}
+{lookupStatus[row._key] === 'notfound' && (
+                      <div className="mt-1">
+                        <button
+                          onClick={() => openProductModal(row._key, row.product_code)}
+                          aria-label={`Create product ${row.product_code.toUpperCase()}`}
+                          className="text-xs text-blue-600 hover:text-blue-700 underline min-h-[44px] min-w-[44px] flex items-center"
+                        >
+                          Create "{row.product_code.toUpperCase()}"
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1">Or try typing partial code for suggestions.</p>
+                      </div>
+                    )}
 
                   {/* Autocomplete Dropdown */}
                   {autocompleteState[row._key]?.show && !autocompleteState[row._key]?.loading && (
@@ -645,6 +683,17 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
       )}
 
       <p className="text-xs text-gray-500">Add at least one window with measurements to continue</p>
+
+      {/* Product Creation Modals */}
+      {rows.map((row) => (
+        <ProductCreationModal
+          key={`modal-${row._key}`}
+          isOpen={productModalState[row._key]?.isOpen || false}
+          onClose={() => closeProductModal(row._key)}
+          productCode={productModalState[row._key]?.code || ''}
+          onSuccess={(productData) => handleProductCreated(row._key, productData)}
+        />
+      ))}
     </div>
   );
 }
