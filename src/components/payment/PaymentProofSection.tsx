@@ -51,7 +51,7 @@ export default function PaymentProofSection({
     }
 
     // Check length (GCash standard 13 chars, GoTyme standard 17 chars)
-    const maxLength = paymentMethod === 'gotyme' ? 17 : 15;
+    const maxLength = paymentMethod === 'gotyme' ? 20 : 15;
     const standardLength = paymentMethod === 'gotyme' ? 17 : 13;
     if (trimmedValue.length < 10 || trimmedValue.length > maxLength) {
       return `Transaction number must be 10-${maxLength} characters (standard ${methodLabel} format is ${standardLength} characters)`;
