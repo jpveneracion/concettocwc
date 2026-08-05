@@ -64,8 +64,8 @@ function PaymentInstructionsContent() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (gracePeriodCountdown === 0 && verificationStatus === 'pending') {
-      // Grace period ended, redirect to manual pending page
-      router.push('/payment/verification/pending');
+      // Grace period ended, redirect to verification history page
+      router.push('/payment/verification/history');
     }
   }, [gracePeriodCountdown, verificationStatus, router]);
 
@@ -387,7 +387,7 @@ function PaymentInstructionsContent() {
                 Waiting for network confirmation...
               </h3>
               <p className="text-gray-600 mb-4">
-                Checking for GCash notification ({gracePeriodCountdown}s remaining)
+                Checking for {selectedMethod === 'gotyme' ? 'GoTyme' : 'GCash'} notification ({gracePeriodCountdown}s remaining)
               </p>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
