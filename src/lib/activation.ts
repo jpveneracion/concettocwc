@@ -526,24 +526,18 @@ export async function listActivationCodes(
 
 /**
  * Deactivate activation code
+ * Uses SECURITY DEFINER function to bypass RLS infinite recursion
  */
 export async function deactivateActivationCode(
   codeId: number,
-  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin'; userId?: string }
 ): Promise<void> {
-  if (rlsContext) {
-    await query(
-      'UPDATE activation_codes SET is_active = false WHERE id = $1',
-      [codeId],
-      rlsContext.companyId,
-      rlsContext.userRole
-    );
-  } else {
-    await sql(
-      'UPDATE activation_codes SET is_active = false WHERE id = $1',
-      [codeId]
-    );
-  }
+  await query(
+    'SELECT deactivate_activation_code($1, $2, $3, $4)',
+    [codeId, rlsContext?.companyId || '', rlsContext?.userRole || 'user', rlsContext?.userId || ''],
+    rlsContext?.companyId,
+    rlsContext?.userRole
+  );
 }
 
 /**
