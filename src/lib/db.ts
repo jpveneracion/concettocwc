@@ -1001,6 +1001,9 @@ export async function getVerificationStats(rlsContext?: RLSContext): Promise<{
     today.setHours(0, 0, 0, 0);
 
     // Execute multiple queries in parallel for better performance
+    // Approved stats come from the payments ledger: once a verification is
+    // approved it is moved into payments (and deleted from payment_verifications).
+    // verified_at records when the payment was approved.
     const [
       pendingResult,
       pendingTodayResult,
@@ -1011,9 +1014,9 @@ export async function getVerificationStats(rlsContext?: RLSContext): Promise<{
     ] = await Promise.all([
       query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['pending'], rlsContext?.companyId, rlsContext?.userRole),
       query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND submitted_at >= $2', ['pending', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
-      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['approved', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payments WHERE verified_at >= $1', [today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
       query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['rejected', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
-      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['approved'], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payments', [], rlsContext?.companyId, rlsContext?.userRole),
       query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['rejected'], rlsContext?.companyId, rlsContext?.userRole)
     ]);
 
