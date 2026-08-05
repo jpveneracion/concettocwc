@@ -22,9 +22,9 @@ export function cleanReferenceNumber(input: string): string {
 }
 
 /**
- * Validate GCash reference number format
- * Standard format: 13-digit numeric (^\d{13}$)
- * Flexible fallback: 10-15 digits (^\\d{10,15}$)
+ * Validate payment reference number format
+ * Standard GCash format: 13-digit numeric (^\d{13}$)
+ * Flexible fallback: 10-20 alphanumeric (handles GoTyme and other refs, ^[A-Z0-9]{10,20}$)
  */
 export function validateReferenceNumberFormat(input: string): {
   valid: boolean;
@@ -43,8 +43,8 @@ export function validateReferenceNumberFormat(input: string): {
     return { valid: true, format: 'standard' };
   }
 
-  // Flexible format: 10-15 digits (handles future format changes)
-  const flexibleFormat = /^\d{10,15}$/;
+  // Flexible format: 10-20 alphanumeric (handles GoTyme refs and future format changes)
+  const flexibleFormat = /^[A-Z0-9]{10,20}$/;
   if (flexibleFormat.test(cleaned)) {
     return {
       valid: true,
@@ -56,7 +56,7 @@ export function validateReferenceNumberFormat(input: string): {
   return {
     valid: false,
     format: 'invalid',
-    message: 'Invalid format - must be 10-15 digits'
+    message: 'Invalid format - must be 10-20 alphanumeric characters'
   };
 }
 
