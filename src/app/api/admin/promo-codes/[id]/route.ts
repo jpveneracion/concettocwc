@@ -139,7 +139,10 @@ async function getActivationCodeById(id: number) {
     throw new Error('Promo code not found');
   }
 
-  const promoCodeData = JSON.parse(result[0].promo_code);
+  // Driver auto-parses JSONB to object, so use directly if already object
+  const promoCodeData = typeof result[0].promo_code === 'string'
+    ? JSON.parse(result[0].promo_code)
+    : result[0].promo_code;
   return {
     id: promoCodeData.id,
     code: promoCodeData.code,
