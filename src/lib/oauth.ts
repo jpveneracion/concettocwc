@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db';
 import type { OAuthAccount, OAuthProvider, OAuthUserInfo, AccountLinkRequest, PiUserInfo } from '@/types/oauth';
 import type { DatabaseRole } from '@/types/roles';
+import crypto from 'crypto';
 
 // OAuth error interface for better error handling
 export interface OAuthError extends Error {
@@ -28,17 +29,12 @@ class OAuthErrorImpl extends Error implements OAuthError {
   }
 }
 
-// Simple string-based email hashing (Edge Runtime compatible)
+// Email hashing for user lookup - MUST match the algorithm used by the
+// signup/login flows (src/app/api/signup/route.ts, src/app/api/login/route.ts):
+// sha256 of the lowercased+trimmed email. A mismatch here makes OAuth treat
+// existing password-registered users as new, creating duplicate companies.
 function hashEmail(email: string): string {
-  // Simple hash function for email lookup (not for security)
-  const normalized = email.toLowerCase().trim();
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(16) + normalized.length.toString(16);
+  return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex');
 }
 
 // User record interface for OAuth operations
@@ -56,6 +52,7 @@ interface CompanyRecord {
   id: string;
   code: string;
   name: string;
+  userCount?: number; // Current user count for orphan detection in OAuth auto-creation
 }
 
 // Company data interface for creation
@@ -266,14 +263,34 @@ export async function createUserWithOAuth(email: string, companyId: string, acco
   }
 }
 
-// Validate company code
+// Validate company code (uses SECURITY DEFINER function to bypass RLS pre-auth)
+// Direct SELECT on companies is blocked by RLS when no tenant context exists,
+// which previously made existing companies look free (causing duplicate key
+// violations on OAuth sign-in).
 export async function validateCompanyCode(companyCode: string): Promise<CompanyRecord | null> {
   try {
-    const results = await sql`
-      SELECT id, code, name FROM companies
-      WHERE UPPER(code) = ${companyCode.toUpperCase()}
-    `;
-    return (results[0] as CompanyRecord) || null;
+    const { query } = await import('@/lib/db');
+
+    const result = await query<{
+      company_id: string;
+      company_code: string;
+      company_name: string;
+      company_user_count: string | number;
+    }>(
+      `SELECT * FROM find_company_by_code($1)`,
+      [companyCode]
+    );
+
+    if (!result.rows[0]) {
+      return null;
+    }
+
+    return {
+      id: result.rows[0].company_id,
+      code: result.rows[0].company_code,
+      name: result.rows[0].company_name,
+      userCount: Number(result.rows[0].company_user_count)
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new OAuthErrorImpl(

@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { setTrialExpiration } from '@/lib/subscription';
 import { setTenantContext, resetTenantContext, type RLSUserRole } from '@/lib/rls';
 import { normalizeRoleForRLS } from '@/types/roles';
+import crypto from 'crypto';
 
 // Helper function to get the appropriate cookie domain based on environment
 function getCookieDomain(): string | undefined {
@@ -219,14 +220,23 @@ export const authOptions = {
         // First create the company to get its UUID
         const { createCompany, validateCompanyCode } = await import('@/lib/oauth');
 
-        // Check if company already exists
+        // Check if company already exists (RLS-bypass lookup via SECURITY DEFINER)
         let company = await validateCompanyCode(companyCode);
+        if (company && (company.userCount ?? 0) > 0) {
+          // The code already belongs to an active company. Never silently join
+          // another tenant's workspace (email local parts can derive the same
+          // 10-char code) - fall back to a unique random code instead.
+          console.log('⚠️ Company code already in use by an active company, generating unique code:', company.code);
+          company = null;
+          defaultCompanyData.code = await generateUniqueCompanyCode();
+        }
+
         if (!company) {
-          // Create new company if it doesn't exist
+          // Create new company if it doesn't exist (or code was taken)
           company = await createCompany(defaultCompanyData);
           console.log('✅ Created new company:', company.id);
         } else {
-          console.log('✅ Using existing company:', company.id);
+          console.log('✅ Reusing orphaned company:', company.id);
         }
 
         const accountData: AccountLinkRequest = {
@@ -356,3 +366,16 @@ export const authOptions = {
 };
 
 export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);
+
+// Generate a unique company code (mirrors the account-choice flow)
+async function generateUniqueCompanyCode(): Promise<string> {
+  const { sql } = await import('@/lib/db');
+  const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const existing = await sql`
+    SELECT check_company_exists(${code}) as exists
+  `;
+  if (existing.length > 0 && existing[0].exists) {
+    return generateUniqueCompanyCode(); // Retry if collision
+  }
+  return code;
+}
