@@ -50,9 +50,11 @@ export default function PaymentProofSection({
       return 'Transaction number must be alphanumeric only (no letters with symbols or special characters)';
     }
 
-    // Check length (10-15 digits, standard GCash/GoTyme format is 13)
-    if (trimmedValue.length < 10 || trimmedValue.length > 15) {
-      return `Transaction number must be 10-15 characters (standard ${methodLabel} format is 13 characters)`;
+    // Check length (GCash standard 13 chars, GoTyme standard 17 chars)
+    const maxLength = paymentMethod === 'gotyme' ? 17 : 15;
+    const standardLength = paymentMethod === 'gotyme' ? 17 : 13;
+    if (trimmedValue.length < 10 || trimmedValue.length > maxLength) {
+      return `Transaction number must be 10-${maxLength} characters (standard ${methodLabel} format is ${standardLength} characters)`;
     }
 
     return null;
