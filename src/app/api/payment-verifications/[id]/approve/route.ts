@@ -87,7 +87,10 @@ export async function POST(
     }
 
     // 5. Get verification record
-    const verification = await getPaymentVerificationById(id);
+    const verification = await getPaymentVerificationById(id, {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -110,7 +113,11 @@ export async function POST(
       id,
       VerificationStatus.APPROVED,
       userId,
-      admin_notes
+      admin_notes,
+      {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      }
     );
 
     if (!updatedVerification) {

@@ -168,7 +168,7 @@ export async function querySQL<T extends QueryResultRow = Record<string, unknown
  */
 export interface RLSContext {
   companyId: string;
-  userRole: string;
+  userRole: 'user' | 'admin' | 'superadmin';
 }
 
 /**
@@ -381,36 +381,44 @@ interface PaymentVerificationRecord {
  * });
  * ```
  */
-export async function createPaymentVerification(verification: {
-  user_id: string;
-  plan_id: string;
-  screenshot_url: string;
-  reference_number?: string;
-  notes?: string;
-}): Promise<PaymentVerificationRecord> {
+export async function createPaymentVerification(
+  verification: {
+    user_id: string;
+    plan_id: string;
+    screenshot_url: string;
+    reference_number?: string;
+    notes?: string;
+    promo_code?: string;
+  },
+  rlsContext?: RLSContext
+): Promise<PaymentVerificationRecord> {
   const startTime = Date.now();
 
   try {
     const result = await withRetry(async () =>
       withQueryTimeout(async () =>
-        sql(
-          `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes)
-           VALUES ($1, $2, $3, $4, $5)
+        query(
+          `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes, promo_code, company_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING *`,
           [
             verification.user_id,
             verification.plan_id,
             verification.screenshot_url,
             verification.reference_number || null,
-            verification.notes || null
-          ]
+            verification.notes || null,
+            verification.promo_code || null,
+            rlsContext?.companyId || null
+          ],
+          rlsContext?.companyId,
+          rlsContext?.userRole
         )
       )
     );
 
     const duration = Date.now() - startTime;
 
-    if (!result[0]) {
+    if (!result.rows[0]) {
       structuredLog(
         'payment_verification_creation_failed',
         'createPaymentVerification',
@@ -438,14 +446,14 @@ export async function createPaymentVerification(verification: {
     );
 
     // Convert database result to match PaymentVerificationRecord interface
-    const dbRecord = result[0];
+    const dbRecord = result.rows[0] as unknown as PaymentVerificationRecord;
     return {
       ...dbRecord,
       submitted_at: new Date(dbRecord.submitted_at),
       reviewed_at: dbRecord.reviewed_at ? new Date(dbRecord.reviewed_at) : undefined,
       created_at: new Date(dbRecord.created_at),
       updated_at: new Date(dbRecord.updated_at)
-    } as PaymentVerificationRecord;
+    };
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -475,10 +483,10 @@ export async function createPaymentVerification(verification: {
  * @returns Promise containing the payment verification record or null if not found
  * @throws Error if database operation fails
  */
-export async function getPaymentVerificationById(id: string): Promise<PaymentVerificationRecord | null> {
+export async function getPaymentVerificationById(id: string, rlsContext?: RLSContext): Promise<PaymentVerificationRecord | null> {
   try {
     // Use query() with automatic RLS context instead of raw sql()
-    const result = await query('SELECT * FROM payment_verifications WHERE id = $1', [id]);
+    const result = await query('SELECT * FROM payment_verifications WHERE id = $1', [id], rlsContext?.companyId, rlsContext?.userRole);
     return (result.rows[0] as unknown as PaymentVerificationRecord) || null;
   } catch (error) {
     throw new Error(`Failed to get payment verification: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -502,7 +510,8 @@ export async function getPaymentVerificationById(id: string): Promise<PaymentVer
  */
 export async function getPaymentVerificationsByUserId(
   userId: string,
-  status?: 'pending' | 'approved' | 'rejected'
+  status?: 'pending' | 'approved' | 'rejected',
+  rlsContext?: RLSContext
 ): Promise<PaymentVerificationRecord[]> {
   try {
     let sqlQuery = 'SELECT * FROM payment_verifications WHERE user_id = $1';
@@ -516,7 +525,7 @@ export async function getPaymentVerificationsByUserId(
     sqlQuery += ' ORDER BY submitted_at DESC';
 
     // Use query() with automatic RLS context
-    const result = await query(sqlQuery, params);
+    const result = await query(sqlQuery, params, rlsContext?.companyId, rlsContext?.userRole);
     return result.rows as unknown as PaymentVerificationRecord[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -540,14 +549,15 @@ export async function getPaymentVerificationsByUserId(
  */
 export async function getPaymentVerificationsByUserIdWithPlanDetails(
   userId: string,
-  status?: 'pending' | 'approved' | 'rejected'
+  status?: 'pending' | 'approved' | 'rejected',
+  rlsContext?: RLSContext
 ): Promise<PaymentVerification[]> {
   try {
-    let query: string;
+    let queryString: string;
     let params: (string | number)[];
 
     if (status) {
-      query = `
+      queryString = `
         SELECT
           pv.*,
           sp.name as plan_name,
@@ -559,7 +569,7 @@ export async function getPaymentVerificationsByUserIdWithPlanDetails(
       `;
       params = [userId, status];
     } else {
-      query = `
+      queryString = `
         SELECT
           pv.*,
           sp.name as plan_name,
@@ -572,8 +582,8 @@ export async function getPaymentVerificationsByUserIdWithPlanDetails(
       params = [userId];
     }
 
-    const result = await withQueryTimeout(async () => sql(query, params));
-    return result as PaymentVerification[];
+    const result = await query(queryString, params, rlsContext?.companyId, rlsContext?.userRole);
+    return result.rows as unknown as PaymentVerification[];
   } catch (error) {
     throw new Error(`Failed to get payment verifications with plan details: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -640,86 +650,89 @@ export async function getPendingVerifications(limit: number = 50, offset: number
  * });
  * ```
  */
-export async function getAllPaymentVerifications(filters: {
-  status?: VerificationStatus;
-  user_id?: string;
-  plan_id?: string;
-  date_from?: string;
-  date_to?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<{ verifications: PaymentVerificationRecord[]; total: number }> {
+export async function getAllPaymentVerifications(
+  filters: {
+    status?: VerificationStatus;
+    user_id?: string;
+    plan_id?: string;
+    date_from?: string;
+    date_to?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  },
+  rlsContext?: RLSContext
+): Promise<{ verifications: PaymentVerificationRecord[]; total: number }> {
   try {
     // Build dynamic WHERE clause based on provided filters
     // Each condition uses parameterized queries to prevent SQL injection
-    let query = 'SELECT * FROM payment_verifications WHERE 1=1';
+    let queryString = 'SELECT * FROM payment_verifications WHERE 1=1';
     const params: (string | number | boolean | null)[] = [];
     let paramIndex = 1;
 
     if (filters.status) {
-      query += ` AND status = $${paramIndex}`;
+      queryString += ` AND status = $${paramIndex}`;
       params.push(filters.status);
       paramIndex++;
     }
 
     if (filters.user_id) {
-      query += ` AND user_id = $${paramIndex}`;
+      queryString += ` AND user_id = $${paramIndex}`;
       params.push(filters.user_id);
       paramIndex++;
     }
 
     if (filters.plan_id) {
-      query += ` AND plan_id = $${paramIndex}`;
+      queryString += ` AND plan_id = $${paramIndex}`;
       params.push(filters.plan_id);
       paramIndex++;
     }
 
     if (filters.date_from) {
-      query += ` AND submitted_at >= $${paramIndex}`;
+      queryString += ` AND submitted_at >= $${paramIndex}`;
       params.push(filters.date_from);
       paramIndex++;
     }
 
     if (filters.date_to) {
-      query += ` AND submitted_at <= $${paramIndex}`;
+      queryString += ` AND submitted_at <= $${paramIndex}`;
       params.push(filters.date_to);
       paramIndex++;
     }
 
     if (filters.search) {
       // ILIKE provides case-insensitive pattern matching in PostgreSQL
-      query += ` AND (reference_number ILIKE $${paramIndex} OR notes ILIKE $${paramIndex})`;
+      queryString += ` AND (reference_number ILIKE $${paramIndex} OR notes ILIKE $${paramIndex})`;
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
 
     // Get total count matching the filters (before pagination)
     // This helps frontend calculate total pages
-    const countQuery = query.replace('SELECT *', 'SELECT COUNT(*)');
-    const countResult = await withQueryTimeout(async () => sql(countQuery, params));
+    const countQuery = queryString.replace('SELECT *', 'SELECT COUNT(*)');
+    const countResult = await query<CountResult>(countQuery, params, rlsContext?.companyId, rlsContext?.userRole);
 
     // Use type-safe interface instead of 'any' cast
-    const total = parseInt((countResult[0] as CountResult).count);
+    const total = parseInt(countResult.rows[0]?.count || '0');
 
     // Add ordering and pagination to main query
-    query += ' ORDER BY submitted_at DESC';
+    queryString += ' ORDER BY submitted_at DESC';
 
     if (filters.limit) {
-      query += ` LIMIT $${paramIndex}`;
+      queryString += ` LIMIT $${paramIndex}`;
       params.push(filters.limit);
       paramIndex++;
     }
 
     if (filters.offset) {
-      query += ` OFFSET $${paramIndex}`;
+      queryString += ` OFFSET $${paramIndex}`;
       params.push(filters.offset);
     }
 
-    const verifications = await withQueryTimeout(async () => sql(query, params));
+    const verifications = await query(queryString, params, rlsContext?.companyId, rlsContext?.userRole);
 
     return {
-      verifications: verifications as PaymentVerificationRecord[],
+      verifications: verifications.rows as unknown as PaymentVerificationRecord[],
       total
     };
   } catch (error) {
@@ -760,19 +773,22 @@ export async function updatePaymentVerificationStatus(
   id: string,
   status: 'approved' | 'rejected',
   adminId?: string,
-  adminNotes?: string
+  adminNotes?: string,
+  rlsContext?: RLSContext
 ): Promise<PaymentVerificationRecord | null> {
   const startTime = Date.now();
 
   try {
     const result = await withRetry(async () =>
       withQueryTimeout(async () =>
-        sql(
+        query(
           `UPDATE payment_verifications
            SET status = $1, admin_id = $2, admin_notes = $3, reviewed_at = NOW(), updated_at = NOW()
            WHERE id = $4
            RETURNING *`,
-          [status, adminId || null, adminNotes || null, id]
+          [status, adminId || null, adminNotes || null, id],
+          rlsContext?.companyId,
+          rlsContext?.userRole
         )
       )
     );
@@ -792,10 +808,9 @@ export async function updatePaymentVerificationStatus(
       true
     );
 
-    return (result[0] as PaymentVerificationRecord) || null;
+    return (result.rows[0] as unknown as PaymentVerificationRecord) || null;
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     structuredLog(
       'payment_verification_status_update_failed',
@@ -804,13 +819,13 @@ export async function updatePaymentVerificationStatus(
         verification_id: id,
         status: status,
         admin_id: adminId,
-        error: errorMessage
+        error: error instanceof Error ? error.message : 'Unknown error'
       },
       duration,
       false
     );
 
-    throw new Error(`Failed to update verification status: ${errorMessage}`);
+    throw new Error(`Failed to update verification status: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -826,11 +841,15 @@ export async function updatePaymentVerificationStatus(
  * console.log(`${pendingCount} verifications awaiting review`);
  * ```
  */
-export async function getPendingVerificationCount(): Promise<number> {
+export async function getPendingVerificationCount(rlsContext?: RLSContext): Promise<number> {
   try {
-    const result = await sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['pending']);
-    // Use type-safe interface instead of 'any' cast
-    return parseInt((result[0] as CountResult).count);
+    const result = await query<CountResult>(
+      'SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1',
+      ['pending'],
+      rlsContext?.companyId,
+      rlsContext?.userRole
+    );
+    return parseInt(result.rows[0]?.count || '0');
   } catch (error) {
     throw new Error(`Failed to get pending verification count: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -855,7 +874,7 @@ export async function getPendingVerificationCount(): Promise<number> {
  * console.log(`Today's activity: ${stats.approved_today} approved, ${stats.rejected_today} rejected`);
  * ```
  */
-export async function getVerificationStats(): Promise<{
+export async function getVerificationStats(rlsContext?: RLSContext): Promise<{
   total_pending: number;
   pending_today: number;
   approved_today: number;
@@ -877,22 +896,22 @@ export async function getVerificationStats(): Promise<{
       totalApprovedResult,
       totalRejectedResult
     ] = await Promise.all([
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['pending']),
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND submitted_at >= $2', ['pending', today.toISOString()]),
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['approved', today.toISOString()]),
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['rejected', today.toISOString()]),
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['approved']),
-      sql('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['rejected'])
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['pending'], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND submitted_at >= $2', ['pending', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['approved', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1 AND reviewed_at >= $2', ['rejected', today.toISOString()], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['approved'], rlsContext?.companyId, rlsContext?.userRole),
+      query<CountResult>('SELECT COUNT(*) as count FROM payment_verifications WHERE status = $1', ['rejected'], rlsContext?.companyId, rlsContext?.userRole)
     ]);
 
     // Use type-safe interface instead of 'any' casts
     return {
-      total_pending: parseInt((pendingResult[0] as CountResult).count),
-      pending_today: parseInt((pendingTodayResult[0] as CountResult).count),
-      approved_today: parseInt((approvedTodayResult[0] as CountResult).count),
-      rejected_today: parseInt((rejectedTodayResult[0] as CountResult).count),
-      total_approved: parseInt((totalApprovedResult[0] as CountResult).count),
-      total_rejected: parseInt((totalRejectedResult[0] as CountResult).count)
+      total_pending: parseInt(pendingResult.rows[0]?.count || '0'),
+      pending_today: parseInt(pendingTodayResult.rows[0]?.count || '0'),
+      approved_today: parseInt(approvedTodayResult.rows[0]?.count || '0'),
+      rejected_today: parseInt(rejectedTodayResult.rows[0]?.count || '0'),
+      total_approved: parseInt(totalApprovedResult.rows[0]?.count || '0'),
+      total_rejected: parseInt(totalRejectedResult.rows[0]?.count || '0')
     };
   } catch (error) {
     throw new Error(`Failed to get verification statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);

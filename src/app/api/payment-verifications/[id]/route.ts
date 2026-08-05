@@ -45,7 +45,10 @@ export async function GET(
     }
 
     // 3. Get verification record
-    const verification = await getPaymentVerificationById(id);
+    const verification = await getPaymentVerificationById(id, {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },

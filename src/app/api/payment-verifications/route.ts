@@ -53,7 +53,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // 2. Parse request body
-    const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string } = await req.json();
+    const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string; promo_code?: string } = await req.json();
 
     if (!body.plan_id || !body.screenshot_base64 || !body.reference_number) {
       return NextResponse.json(
@@ -135,17 +135,27 @@ export async function POST(req: Request): Promise<NextResponse> {
       plan_id: body.plan_id,
       screenshot_url: uploadResult.cid,
       reference_number: sanitizedReferenceNumber,
-      notes: sanitizedNotes
+      notes: sanitizedNotes,
+      promo_code: body.promo_code ? sanitizeInput(body.promo_code).toUpperCase() : undefined
+    }, {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
     });
 
     // 9. Trigger automatic verification (Trigger A)
     let matchResult;
     try {
-      matchResult = await checkAutomaticVerificationMatch(verification);
+      matchResult = await checkAutomaticVerificationMatch(verification, {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      });
 
       if (matchResult.shouldAutoApprove) {
         // Update verification with automatic result
-        await updateVerificationWithAutomaticResult(verification.id, matchResult);
+        await updateVerificationWithAutomaticResult(verification.id, matchResult, {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        });
       }
     } catch (error) {
       console.error('Automatic verification check error:', error);
@@ -292,7 +302,10 @@ export async function GET(req: Request): Promise<NextResponse> {
     };
 
     // 7. Get verifications from database
-    const result = await getAllPaymentVerifications(filters);
+    const result = await getAllPaymentVerifications(filters, {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
 
     // 8. Return paginated response
     return NextResponse.json({

@@ -103,7 +103,10 @@ export async function POST(
     const { sanitizedReason, sanitizedNotes } = sanitizeRejectionInput(reason, admin_notes);
 
     // 7. Get verification record
-    const verification = await getPaymentVerificationById(id);
+    const verification = await getPaymentVerificationById(id, {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
     if (!verification) {
       return NextResponse.json(
         { error: 'Verification not found' },
@@ -130,7 +133,11 @@ export async function POST(
       id,
       VerificationStatus.REJECTED,
       userId,
-      finalNotes
+      finalNotes,
+      {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      }
     );
 
     if (!updatedVerification) {

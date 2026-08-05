@@ -106,7 +106,9 @@ export default function PaymentProofSection({
 
       setSubmitted(true);
     } catch (err) {
-      setError('Failed to submit payment proof. Please try again.');
+      setError(err instanceof Error && err.message
+        ? err.message
+        : 'Failed to submit payment proof. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

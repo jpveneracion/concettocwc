@@ -1,6 +1,6 @@
 // src/lib/payment-verification.ts
 
-import { sql } from './db';
+import { sql, query, RLSContext } from './db';
 import { cleanReferenceNumber, validateReferenceNumberFormat } from './reference-cleaning';
 import type { PaymentVerification, GCashWebhookData } from '@/types/payment';
 
@@ -18,7 +18,8 @@ interface VerificationMatchResult {
  * Conservative threshold: auto-approve ONLY when ALL conditions met perfectly
  */
 export async function checkAutomaticVerificationMatch(
-  verification: PaymentVerification
+  verification: PaymentVerification,
+  rlsContext?: RLSContext
 ): Promise<VerificationMatchResult> {
   const cleanedRef = cleanReferenceNumber(verification.reference_number || '');
   const formatCheck = validateReferenceNumberFormat(verification.reference_number || '');
@@ -39,32 +40,33 @@ export async function checkAutomaticVerificationMatch(
   }
 
   // Check for matching webhook data
-  const webhookResult = await sql(`
+  const webhookResult = await query(`
     SELECT * FROM gcash_webhook_data
     WHERE cleaned_transaction_number = $1
     AND received_at > NOW() - INTERVAL '24 hours'
     ORDER BY received_at DESC
     LIMIT 1
-  `, [cleanedRef]) as GCashWebhookData[];
+  `, [cleanedRef], rlsContext?.companyId, rlsContext?.userRole);
 
-  if (!webhookResult[0]) {
+  const webhookRows = webhookResult.rows as unknown as GCashWebhookData[];
+  if (!webhookRows[0]) {
     return {
       shouldAutoApprove: false,
       reason: 'No matching webhook data found within 24 hours'
     };
   }
 
-  const webhook = webhookResult[0];
+  const webhook = webhookRows[0];
 
   // Check for multiple potential matches (ambiguity)
-  const duplicateCheck = await sql(`
+  const duplicateCheck = await query(`
     SELECT COUNT(*) as count FROM payment_verifications
     WHERE REGEXP_REPLACE(UPPER(reference_number), '[^A-Z0-9]', '', '') = $1
     AND id != $2
     AND status = 'pending'
-  `, [cleanedRef, verification.id]) as {count: string}[];
+  `, [cleanedRef, verification.id], rlsContext?.companyId, rlsContext?.userRole);
 
-  if (parseInt(duplicateCheck[0].count) > 0) {
+  if (parseInt((duplicateCheck.rows[0] as {count: string}).count) > 0) {
     return {
       shouldAutoApprove: false,
       reason: 'Multiple verifications with same reference number - ambiguous match'
@@ -72,19 +74,19 @@ export async function checkAutomaticVerificationMatch(
   }
 
   // Get expected amount from subscription plans
-  const planResult = await sql(`
+  const planResult = await query(`
     SELECT amount FROM subscription_plans
     WHERE id = $1
-  `, [verification.plan_id]) as {amount: string}[];
+  `, [verification.plan_id], rlsContext?.companyId, rlsContext?.userRole);
 
-  if (!planResult[0]) {
+  if (!planResult.rows[0]) {
     return {
       shouldAutoApprove: false,
       reason: 'Plan not found for verification'
     };
   }
 
-  const expectedAmount = parseFloat(String(planResult[0].amount));
+  const expectedAmount = parseFloat(String(planResult.rows[0].amount));
   const webhookAmount = parseFloat(String(webhook.amount));
 
   // Exact amount match required (zero tolerance for differences)
@@ -122,14 +124,15 @@ export async function checkAutomaticVerificationMatch(
  */
 export async function updateVerificationWithAutomaticResult(
   verificationId: string,
-  matchResult: VerificationMatchResult
+  matchResult: VerificationMatchResult,
+  rlsContext?: RLSContext
 ): Promise<void> {
   const status = matchResult.shouldAutoApprove ? 'matched' :
     matchResult.reason.includes('no webhook') ? 'no_webhook_data' :
     matchResult.reason.includes('Amount') ? 'amount_mismatch' :
     matchResult.reason.includes('time') ? 'time_mismatch' : 'other_mismatch';
 
-  await sql(`
+  await query(`
     UPDATE payment_verifications
     SET
       automatic_verification_attempted = TRUE,
@@ -139,14 +142,15 @@ export async function updateVerificationWithAutomaticResult(
       updated_at = NOW()
     WHERE id = $4
   `, [status, matchResult.shouldAutoApprove ? 'automatic' : 'manual',
-      matchResult.webhookData?.id || null, verificationId]);
+      matchResult.webhookData?.id || null, verificationId],
+     rlsContext?.companyId, rlsContext?.userRole);
 
   // If auto-approved, also update verification status
   if (matchResult.shouldAutoApprove) {
-    await sql(`
+    await query(`
       UPDATE payment_verifications
       SET status = 'approved', reviewed_at = NOW()
       WHERE id = $1
-    `, [verificationId]);
+    `, [verificationId], rlsContext?.companyId, rlsContext?.userRole);
   }
 }

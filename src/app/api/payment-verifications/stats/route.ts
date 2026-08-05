@@ -37,7 +37,10 @@ export async function GET(req: Request) {
     }
 
     // 3. Get verification statistics from database
-    const stats = await getVerificationStats();
+    const stats = await getVerificationStats({
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
 
     // 4. Return stats response with proper typing
     const response: VerificationStats = {

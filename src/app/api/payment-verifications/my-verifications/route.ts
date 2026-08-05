@@ -41,7 +41,11 @@ export async function GET(req: Request): Promise<NextResponse> {
     // 3. Get user's verifications
     const verifications = await getPaymentVerificationsByUserId(
       session.userId,
-      validStatus
+      validStatus,
+      {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      }
     );
 
     // 4. Add gateway URLs and return

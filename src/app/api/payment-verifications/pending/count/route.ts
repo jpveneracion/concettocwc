@@ -36,7 +36,10 @@ export async function GET(req: Request) {
     }
 
     // 3. Get pending verification count from database
-    const count = await getPendingVerificationCount();
+    const count = await getPendingVerificationCount({
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    });
 
     // 4. Return count response
     return NextResponse.json({ count }, { status: 200 });

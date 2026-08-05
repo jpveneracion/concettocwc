@@ -174,7 +174,14 @@ function PaymentInstructionsContent() {
           pollForVerification(data.verification_id);
         }
       } else {
+        // API returned an error - surface it and let the form show the failure
+        let message = 'Failed to submit payment proof. Please try again.';
+        try {
+          const errorData = await response.json();
+          if (errorData?.error) message = errorData.error;
+        } catch { /* ignore parse errors */ }
         setVerificationStatus('error');
+        throw new Error(message);
       }
     } catch (error) {
       console.error('Error submitting proof:', error);
