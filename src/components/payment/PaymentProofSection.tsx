@@ -45,14 +45,14 @@ export default function PaymentProofSection({
       return `${methodLabel} transaction number is required`;
     }
 
-    // Check if value contains only digits
-    if (!/^\d+$/.test(trimmedValue)) {
-      return 'Transaction number must contain only digits (no letters or special characters)';
+    // Check if value contains only alphanumeric characters
+    if (!/^[a-zA-Z0-9]+$/.test(trimmedValue)) {
+      return 'Transaction number must be alphanumeric only (no letters with symbols or special characters)';
     }
 
     // Check length (10-15 digits, standard GCash/GoTyme format is 13)
     if (trimmedValue.length < 10 || trimmedValue.length > 15) {
-      return `Transaction number must be 10-15 digits (standard ${methodLabel} format is 13 digits)`;
+      return `Transaction number must be 10-15 characters (standard ${methodLabel} format is 13 characters)`;
     }
 
     return null;
