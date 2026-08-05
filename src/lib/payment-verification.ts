@@ -75,7 +75,7 @@ export async function checkAutomaticVerificationMatch(
 
   // Get expected amount from subscription plans
   const planResult = await query(`
-    SELECT amount FROM subscription_plans
+    SELECT price FROM subscription_plans
     WHERE id = $1
   `, [verification.plan_id], rlsContext?.companyId, rlsContext?.userRole);
 
@@ -86,7 +86,7 @@ export async function checkAutomaticVerificationMatch(
     };
   }
 
-  const expectedAmount = parseFloat(String(planResult.rows[0].amount));
+  const expectedAmount = parseFloat(String(planResult.rows[0].price));
   const webhookAmount = parseFloat(String(webhook.amount));
 
   // Exact amount match required (zero tolerance for differences)

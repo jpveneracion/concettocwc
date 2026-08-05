@@ -358,6 +358,9 @@ interface PaymentVerificationRecord {
   created_at: Date;
   updated_at: Date;
   promo_code?: string;
+  amount?: number;
+  payment_method?: string;
+  company_id?: string;
 }
 
 /**
@@ -389,6 +392,8 @@ export async function createPaymentVerification(
     reference_number?: string;
     notes?: string;
     promo_code?: string;
+    amount?: number;
+    payment_method?: string;
   },
   rlsContext?: RLSContext
 ): Promise<PaymentVerificationRecord> {
@@ -398,8 +403,8 @@ export async function createPaymentVerification(
     const result = await withRetry(async () =>
       withQueryTimeout(async () =>
         query(
-          `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes, promo_code, company_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)
+          `INSERT INTO payment_verifications (user_id, plan_id, screenshot_url, reference_number, notes, promo_code, amount, payment_method, company_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING *`,
           [
             verification.user_id,
@@ -408,6 +413,8 @@ export async function createPaymentVerification(
             verification.reference_number || null,
             verification.notes || null,
             verification.promo_code || null,
+            verification.amount ?? null,
+            verification.payment_method || null,
             rlsContext?.companyId || null
           ],
           rlsContext?.companyId,
@@ -826,6 +833,110 @@ export async function updatePaymentVerificationStatus(
     );
 
     throw new Error(`Failed to update verification status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Create a payment record in the payments ledger.
+ * Called when a payment verification is approved (or auto-approved) -
+ * the verified payment moves from payment_verifications into payments.
+ */
+export async function createPaymentRecord(
+  payment: {
+    company_id?: string;
+    user_id: string;
+    plan_id: string;
+    amount?: number;
+    payment_method?: string;
+    reference_number?: string;
+    promo_code?: string;
+    admin_notes?: string;
+    verified_by?: string;
+  },
+  rlsContext?: RLSContext
+): Promise<{ id: string }> {
+  const startTime = Date.now();
+
+  try {
+    const result = await withRetry(async () =>
+      withQueryTimeout(async () =>
+        query(
+          `INSERT INTO payments (company_id, user_id, plan_id, amount, payment_method, reference_number, promo_code, admin_notes, verified_by, verified_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+           RETURNING id`,
+          [
+            payment.company_id || rlsContext?.companyId || null,
+            payment.user_id,
+            payment.plan_id,
+            payment.amount ?? 0,
+            payment.payment_method || null,
+            payment.reference_number || null,
+            payment.promo_code || null,
+            payment.admin_notes || null,
+            payment.verified_by || null
+          ],
+          rlsContext?.companyId,
+          rlsContext?.userRole
+        )
+      )
+    );
+
+    const duration = Date.now() - startTime;
+    const paymentId = result.rows[0]?.id as string | undefined;
+
+    structuredLog(
+      'payment_record_created',
+      'createPaymentRecord',
+      {
+        payment_id: paymentId,
+        user_id: payment.user_id,
+        plan_id: payment.plan_id,
+        amount: payment.amount,
+        payment_method: payment.payment_method
+      },
+      duration,
+      true
+    );
+
+    if (!paymentId) {
+      throw new Error('Failed to create payment record');
+    }
+
+    return { id: paymentId };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+
+    structuredLog(
+      'payment_record_creation_failed',
+      'createPaymentRecord',
+      {
+        user_id: payment.user_id,
+        plan_id: payment.plan_id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      duration,
+      false
+    );
+
+    throw new Error(`Payment record creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Delete a payment verification record.
+ * Used after an approved verification has been moved to the payments ledger.
+ */
+export async function deletePaymentVerification(id: string, rlsContext?: RLSContext): Promise<boolean> {
+  try {
+    const result = await query(
+      'DELETE FROM payment_verifications WHERE id = $1',
+      [id],
+      rlsContext?.companyId,
+      rlsContext?.userRole
+    );
+    return (result.rowCount ?? 0) > 0;
+  } catch (error) {
+    throw new Error(`Failed to delete payment verification: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

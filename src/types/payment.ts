@@ -31,12 +31,35 @@ export interface PaymentVerification {
   created_at: Date;
   updated_at: Date;
   promo_code?: string; // Promo code used for this payment verification, if any
+  amount?: number; // Amount paid (captured at submission)
+  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer'
 
   // Joined fields for API responses
   user_email?: string;
   user_name?: string;
   plan_name?: string;
   plan_amount?: number;
+}
+
+/**
+ * Approved payment record (moved from payment_verifications on approval)
+ * Source of truth for revenue analytics
+ */
+export interface PaymentRecord {
+  id: string;
+  company_id: string;
+  user_id: string;
+  plan_id: string;
+  amount: number;
+  payment_method?: string;
+  reference_number?: string;
+  promo_code?: string;
+  discount_amount: number;
+  admin_notes?: string;
+  verified_by?: string;
+  verified_at?: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 /**
@@ -132,6 +155,8 @@ export interface CreateVerificationRequest {
   screenshot_file: File; // Will be uploaded to Pinata
   reference_number?: string;
   notes?: string;
+  final_amount?: number; // Amount actually paid (after discounts)
+  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer'
 }
 
 /**
@@ -172,6 +197,7 @@ export interface ApproveVerificationRequest {
 export interface ApproveVerificationResponse {
   success: boolean;
   subscription_id?: string;
+  payment_id?: string;
   message: string;
   user_notified: boolean;
 }

@@ -69,11 +69,24 @@ export default function VerificationTable({
   }
 
   function formatCurrency(amount: number | undefined): string {
-    if (!amount) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
+    if (!amount) return '₱0.00';
+    return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'PHP',
+      minimumFractionDigits: 0
     }).format(amount);
+  }
+
+  function formatMethod(method?: string): string {
+    if (!method) return '';
+    const labels: Record<string, string> = {
+      gcash: 'GCash',
+      gotyme: 'GoTyme',
+      usdc: 'USDC',
+      card: 'Card',
+      bank_transfer: 'Bank Transfer'
+    };
+    return labels[method.toLowerCase()] || method;
   }
 
   if (loading) {
@@ -140,7 +153,10 @@ export default function VerificationTable({
                       {verification.plan_name || 'Unknown Plan'}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {formatCurrency(verification.plan_amount)}
+                      {formatCurrency(verification.amount ?? verification.plan_amount)}
+                      {verification.payment_method && (
+                        <span className="text-gray-400"> · {formatMethod(verification.payment_method)}</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex-1">
@@ -222,7 +238,8 @@ export default function VerificationTable({
                       {verification.plan_name || 'Unknown'}
                     </div>
                     <div className="text-gray-500 text-xs">
-                      {formatCurrency(verification.plan_amount)}
+                      {formatCurrency(verification.amount ?? verification.plan_amount)}
+                      {verification.payment_method && ` · ${formatMethod(verification.payment_method)}`}
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">

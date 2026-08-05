@@ -5,11 +5,17 @@ import { getSession, requireSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import {
   createPaymentVerification,
-  getAllPaymentVerifications
+  createPaymentRecord,
+  deletePaymentVerification,
+  getAllPaymentVerifications,
+  query,
+  sql
 } from '@/lib/db';
+import { decryptPII } from '@/lib/crypto';
 import { uploadToPinata, validateScreenshotFile } from '@/lib/pinata';
 import { checkAutomaticVerificationMatch, updateVerificationWithAutomaticResult } from '@/lib/payment-verification';
 import { validateReferenceNumberFormat } from '@/lib/reference-cleaning';
+import { activateSubscriptionWithVerification } from '@/lib/subscription-activation';
 import type {
   CreateVerificationRequest,
   CreateVerificationResponse,
@@ -53,7 +59,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // 2. Parse request body
-    const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string; promo_code?: string } = await req.json();
+    const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string; promo_code?: string; final_amount?: number; payment_method?: string } = await req.json();
 
     if (!body.plan_id || !body.screenshot_base64 || !body.reference_number) {
       return NextResponse.json(
@@ -62,7 +68,23 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 3. Validate and sanitize plan_id
+    // 3. Validate payment method and amount
+    const allowedPaymentMethods = ['gcash', 'gotyme', 'usdc', 'card', 'bank_transfer'];
+    if (body.payment_method && !allowedPaymentMethods.includes(body.payment_method.toLowerCase())) {
+      return NextResponse.json(
+        { error: 'Invalid payment_method. Must be one of: ' + allowedPaymentMethods.join(', ') },
+        { status: 400 }
+      );
+    }
+
+    if (body.final_amount !== undefined && (!Number.isFinite(body.final_amount) || body.final_amount < 0)) {
+      return NextResponse.json(
+        { error: 'Invalid final_amount. Must be a non-negative number' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Validate and sanitize plan_id
     if (!isValidUUID(body.plan_id)) {
       return NextResponse.json(
         { error: 'Invalid plan_id format' },
@@ -70,7 +92,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 4. Validate reference number format
+    // 5. Validate reference number format
     const referenceNumberValidation = validateReferenceNumberFormat(body.reference_number);
     if (!referenceNumberValidation.valid) {
       return NextResponse.json(
@@ -79,11 +101,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 5. Validate and sanitize reference number and notes
+    // 6. Validate and sanitize reference number and notes
     const sanitizedReferenceNumber = sanitizeInput(body.reference_number);
     const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : undefined;
 
-    // 6. Validate screenshot base64 and convert to File
+    // 7. Validate screenshot base64 and convert to File
     let file: File;
     try {
       const base64Data = body.screenshot_base64.split(',')[1];
@@ -129,20 +151,22 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 8. Create verification record
+    // 9. Create verification record
     const verification = await createPaymentVerification({
       user_id: session.userId,
       plan_id: body.plan_id,
       screenshot_url: uploadResult.cid,
       reference_number: sanitizedReferenceNumber,
       notes: sanitizedNotes,
-      promo_code: body.promo_code ? sanitizeInput(body.promo_code).toUpperCase() : undefined
+      promo_code: body.promo_code ? sanitizeInput(body.promo_code).toUpperCase() : undefined,
+      amount: body.final_amount !== undefined ? Number(body.final_amount) : undefined,
+      payment_method: body.payment_method ? body.payment_method.toLowerCase() : undefined
     }, {
       companyId: session.companyId,
       userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
     });
 
-    // 9. Trigger automatic verification (Trigger A)
+    // 10. Trigger automatic verification (Trigger A)
     let matchResult;
     try {
       matchResult = await checkAutomaticVerificationMatch(verification, {
@@ -151,8 +175,40 @@ export async function POST(req: Request): Promise<NextResponse> {
       });
 
       if (matchResult.shouldAutoApprove) {
+        // Activate subscription first - fail hard if activation fails
+        const activation = await activateSubscriptionWithVerification(
+          verification.user_id,
+          verification.plan_id,
+          verification.id
+        );
+        if (!activation.success) {
+          throw new Error(activation.error || 'Failed to activate subscription');
+        }
+
         // Update verification with automatic result
         await updateVerificationWithAutomaticResult(verification.id, matchResult, {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        });
+
+        // Move verified payment into the payments ledger
+        const webhookAmount = matchResult.webhookData?.amount != null
+          ? Number(matchResult.webhookData.amount)
+          : verification.amount;
+        await createPaymentRecord({
+          company_id: verification.company_id,
+          user_id: verification.user_id,
+          plan_id: verification.plan_id,
+          amount: webhookAmount,
+          payment_method: 'gcash',
+          reference_number: verification.reference_number,
+          promo_code: verification.promo_code
+        }, {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        });
+
+        await deletePaymentVerification(verification.id, {
           companyId: session.companyId,
           userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
         });
@@ -307,9 +363,78 @@ export async function GET(req: Request): Promise<NextResponse> {
       userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
     });
 
-    // 8. Return paginated response
+    // 8. Enrich with decrypted user info and plan details
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    };
+
+    const userIds = [...new Set(result.verifications.map(v => v.user_id))];
+    const planIds = [...new Set(result.verifications.map(v => v.plan_id))];
+
+    let userMap = new Map<string, { name?: string; email?: string }>();
+    let planMap = new Map<string, { name?: string; amount?: number }>();
+
+    try {
+      // Batch fetch encrypted user PII (with RLS context for admin visibility)
+      if (userIds.length > 0) {
+        const userRows = await query(
+          'SELECT id, name_encrypted, email_encrypted FROM users WHERE id = ANY($1::uuid[])',
+          [userIds as unknown as string],
+          rlsContext.companyId,
+          rlsContext.userRole
+        );
+
+        const decryptField = (value: unknown): string | undefined => {
+          if (!value) return undefined;
+          let data = value as string | Buffer;
+          if (typeof data === 'string' && data.startsWith('\\x')) data = data.substring(2);
+          const decrypted = decryptPII(data);
+          return decrypted && decrypted !== '[Protected Data]' ? decrypted : undefined;
+        };
+
+        for (const row of userRows.rows) {
+          userMap.set(row.id as string, {
+            name: decryptField(row.name_encrypted),
+            email: decryptField(row.email_encrypted)
+          });
+        }
+      }
+
+      // Fetch plan details via SECURITY DEFINER function
+      for (const planId of planIds) {
+        try {
+          const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [planId]);
+          if (planResult.length > 0) {
+            const planData = typeof planResult[0].plan_data === 'string'
+              ? JSON.parse(planResult[0].plan_data)
+              : planResult[0].plan_data;
+            if (planData) {
+              planMap.set(planId, {
+                name: planData.name,
+                amount: planData.amount || planData.price
+              });
+            }
+          }
+        } catch (planError) {
+          console.error('Error fetching plan details for verification:', planError);
+        }
+      }
+    } catch (enrichError) {
+      console.error('Error enriching verification list:', enrichError);
+    }
+
+    const enrichedVerifications = result.verifications.map(v => ({
+      ...v,
+      user_name: userMap.get(v.user_id)?.name,
+      user_email: userMap.get(v.user_id)?.email,
+      plan_name: planMap.get(v.plan_id)?.name,
+      plan_amount: planMap.get(v.plan_id)?.amount
+    }));
+
+    // 9. Return paginated response
     return NextResponse.json({
-      verifications: result.verifications,
+      verifications: enrichedVerifications,
       total: result.total,
       pagination: {
         limit,

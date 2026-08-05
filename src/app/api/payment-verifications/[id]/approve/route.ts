@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
-import { getPaymentVerificationById, updatePaymentVerificationStatus } from '@/lib/db';
+import { getPaymentVerificationById, createPaymentRecord, deletePaymentVerification, sql } from '@/lib/db';
 import { activateSubscriptionWithVerification, mapPlanIdToSubscriptionPlan } from '@/lib/subscription-activation';
 import { redeemActivationCode } from '@/lib/activation';
 import { SubscriptionPlan } from '@/types/subscription';
@@ -108,26 +108,7 @@ export async function POST(
       );
     }
 
-    // 7. Update verification status to approved
-    const updatedVerification = await updatePaymentVerificationStatus(
-      id,
-      VerificationStatus.APPROVED,
-      userId,
-      admin_notes,
-      {
-        companyId: session.companyId,
-        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
-      }
-    );
-
-    if (!updatedVerification) {
-      return NextResponse.json(
-        { error: 'Failed to update verification status' },
-        { status: 500 }
-      );
-    }
-
-    // 8. Activate subscription with verification
+    // 7. Activate subscription with verification
     const subscriptionResult = await activateSubscriptionWithVerification(
       verification.user_id,
       verification.plan_id,
@@ -135,7 +116,7 @@ export async function POST(
     );
 
     if (!subscriptionResult.success) {
-      // If subscription activation fails, the verification status remains unchanged
+      // If subscription activation fails, the verification remains pending
       // The admin can review and retry the approval process
       return NextResponse.json(
         { error: subscriptionResult.error || 'Failed to activate subscription' },
@@ -145,7 +126,7 @@ export async function POST(
 
     const subscriptionId = subscriptionResult.subscription_id;
 
-    // 9. Redeem promo code if present in verification
+    // 8. Redeem promo code if present in verification
     if (verification.promo_code) {
       console.log(`🎟️  Promo code found in verification: ${verification.promo_code}`);
       console.log(`👤 User ID: ${verification.user_id}`);
@@ -194,6 +175,58 @@ export async function POST(
       console.log(`ℹ️  No promo code found in verification ${id}`);
     }
 
+    // 9. Move verified payment into the payments ledger
+    let paymentAmount = verification.amount;
+    if (paymentAmount == null) {
+      // Fallback: use the plan price when amount was not captured at submission
+      try {
+        const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [verification.plan_id]);
+        if (planResult.length > 0) {
+          const planData = typeof planResult[0].plan_data === 'string'
+            ? JSON.parse(planResult[0].plan_data)
+            : planResult[0].plan_data;
+          if (planData) {
+            paymentAmount = Number(planData.amount ?? planData.price);
+          }
+        }
+      } catch (planError) {
+        console.error('Error fetching plan amount for payment record:', planError);
+      }
+    }
+
+    let paymentId: string | undefined;
+    try {
+      const paymentResult = await createPaymentRecord({
+        company_id: verification.company_id,
+        user_id: verification.user_id,
+        plan_id: verification.plan_id,
+        amount: paymentAmount != null ? Number(paymentAmount) : undefined,
+        payment_method: verification.payment_method,
+        reference_number: verification.reference_number,
+        promo_code: verification.promo_code,
+        admin_notes,
+        verified_by: userId
+      }, {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      });
+      paymentId = paymentResult.id;
+
+      // Remove the verification entry - it has been moved to the payments ledger
+      await deletePaymentVerification(id, {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      });
+    } catch (moveError) {
+      // Payment approval already succeeded (subscription activated + promo redeemed).
+      // If moving to the ledger fails, keep the verification so the admin can retry.
+      console.error('Error moving payment to ledger:', moveError);
+      return NextResponse.json(
+        { error: 'Subscription activated, but failed to record payment. Please retry.' },
+        { status: 500 }
+      );
+    }
+
     // 10. Send payment approval notification
     // TODO: This function will be implemented in later tasks
     // For now, we'll add a placeholder comment
@@ -209,6 +242,7 @@ export async function POST(
     const response: ApproveVerificationResponse = {
       success: true,
       subscription_id: subscriptionId,
+      payment_id: paymentId,
       message: 'Payment verification approved successfully',
       user_notified: userNotified
     };
