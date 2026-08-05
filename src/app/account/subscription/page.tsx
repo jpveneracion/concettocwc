@@ -307,7 +307,7 @@ export default function SubscriptionPage() {
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">Current Plan</h2>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-2xl font-bold text-gray-900 break-words">{planName}</span>
+                <span className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{planName}</span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusBadgeClass(subscription.status)}`}>
                   {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                 </span>
