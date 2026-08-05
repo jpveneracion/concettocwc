@@ -232,12 +232,13 @@ export interface LegacySubscriptionPlan {
   id: string;
   name: string;
   amount: number;
+  price: number;
   currency: string;
   interval: string;
   features: {
     quotes_limit?: number;
     [key: string]: unknown;
-  };
+  } | null;
   created_at: Date;
   updated_at: Date;
 }

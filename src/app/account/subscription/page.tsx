@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import type { SubscriptionDetails } from '@/types/subscription';
+import { SubscriptionPlanInterval } from '@/types/subscription';
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 type BillingPeriod = 'monthly' | 'quarterly' | 'annual';
@@ -183,21 +184,25 @@ export default function SubscriptionPage() {
     }).format(amount);
   }
 
-  function getPlanName(planId: string): string {
-    if (planId === 'basic') return 'Basic';
-    if (planId === 'pro') return 'Pro';
-    return planId.charAt(0).toUpperCase() + planId.slice(1);
+  function getPlanName(): string {
+    return subscription?.plan?.name || 'Unknown Plan';
   }
 
-  function getPlanPrice(planId: string): number {
-    if (planId === 'basic') return 499;
-    if (planId === 'pro') return 999;
-    return 0;
+  function getPlanPrice(): number {
+    return subscription?.plan?.price ?? 0;
+  }
+
+  function getBillingCycleLabel(): string {
+    const interval = subscription?.plan?.interval;
+    if (interval === SubscriptionPlanInterval.ANNUAL) return 'Annual';
+    if (interval === SubscriptionPlanInterval.QUARTERLY) return 'Quarterly';
+    return 'Monthly';
   }
 
   function getQuotesLimit(sub: SubscriptionDetails): string {
-    if (sub.plan.id === 'pro') return 'Unlimited';
-    return sub.usage_stats.quotes_remaining.toString();
+    return sub.usage_stats.quotes_remaining === -1
+      ? 'Unlimited'
+      : sub.usage_stats.quotes_remaining.toString();
   }
 
   if (loadingState === 'loading') {
@@ -244,8 +249,9 @@ export default function SubscriptionPage() {
     );
   }
 
-  const planName = getPlanName(subscription.plan.id);
-  const planPrice = getPlanPrice(subscription.plan.id);
+  const planName = getPlanName();
+  const planPrice = getPlanPrice();
+  const billingCycleLabel = getBillingCycleLabel();
   const quotesLimit = getQuotesLimit(subscription);
 
   return (
@@ -308,7 +314,7 @@ export default function SubscriptionPage() {
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-gray-900">{formatCurrency(planPrice)}</div>
-              <div className="text-gray-500 text-sm">per month</div>
+              <div className="text-gray-500 text-sm">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
             </div>
           </div>
 
@@ -316,7 +322,7 @@ export default function SubscriptionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <h3 className="text-xs text-gray-500 mb-1">Billing Cycle</h3>
-              <p className="text-sm text-gray-900">Monthly</p>
+              <p className="text-sm text-gray-900">{billingCycleLabel}</p>
             </div>
             <div>
               <h3 className="text-xs text-gray-500 mb-1">Next Billing Date</h3>
@@ -365,7 +371,7 @@ export default function SubscriptionPage() {
                   {subscription.usage_stats.quotes_created_this_period}
                 </span>
               </div>
-              {subscription.plan.id !== 'pro' && (
+              {quotesLimit !== 'Unlimited' && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
@@ -411,7 +417,7 @@ export default function SubscriptionPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Billing Cycle</span>
-              <span className="text-sm font-medium text-gray-900">Monthly</span>
+              <span className="text-sm font-medium text-gray-900">{billingCycleLabel}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Next Payment Amount</span>

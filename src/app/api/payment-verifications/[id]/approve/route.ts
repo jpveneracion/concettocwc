@@ -109,10 +109,17 @@ export async function POST(
     }
 
     // 7. Activate subscription with verification
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    };
+
     const subscriptionResult = await activateSubscriptionWithVerification(
       verification.user_id,
       verification.plan_id,
-      id
+      id,
+      {},
+      rlsContext
     );
 
     if (!subscriptionResult.success) {
@@ -177,22 +184,30 @@ export async function POST(
 
     // 9. Move verified payment into the payments ledger
     let paymentAmount = verification.amount;
+    let planPrice: number | undefined;
+    try {
+      const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [verification.plan_id]);
+      if (planResult.length > 0) {
+        const planData = typeof planResult[0].plan_data === 'string'
+          ? JSON.parse(planResult[0].plan_data)
+          : planResult[0].plan_data;
+        if (planData) {
+          planPrice = Number(planData.price ?? planData.amount);
+        }
+      }
+    } catch (planError) {
+      console.error('Error fetching plan amount for payment record:', planError);
+    }
+
     if (paymentAmount == null) {
       // Fallback: use the plan price when amount was not captured at submission
-      try {
-        const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [verification.plan_id]);
-        if (planResult.length > 0) {
-          const planData = typeof planResult[0].plan_data === 'string'
-            ? JSON.parse(planResult[0].plan_data)
-            : planResult[0].plan_data;
-          if (planData) {
-            paymentAmount = Number(planData.amount ?? planData.price);
-          }
-        }
-      } catch (planError) {
-        console.error('Error fetching plan amount for payment record:', planError);
-      }
+      paymentAmount = planPrice;
     }
+
+    // Discount = plan price minus amount actually paid (e.g. promo-code discounts)
+    const discountAmount = (paymentAmount != null && planPrice != null)
+      ? Math.max(0, planPrice - paymentAmount)
+      : 0;
 
     let paymentId: string | undefined;
     try {
@@ -204,6 +219,7 @@ export async function POST(
         payment_method: verification.payment_method,
         reference_number: verification.reference_number,
         promo_code: verification.promo_code,
+        discount_amount: discountAmount,
         admin_notes,
         verified_by: userId
       }, {

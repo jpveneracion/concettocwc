@@ -8,7 +8,7 @@ import {
   getSubscriptionPlanById
 } from './subscription-plans';
 import { SubscriptionPlan } from '@/types/subscription';
-import { getUser, updateUser, sql } from './db';
+import { getUser, updateUser, sql, query, type RLSContext } from './db';
 
 // ============================================================================
 // TYPESCRIPT INTERFACES
@@ -145,7 +145,8 @@ export async function activateSubscriptionWithVerification(
   userId: string,
   planId: string,
   verificationId: string,
-  options: SubscriptionActivationOptions = {}
+  options: SubscriptionActivationOptions = {},
+  rlsContext?: RLSContext
 ): Promise<SubscriptionActivationResult> {
   const startTime = Date.now();
   let rollbackActions: Array<() => Promise<void>> = [];
@@ -184,7 +185,8 @@ export async function activateSubscriptionWithVerification(
       userId,
       activationCode,
       discountPercent,
-      planMapping.subscriptionPlan
+      planMapping.subscriptionPlan,
+      rlsContext
     );
 
     // Add rollback action for subscription activation
@@ -196,7 +198,54 @@ export async function activateSubscriptionWithVerification(
       });
     });
 
-    // 7. Set trial expiration (if not skipped)
+    // 7. Create the subscriptions ledger record (one active subscription per company)
+    const companyId = rlsContext?.companyId || user.company_id;
+    const planPrice = Number(plan.price ?? 0);
+    const periodEnd = new Date();
+    switch (plan.interval.toLowerCase()) {
+      case 'month':
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        break;
+      case 'quarter':
+        periodEnd.setMonth(periodEnd.getMonth() + 3);
+        break;
+      case 'year':
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        break;
+      default:
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+    }
+
+    const subscriptionResult = await query<{ id: string }>(
+      `INSERT INTO subscriptions (company_id, plan_id, status, current_period_end, cancel_at_period_end)
+       VALUES ($1, $2, 'active', $3, false)
+       ON CONFLICT (company_id) DO UPDATE
+       SET plan_id = EXCLUDED.plan_id,
+           status = 'active',
+           current_period_end = EXCLUDED.current_period_end,
+           cancel_at_period_end = false,
+           updated_at = NOW()
+       RETURNING id`,
+      [companyId, planId, periodEnd.toISOString()],
+      rlsContext?.companyId,
+      rlsContext?.userRole
+    );
+
+    const subscriptionId = subscriptionResult.rows[0]?.id as string | undefined;
+    if (!subscriptionId) {
+      throw new Error('Failed to create subscription record');
+    }
+
+    // Create subscription item (price at time of purchase)
+    await query(
+      `INSERT INTO subscription_items (subscription_id, plan_id, quantity, price)
+       VALUES ($1, $2, 1, $3)`,
+      [subscriptionId, planId, planPrice],
+      rlsContext?.companyId,
+      rlsContext?.userRole
+    );
+
+    // 8. Set trial expiration (if not skipped)
     let trialExpiresAt: Date | undefined;
     if (!shouldSkipTrial) {
       trialExpiresAt = await setTrialExpiration(userId, trialDays);
@@ -210,22 +259,23 @@ export async function activateSubscriptionWithVerification(
       });
     }
 
-    // 8. Log successful activation
+    // 9. Log successful activation
     const duration = Date.now() - startTime;
     console.log(`✅ Subscription activation completed successfully in ${duration}ms:`, {
       userId,
       planId,
       verificationId,
+      subscriptionId,
       subscriptionPlan: planMapping.subscriptionPlan,
       trialExpiresAt: trialExpiresAt?.toISOString(),
       discountPercent,
       activationCode
     });
 
-    // 9. Return success result
+    // 10. Return success result
     return {
       success: true,
-      subscription_id: verificationId, // Using verification ID as subscription reference
+      subscription_id: subscriptionId,
       message: 'Subscription activated successfully',
       user_id: userId,
       plan_id: planId,

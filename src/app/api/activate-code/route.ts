@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
         userId,
         code,
         redeemedCode.discount_percent,
-        subscription_plan
+        subscription_plan,
+        {
+          companyId: session.companyId,
+          userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+        }
       );
 
       // Get updated trial status

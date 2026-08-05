@@ -179,7 +179,12 @@ export async function POST(req: Request): Promise<NextResponse> {
         const activation = await activateSubscriptionWithVerification(
           verification.user_id,
           verification.plan_id,
-          verification.id
+          verification.id,
+          {},
+          {
+            companyId: session.companyId,
+            userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+          }
         );
         if (!activation.success) {
           throw new Error(activation.error || 'Failed to activate subscription');

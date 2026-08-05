@@ -6,6 +6,7 @@ import {
   TrialStatusResponse,
   SubscriptionPlan,
   SubscriptionPlanDetails,
+  SubscriptionPlanInterval,
   // Legacy types for backward compatibility
   LegacySubscription,
   LegacySubscriptionPlan,
@@ -117,13 +118,31 @@ export async function setTrialExpiration(userId: number | string, days: number =
 
 /**
  * Activate user subscription with code
+ * Uses query() with RLS context so the users update actually applies under RLS
  */
 export async function activateSubscription(
   userId: string,
   code: string,
   discount_percent: number,
-  subscription_plan: SubscriptionPlan
+  subscription_plan: SubscriptionPlan,
+  rlsContext?: RLSContext
 ): Promise<void> {
+  if (rlsContext) {
+    const result = await query(
+      `UPDATE users
+       SET subscription_activated = true, activation_code = $2, discount_percent = $3, subscription_plan = $4
+       WHERE id = $1::uuid`,
+      [userId, code, discount_percent, subscription_plan],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    if ((result.rowCount ?? 0) === 0) {
+      throw new Error('Failed to activate subscription: user not found or RLS blocked update');
+    }
+    return;
+  }
+
+  // Legacy path without context (raw SQL, subject to RLS)
   await updateUser(userId, {
     subscription_activated: true,
     activation_code: code,
@@ -345,20 +364,26 @@ export async function buildSubscriptionDetails(
   const quotesCreatedThisPeriod = parseInt((quotesResult[0] as CountResult)?.count || '0');
 
   // Get quote limit from plan features
-  const quotesLimit = (plan.features.quotes_limit as number | null) || null;
+  const quotesLimit = (plan.features?.quotes_limit as number | null) || null;
   const quotesRemaining = quotesLimit === null ? -1 : Math.max(0, quotesLimit - quotesCreatedThisPeriod);
 
   // Convert LegacySubscriptionPlan to SubscriptionPlanDetails for compatibility
+  const rawInterval = (plan.interval || 'month').toLowerCase();
+  const normalizedInterval: SubscriptionPlanInterval =
+    rawInterval === 'year' ? SubscriptionPlanInterval.ANNUAL :
+    rawInterval === 'quarter' ? SubscriptionPlanInterval.QUARTERLY :
+    SubscriptionPlanInterval.MONTHLY;
+
   const subscriptionPlanDetails: SubscriptionPlanDetails = {
     id: plan.id,
     name: plan.name,
     description: `Legacy ${plan.name} plan`, // Add description for compatibility
-    price: plan.amount, // Map amount to price
+    price: plan.price ?? plan.amount, // Real column is price; amount kept for legacy rows
     currency: plan.currency,
-    interval: plan.interval as any, // Type assertion for compatibility
+    interval: normalizedInterval,
     discount_percent: 0, // Legacy plans don't have discount_percent
     features: {
-      max_quotes_per_period: plan.features.quotes_limit
+      max_quotes_per_period: plan.features?.quotes_limit
     },
     status: 'active' as any, // Legacy plans are considered active
     is_active: true,

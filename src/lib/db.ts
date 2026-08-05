@@ -850,6 +850,7 @@ export async function createPaymentRecord(
     payment_method?: string;
     reference_number?: string;
     promo_code?: string;
+    discount_amount?: number;
     admin_notes?: string;
     verified_by?: string;
   },
@@ -861,8 +862,8 @@ export async function createPaymentRecord(
     const result = await withRetry(async () =>
       withQueryTimeout(async () =>
         query(
-          `INSERT INTO payments (company_id, user_id, plan_id, amount, payment_method, reference_number, promo_code, admin_notes, verified_by, verified_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          `INSERT INTO payments (company_id, user_id, plan_id, amount, payment_method, reference_number, promo_code, discount_amount, admin_notes, verified_by, verified_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
            RETURNING id`,
           [
             payment.company_id || rlsContext?.companyId || null,
@@ -872,6 +873,7 @@ export async function createPaymentRecord(
             payment.payment_method || null,
             payment.reference_number || null,
             payment.promo_code || null,
+            payment.discount_amount ?? 0,
             payment.admin_notes || null,
             payment.verified_by || null
           ],
