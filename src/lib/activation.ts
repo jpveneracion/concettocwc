@@ -405,50 +405,26 @@ export async function redeemActivationCode(
 
   let result;
 
-  if (activationCode.usage_limit !== undefined) {
-    // Usage-limited codes (new system)
-    if (rlsContext) {
-      const queryResult = await query<ActivationCodeRecord>(
-        `UPDATE activation_codes
-         SET current_usage = current_usage + 1, status_history = $1
-         WHERE code = $2
-         RETURNING *`,
-        [JSON.stringify(statusHistory), code],
-        rlsContext.companyId,
-        rlsContext.userRole
-      );
-      result = queryResult.rows;
-    } else {
-      result = await sql(
-        `UPDATE activation_codes
-         SET current_usage = current_usage + 1, status_history = $1
-         WHERE code = $2
-         RETURNING *`,
-        [JSON.stringify(statusHistory), code]
-      );
-    }
+  // Increment usage via SECURITY DEFINER function. This bypasses RLS tenant
+  // isolation on activation_codes so a promo created by one company can be
+  // redeemed by another (payment approval runs as the acting admin's company,
+  // and a direct UPDATE would otherwise affect 0 rows and stay at 0 usage).
+  // The function handles both usage-limited (current_usage+1) and one-time
+  // (used_by/used_at) codes.
+  const incrementParams = [code, userId, ipAddress, JSON.stringify(statusHistory)];
+  if (rlsContext) {
+    const queryResult = await query<ActivationCodeRecord>(
+      `SELECT * FROM increment_promo_usage($1, $2, $3, $4::jsonb)`,
+      incrementParams,
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    result = queryResult.rows;
   } else {
-    // One-time use codes (existing system)
-    if (rlsContext) {
-      const queryResult = await query<ActivationCodeRecord>(
-        `UPDATE activation_codes
-         SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
-         WHERE code = $5
-         RETURNING *`,
-        [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code],
-        rlsContext.companyId,
-        rlsContext.userRole
-      );
-      result = queryResult.rows;
-    } else {
-      result = await sql(
-        `UPDATE activation_codes
-         SET used_by = $1, used_at = $2, used_ip_address = $3, status_history = $4
-         WHERE code = $5
-         RETURNING *`,
-        [userId, now.toISOString(), ipAddress, JSON.stringify(statusHistory), code]
-      );
-    }
+    result = await sql(
+      `SELECT * FROM increment_promo_usage($1, $2, $3, $4::jsonb)`,
+      incrementParams
+    );
   }
 
   return mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
