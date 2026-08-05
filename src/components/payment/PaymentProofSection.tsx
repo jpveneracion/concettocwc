@@ -39,9 +39,10 @@ export default function PaymentProofSection({
 
   const validateReferenceNumber = (value: string): string | null => {
     const trimmedValue = value.trim();
+    const methodLabel = paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash';
 
     if (!trimmedValue) {
-      return 'GCash transaction number is required';
+      return `${methodLabel} transaction number is required`;
     }
 
     // Check if value contains only digits
@@ -49,9 +50,9 @@ export default function PaymentProofSection({
       return 'Transaction number must contain only digits (no letters or special characters)';
     }
 
-    // Check length (10-15 digits, standard GCash format is 13)
+    // Check length (10-15 digits, standard GCash/GoTyme format is 13)
     if (trimmedValue.length < 10 || trimmedValue.length > 15) {
-      return 'Transaction number must be 10-15 digits (standard GCash format is 13 digits)';
+      return `Transaction number must be 10-15 digits (standard ${methodLabel} format is 13 digits)`;
     }
 
     return null;
@@ -197,7 +198,7 @@ export default function PaymentProofSection({
         {/* Reference Number */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            GCash Transaction Number <span className="text-red-500">*</span>
+            {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} Transaction Number <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -218,7 +219,7 @@ export default function PaymentProofSection({
           )}
           {!referenceError && (
             <p className="mt-1 text-xs text-gray-500">
-              Enter the 13-digit transaction number from your GCash receipt. Required for automatic verification and speeds up processing.
+              Enter the 13-digit transaction number from your {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} receipt. Required for automatic verification and speeds up processing.
             </p>
           )}
         </div>
@@ -257,7 +258,7 @@ export default function PaymentProofSection({
         <div className="bg-yellow-50 rounded-lg p-3">
           <p className="text-xs text-yellow-700">
             <strong>Important:</strong> Please ensure your screenshot clearly shows the payment amount,
-            date, and transaction reference. The GCash transaction number is required for automatic verification.
+            date, and transaction reference. The {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} transaction number is required for automatic verification.
             Blurred or incomplete screenshots may delay verification.
           </p>
         </div>
