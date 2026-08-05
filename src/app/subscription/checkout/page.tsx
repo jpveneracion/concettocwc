@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import PlanComparison from '@/components/subscription/PlanComparison';
+import CurrentSubscriptionCard from '@/components/subscription/CurrentSubscriptionCard';
 
 interface CheckoutError {
   type: 'validation' | 'api' | 'network';
@@ -119,7 +120,7 @@ function CheckoutContent() {
   const isButtonDisabled = !selectedPlan || isLoading;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold mb-2">Choose Your Plan</h1>
@@ -151,90 +152,101 @@ function CheckoutContent() {
         </div>
       )}
 
-      {/* Action Section */}
-      <div className="flex flex-col items-center gap-6">
-          <button
-            onClick={handleSubscribe}
-            disabled={isButtonDisabled}
-            className={`
-              px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200
-              ${isButtonDisabled
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
-              }
-              ${isLoading ? 'cursor-wait' : ''}
-            `}
-            style={{ minHeight: '56px', minWidth: '280px' }}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-xl animate-spin">⏳</span>
-                <span>Processing payment...</span>
+      <div className="lg:grid lg:grid-cols-3 lg:gap-6">
+        {/* Main column: plans + action (full width on mobile, 2/3 on desktop) */}
+        <div className="lg:col-span-2">
+          {/* Action Section */}
+          <div className="flex flex-col items-center gap-6">
+              <button
+                onClick={handleSubscribe}
+                disabled={isButtonDisabled}
+                className={`
+                  px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200
+                  ${isButtonDisabled
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                  }
+                  ${isLoading ? 'cursor-wait' : ''}
+                `}
+                style={{ minHeight: '56px', minWidth: '280px' }}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-xl animate-spin">⏳</span>
+                    <span>Processing payment...</span>
+                  </div>
+                ) : (
+                  'Proceed to Payment'
+                )}
+              </button>
+
+              {/* Trust Elements */}
+              <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">🛡️</span>
+                  <span>SSL Secured</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>No hidden fees</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <span>Secure payment</span>
+                </div>
               </div>
-            ) : (
-              'Proceed to Payment'
-            )}
-          </button>
+            </div>
 
-          {/* Trust Elements */}
-          <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
-            <div className="flex items-center gap-2">
-              <span className="text-green-600">🛡️</span>
-              <span>SSL Secured</span>
+          {/* Plan Comparison */}
+          <div className="mb-6">
+            <PlanComparison
+              onPlanSelect={handlePlanSelect}
+              selectedPlan={selectedPlan}
+            />
+          </div>
+
+          {/* Selected Plan Summary */}
+          {selectedPlan && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">✓</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900">Selected Plan</p>
+                  <p className="text-xs text-blue-700 capitalize">{selectedPlan} subscription</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-green-600">✓</span>
-              <span>No hidden fees</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-green-600">✓</span>
-              <span>Secure payment</span>
+          )}
+
+          {/* Additional Information */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Why choose our subscription plans?
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Flexible Pricing</h4>
+                <p className="text-sm text-gray-600">
+                  Start with our Basic plan and upgrade as your business grows. No long-term contracts.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Dedicated Support</h4>
+                <p className="text-sm text-gray-600">
+                  Get help when you need it with our priority support channels for Pro plan subscribers.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-      {/* Plan Comparison */}
-      <div className="mb-6">
-        <PlanComparison
-          onPlanSelect={handlePlanSelect}
-          selectedPlan={selectedPlan}
-        />
-      </div>
-
-      {/* Selected Plan Summary */}
-      {selectedPlan && (
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm">✓</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900">Selected Plan</p>
-              <p className="text-xs text-blue-700 capitalize">{selectedPlan} subscription</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Additional Information */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Why choose our subscription plans?
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Flexible Pricing</h4>
-            <p className="text-sm text-gray-600">
-              Start with our Basic plan and upgrade as your business grows. No long-term contracts.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Dedicated Support</h4>
-            <p className="text-sm text-gray-600">
-              Get help when you need it with our priority support channels for Pro plan subscribers.
-            </p>
-          </div>
-        </div>
+        {/* Right column: current subscription (on desktop). On mobile it stacks
+            first, above the plans, so subscription info is visible immediately. */}
+        <aside className="order-first lg:order-none mb-6 lg:mb-0 lg:col-span-1">
+          <CurrentSubscriptionCard />
+        </aside>
       </div>
     </div>
   );

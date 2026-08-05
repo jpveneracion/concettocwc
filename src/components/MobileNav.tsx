@@ -14,8 +14,9 @@ const navItems = [
   { href: '/quotes/new', label: 'New quote', icon: '➕', requiresFutureOrders: true },
   { href: '/products', label: 'Products', icon: '🏷️', requiresFutureOrders: false },
   { href: '/company-products', label: 'Company Products', icon: '🏢', requiresFutureOrders: false },
+  { href: '/account/subscription', label: 'My Subscriptions', icon: '📋', requiresFutureOrders: false },
+  { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳', requiresFutureOrders: false },
   { href: '/settings', label: 'Settings', icon: '⚙️', requiresFutureOrders: false },
-  { href: '/account/subscription', label: 'Subscription', icon: '💳', requiresFutureOrders: false },
 ];
 
 const adminNavItems = [

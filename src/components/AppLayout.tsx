@@ -12,8 +12,9 @@ const navItems = [
   { href: '/quotes/new', label: 'New quote', icon: '➕' },
   { href: '/products', label: 'Products', icon: '🏷️' },
   { href: '/company-products', label: 'Company Products', icon: '🏢' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/account/subscription', label: 'My Subscriptions', icon: '📋' },
   { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 const adminNavItems = [
