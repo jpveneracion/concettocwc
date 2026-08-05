@@ -235,7 +235,12 @@ export async function checkSubscriptionAccess(session: SubscriptionSession | nul
     };
   }
 
-  const subscription = await getSubscriptionByCompanyId(session.companyId);
+  const rlsContext: RLSContext = {
+    companyId: session.companyId,
+    userRole: ((session as { role?: string }).role || 'user') as 'user' | 'admin' | 'superadmin'
+  };
+
+  const subscription = await getSubscriptionByCompanyId(session.companyId, rlsContext);
 
   if (!subscription) {
     // No subscription found - check if company can start trial
@@ -247,7 +252,7 @@ export async function checkSubscriptionAccess(session: SubscriptionSession | nul
     };
   }
 
-  const plan = await getSubscriptionPlan(subscription.plan_id);
+  const plan = await getSubscriptionPlan(subscription.plan_id, rlsContext);
 
   if (!plan) {
     return {
@@ -258,7 +263,7 @@ export async function checkSubscriptionAccess(session: SubscriptionSession | nul
   }
 
   const now = new Date();
-  const details = await buildSubscriptionDetails(subscription, plan);
+  const details = await buildSubscriptionDetails(subscription, plan, rlsContext);
 
   // Handle different subscription statuses
   switch (subscription.status) {
@@ -348,18 +353,30 @@ export async function checkSubscriptionAccess(session: SubscriptionSession | nul
  */
 export async function buildSubscriptionDetails(
   subscription: LegacySubscription,
-  plan: LegacySubscriptionPlan
+  plan: LegacySubscriptionPlan,
+  rlsContext?: RLSContext
 ): Promise<SubscriptionDetails> {
   const now = new Date();
   const periodStart = subscription.current_period_end
     ? new Date(subscription.current_period_end.getTime() - 30 * 24 * 60 * 60 * 1000) // Approximate period start
     : subscription.created_at;
 
-  // Get quotes created in current period
-  const quotesResult = await sql(
-    'SELECT COUNT(*) as count FROM quotes WHERE company_id = $1 AND created_at >= $2 AND created_at <= $3',
-    [subscription.company_id, periodStart, now]
-  );
+  // Get quotes created in current period (with RLS context so tenant isolation allows the count)
+  let quotesResult: Array<{ count?: string | number }>;
+  if (rlsContext) {
+    const countResult = await query<{ count: string }>(
+      'SELECT COUNT(*) as count FROM quotes WHERE company_id = $1 AND created_at >= $2 AND created_at <= $3',
+      [subscription.company_id, periodStart, now],
+      rlsContext.companyId,
+      rlsContext.userRole
+    );
+    quotesResult = countResult.rows;
+  } else {
+    quotesResult = await sql(
+      'SELECT COUNT(*) as count FROM quotes WHERE company_id = $1 AND created_at >= $2 AND created_at <= $3',
+      [subscription.company_id, periodStart, now]
+    );
+  }
 
   const quotesCreatedThisPeriod = parseInt((quotesResult[0] as CountResult)?.count || '0');
 

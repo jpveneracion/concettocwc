@@ -28,8 +28,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 2. Subscription Retrieval
-    const subscription = await getSubscriptionByCompanyId(session.companyId);
+    // 2. Subscription Retrieval (with RLS context so tenant policies allow the read)
+    const rlsContext = {
+      companyId: session.companyId,
+      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+    };
+    const subscription = await getSubscriptionByCompanyId(session.companyId, rlsContext);
     if (!subscription) {
       // No subscription found - return checkout URL
       return NextResponse.json(
@@ -42,7 +46,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Plan Details
-    const plan = await getSubscriptionPlan(subscription.plan_id);
+    const plan = await getSubscriptionPlan(subscription.plan_id, rlsContext);
     if (!plan) {
       return NextResponse.json(
         { error: 'Subscription plan not found' },
@@ -53,7 +57,8 @@ export async function GET(req: NextRequest) {
     // 4. Subscription Details Building
     const subscriptionDetails: SubscriptionDetails = await buildSubscriptionDetails(
       subscription,
-      plan
+      plan,
+      rlsContext
     );
 
     // 5. Return Response
