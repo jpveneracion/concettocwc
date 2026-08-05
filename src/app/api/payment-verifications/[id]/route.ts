@@ -77,20 +77,30 @@ export async function GET(
     // 5. Get user and plan details for response using SECURITY DEFINER functions
     let userEmail: string | undefined, planName: string | undefined, planAmount: number | undefined;
 
+    // Helper: driver auto-parses json columns into objects; fall back to JSON.parse for strings
+    const parseJsonColumn = (value: unknown): Record<string, unknown> | null => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'string') {
+        try { return JSON.parse(value); } catch { return null; }
+      }
+      if (typeof value === 'object') return value as Record<string, unknown>;
+      return null;
+    };
+
     try {
       // Get user info using SECURITY DEFINER function
       const userResult = await sql('SELECT get_user_by_id($1::uuid) as user_data', [verification.user_id]);
       if (userResult.length > 0) {
-        const userData = JSON.parse(userResult[0].user_data);
-        userEmail = userData.email;
+        const userData = parseJsonColumn(userResult[0].user_data);
+        userEmail = userData?.email as string | undefined;
       }
 
       // Get plan info using SECURITY DEFINER function
       const planResult = await sql('SELECT get_subscription_plan_by_id($1::uuid) as plan_data', [verification.plan_id]);
       if (planResult.length > 0) {
-        const planData = JSON.parse(planResult[0].plan_data);
-        planName = planData.name;
-        planAmount = planData.amount || planData.price;
+        const planData = parseJsonColumn(planResult[0].plan_data);
+        planName = planData?.name as string | undefined;
+        planAmount = (planData?.amount || planData?.price) as number | undefined;
       }
     } catch (error) {
       console.error('Error fetching joined data:', error);
