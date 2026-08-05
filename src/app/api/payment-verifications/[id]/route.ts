@@ -3,8 +3,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
-import { getPaymentVerificationById, sql } from '@/lib/db';
+import { getPaymentVerificationById, query, sql } from '@/lib/db';
 import { getPinataUrl } from '@/lib/pinata';
+import { decryptPII } from '@/lib/crypto';
 import type { PaymentVerification, VerificationStatus } from '@/types/payment';
 
 /**
@@ -104,6 +105,30 @@ export async function GET(
       }
     } catch (error) {
       console.error('Error fetching joined data:', error);
+    }
+
+    // Fetch and decrypt user email (plaintext column is nulled after PII encryption)
+    try {
+      const userRows = await query(
+        'SELECT email_encrypted FROM users WHERE id = $1',
+        [verification.user_id],
+        session.companyId,
+        (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      );
+      const encryptedEmail = userRows.rows[0]?.email_encrypted;
+      if (encryptedEmail) {
+        let encryptedData = encryptedEmail as string | Buffer;
+        // Fix PostgreSQL hex format - remove '\x' prefix if present
+        if (typeof encryptedData === 'string' && encryptedData.startsWith('\\x')) {
+          encryptedData = encryptedData.substring(2);
+        }
+        const decrypted = decryptPII(encryptedData);
+        if (decrypted && decrypted !== '[Protected Data]') {
+          userEmail = decrypted;
+        }
+      }
+    } catch (error) {
+      console.error('Error decrypting user email:', error);
     }
 
     // 6. Build response with gateway URL and proper type conversion
