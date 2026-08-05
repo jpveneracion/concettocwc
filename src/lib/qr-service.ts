@@ -169,6 +169,29 @@ export async function validatePromoCode(
   rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ValidationResult> {
   try {
+    // For public payment flow (no RLS context), use SECURITY DEFINER function that bypasses RLS
+    if (!rlsContext) {
+      const result = await sql(
+        'SELECT validate_promo_code_for_payment($1, $2, $3) as validation',
+        [promoCode, planPrice, 'basic'] // plan will be resolved in function
+      );
+      const validation = result[0]?.validation;
+      if (!validation.valid) {
+        return {
+          valid: false,
+          error_message: validation.error
+        };
+      }
+      return {
+        valid: true,
+        discount_percent: validation.discount_percent,
+        discount_amount: validation.discount_amount,
+        gcash_qr_url: validation.gcash_qr_url,
+        gotyme_qr_url: validation.gotyme_qr_url,
+        final_amount: validation.final_amount
+      };
+    }
+
     // Import the enhanced validation function
     const { validateActivationCodeWithDetails } = await import('./activation');
 
