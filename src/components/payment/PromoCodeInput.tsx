@@ -24,7 +24,7 @@ export default function PromoCodeInput({
 
   const handleApply = () => {
     if (inputValue.trim()) {
-      onApply(inputValue.trim());
+      onApply(inputValue.trim().toUpperCase());
     }
   };
 
