@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import type { SubscriptionDetails } from '@/types/subscription';
 import { SubscriptionPlanInterval } from '@/types/subscription';
@@ -301,25 +302,25 @@ export default function SubscriptionPage() {
         )}
 
         {/* Current Plan Card */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">Current Plan</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900">{planName}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(subscription.status)}`}>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 md:gap-6 mb-5">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Current Plan</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{planName}</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusBadgeClass(subscription.status)}`}>
                   {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                 </span>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-left md:text-right md:flex-shrink-0">
               <div className="text-2xl font-bold text-gray-900">{formatCurrency(planPrice)}</div>
               <div className="text-gray-500 text-sm">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
             </div>
           </div>
 
           {/* Plan Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
               <h3 className="text-xs text-gray-500 mb-1">Billing Cycle</h3>
               <p className="text-sm text-gray-900">{billingCycleLabel}</p>
@@ -335,23 +336,23 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
             <button
               onClick={handleUpdatePlan}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
             >
               Upgrade Plan
             </button>
             <button
               onClick={() => setShowCancelConfirm(true)}
               disabled={subscription.cancel_at_period_end}
-              className="px-4 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-red-600 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {subscription.cancel_at_period_end ? 'Cancellation Pending' : 'Cancel Subscription'}
             </button>
             <button
               onClick={handleUpdatePayment}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
             >
               Update Payment
             </button>
@@ -432,9 +433,12 @@ export default function SubscriptionPage() {
               </span>
             </div>
             <div className="border-t border-gray-200 pt-3">
-              <button className="text-sm text-blue-600 hover:text-blue-700">
+              <Link
+                href="/account/billing-history"
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
                 View billing history →
-              </button>
+              </Link>
             </div>
           </div>
         </div>
