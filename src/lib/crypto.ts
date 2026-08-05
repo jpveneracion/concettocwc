@@ -89,7 +89,9 @@ export function decryptPII(encrypted: string | Buffer): string {
     // Convert hex string to Buffer if needed
     let encryptedBuffer: Buffer;
     if (typeof encrypted === 'string') {
-      encryptedBuffer = Buffer.from(encrypted, 'hex');
+      // Normalize PostgreSQL hex format ('\x...') and plain hex strings
+      const hex = encrypted.startsWith('\\x') ? encrypted.substring(2) : encrypted;
+      encryptedBuffer = Buffer.from(hex, 'hex');
     } else if (Buffer.isBuffer(encrypted)) {
       encryptedBuffer = encrypted;
     } else {
@@ -98,6 +100,16 @@ export function decryptPII(encrypted: string | Buffer): string {
         'Encrypted data must be a hex string or Buffer',
         'Data format error'
       );
+    }
+
+    // Some writers stored the hex string itself as text bytes (e.g. the neon
+    // serverless driver binding a string to a bytea column). Detect an
+    // all-hex ASCII buffer and decode it before decrypting.
+    if (encryptedBuffer.length > 32 && /^[0-9a-f]+$/i.test(encryptedBuffer.toString('latin1'))) {
+      const decoded = Buffer.from(encryptedBuffer.toString('latin1'), 'hex');
+      if (decoded.length >= ENCRYPTED_POSITION) {
+        encryptedBuffer = decoded;
+      }
     }
 
     if (encryptedBuffer.length < ENCRYPTED_POSITION) {
