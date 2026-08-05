@@ -18,6 +18,7 @@ const navItems = [
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: '🛡️' },
+  { href: '/admin/verifications', label: 'Payment Verifications', icon: '✅' },
   { href: '/admin/company-products', label: 'Company Products', icon: '🏢' },
   { href: '/admin/activation-codes', label: 'Activation Codes', icon: '🔑' },
   { href: '/admin/plans', label: 'Subscription Plans', icon: '💳' },
@@ -157,7 +158,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               {adminNavItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href);
-                const showBadge = item.href === '/admin/dashboard' && pendingCount > 0;
+                const showBadge = item.href === '/admin/verifications' && pendingCount > 0;
 
                 return (
                   <Link
