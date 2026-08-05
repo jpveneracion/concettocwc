@@ -166,14 +166,15 @@ export async function testDiscountCalculations(): Promise<void> {
 export async function validatePromoCode(
   promoCode: string,
   planPrice: number,
-  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
+  rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' },
+  planName?: string
 ): Promise<ValidationResult> {
   try {
     // For public payment flow (no RLS context), use SECURITY DEFINER function that bypasses RLS
     if (!rlsContext) {
       const result = await sql(
         'SELECT validate_promo_code_for_payment($1, $2, $3) as validation',
-        [promoCode, planPrice, 'basic'] // plan will be resolved in function
+        [promoCode, planPrice, planName || ''] // pass actual plan name like "Monthly Plan"
       );
       const validation = result[0]?.validation;
       if (!validation.valid) {
@@ -357,7 +358,7 @@ export async function getPaymentQrCode(
 
   // Priority 1: Check promo code validity
   if (promoCode) {
-    const promoValidation = await validatePromoCode(promoCode, plan.price);
+    const promoValidation = await validatePromoCode(promoCode, plan.price, undefined, plan.name);
 
     if (promoValidation.valid) {
       // Use promo QR code if available
