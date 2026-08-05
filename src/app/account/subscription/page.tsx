@@ -307,27 +307,27 @@ export default function SubscriptionPage() {
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-gray-900 mb-2">Current Plan</h2>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{planName}</span>
+                <span className="text-2xl font-bold text-gray-900 break-words">{planName}</span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusBadgeClass(subscription.status)}`}>
                   {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
                 </span>
               </div>
             </div>
             <div className="text-left md:text-right md:flex-shrink-0">
-              <div className="text-2xl font-bold text-gray-900">{formatCurrency(planPrice)}</div>
-              <div className="text-gray-500 text-sm">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">{formatCurrency(planPrice)}</div>
+              <div className="text-sm text-gray-500">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
             </div>
           </div>
 
           {/* Plan Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <h3 className="text-xs text-gray-500 mb-1">Billing Cycle</h3>
-              <p className="text-sm text-gray-900">{billingCycleLabel}</p>
+              <h3 className="text-sm text-gray-500 mb-1">Billing Cycle</h3>
+              <p className="text-base text-gray-900">{billingCycleLabel}</p>
             </div>
             <div>
-              <h3 className="text-xs text-gray-500 mb-1">Next Billing Date</h3>
-              <p className="text-sm text-gray-900">
+              <h3 className="text-sm text-gray-500 mb-1">Next Billing Date</h3>
+              <p className="text-base text-gray-900">
                 {subscription.current_period_end
                   ? new Date(subscription.current_period_end).toLocaleDateString()
                   : 'N/A'}
