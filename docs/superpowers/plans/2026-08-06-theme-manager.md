@@ -19,12 +19,13 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 36/62 tasks completed (58%)
+## Overall Progress: 38/62 tasks completed (61%)
 
 ### Phase 1: Design tokens & Tailwind wiring - 6/6 tasks (100%) ✅ COMPLETE
 ### Phase 2: Database: per-user theme storage - 5/8 tasks (63%) (2.6 apply verified 2026-08-06 via Neon console; 2.7/2.8 pending)
 ### Phase 3: Server + client plumbing & picker UI - 17/17 tasks (100%) ✅ COMPLETE
 ### Phase 4: Theme editor paywall gating - 8/8 tasks (100%) ✅ COMPLETE
+### Phase 5: Theme editor UI (premium) - 4/10 tasks (40%) (5.1/5.2 code done, browser verify pending; 5.5/5.6 CANCELLED - print untouched per user)
 ### Phase 5: Theme editor UI (premium) - 0/10 tasks (0%)
 ### Phase 6: Migrate hardcoded colors - 0/8 tasks (0%)
 ### Phase 7: Tests & docs - 0/5 tasks (0%)
@@ -2812,7 +2813,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 5.3: Create Contrast Calculator
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1k tokens
 **Files:** Create: `src/lib/contrast-calculator.ts`
 
@@ -2906,7 +2907,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 5.4: Add Contrast Warning to Theme Editor
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (low-contrast banner with override checkbox; never blocks save)
 **Size:** ~1.1k tokens
 **Files:** Modify: `src/components/theme/ThemeEditor.tsx`
 
@@ -2979,7 +2980,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 5.5: Create Print Theme Utility
-**Status:** ⏳ PENDING
+**Status:** ❌ CANCELLED (2026-08-06, user decision: print output is already theme-independent via PrintDoc inline fixed colors - keep untouched. Utility file created then removed in e03eaf1)
 **Size:** ~900 tokens
 **Files:** Create: `src/lib/print.ts`
 
@@ -3054,7 +3055,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 5.6: Integrate Print Utility with Quote/Invoice Generation
-**Status:** ⏳ PENDING
+**Status:** ❌ CANCELLED (2026-08-06, user decision: print must stay untouched - PrintDoc renders with inline fixed colors, inherently theme-independent; any wrapping risks regressions)
 **Size:** ~800 tokens
 **Files:** Modify: Print button handlers
 
