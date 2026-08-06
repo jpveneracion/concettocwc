@@ -85,6 +85,21 @@ export default function SettingsPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
+              <h3 className="font-medium text-sm text-gray-700">Appearance</h3>
+              <p className="text-xs text-gray-500 mt-1">Customize your theme, mode, and colors</p>
+            </div>
+            <a
+              href="/settings/appearance"
+              className="px-3 py-1.5 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-center md:text-left"
+            >
+              Manage Appearance →
+            </a>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div>
               <h3 className="font-medium text-sm text-gray-700">Product Pricing</h3>
               <p className="text-xs text-gray-500 mt-1">Set pricing for each blinds family (collection)</p>
             </div>
