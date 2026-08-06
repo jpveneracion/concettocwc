@@ -133,3 +133,6 @@ export * from './product';
 
 // Export landing page types
 export * from './landing';
+
+// Export theme types
+export * from './theme';
