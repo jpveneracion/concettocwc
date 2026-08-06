@@ -19,12 +19,12 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 31/62 tasks completed (50%)
+## Overall Progress: 36/62 tasks completed (58%)
 
 ### Phase 1: Design tokens & Tailwind wiring - 6/6 tasks (100%) ✅ COMPLETE
 ### Phase 2: Database: per-user theme storage - 5/8 tasks (63%) (2.6 apply verified 2026-08-06 via Neon console; 2.7/2.8 pending)
 ### Phase 3: Server + client plumbing & picker UI - 17/17 tasks (100%) ✅ COMPLETE
-### Phase 4: Theme editor paywall gating - 6/8 tasks (75%) (4.1-4.6 done; 4.7/4.8 pending)
+### Phase 4: Theme editor paywall gating - 8/8 tasks (100%) ✅ COMPLETE
 ### Phase 5: Theme editor UI (premium) - 0/10 tasks (0%)
 ### Phase 6: Migrate hardcoded colors - 0/8 tasks (0%)
 ### Phase 7: Tests & docs - 0/5 tasks (0%)
@@ -2419,7 +2419,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.7: Commit Paywall Changes
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (b967327: entitlement in SSR seed, context, lock UI; cb19517: plan + tests)
 **Size:** ~400 tokens
 **Files:** Commit: Paywall files
 
@@ -2447,7 +2447,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.8: Phase 4 Milestone Validation - CHECKPOINT
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (validated 2026-08-06: 403/200 curl matrix, GET+SSR leak test with injected DB tokens, 13/13 tests green, build clean. Deviation: /subscription route does not exist - lock links to real /subscription/checkout)
 **Size:** ~600 tokens (compression point)
 **Purpose:** Validate Phase 4 paywall gating completion
 
