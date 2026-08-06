@@ -4,11 +4,12 @@ import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ModePicker from '@/components/theme/ModePicker';
 import PresetPicker from '@/components/theme/PresetPicker';
+import ThemeEditor from '@/components/theme/ThemeEditor';
 import ThemeEditorLock from '@/components/theme/ThemeEditorLock';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AppearanceSettings() {
-  const { save, saving } = useTheme();
+  const { canUseThemeEditor, save, saving } = useTheme();
   const [saved, setSaved] = useState(false);
 
   const handleSave = async () => {
@@ -42,7 +43,9 @@ export default function AppearanceSettings() {
           <PresetPicker />
         </div>
 
-        <ThemeEditorLock />
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+          {canUseThemeEditor ? <ThemeEditor /> : <ThemeEditorLock />}
+        </div>
       </div>
     </AppLayout>
   );

@@ -23,10 +23,12 @@ interface ThemeContextValue {
   mode: ThemeMode;
   themeId: string;
   tokens: ThemeTokens;
+  customTokens: Partial<ThemeTokens>;
   canUseThemeEditor: boolean;
   setMode: (mode: ThemeMode) => void;
   setTheme: (themeId: string) => void;
   updateTokens: (tokens: Partial<ThemeTokens>) => void;
+  removeToken: (tokenName: TokenName) => void;
   resetTokens: () => void;
   save: () => Promise<void>;
   saving: boolean;
@@ -152,6 +154,15 @@ export function ThemeProvider({ children, initialPreference, themeEditorEntitled
     setCustomTokens((prev) => ({ ...prev, ...newTokens }));
   }, [themeEditorEntitled]);
 
+  const removeToken = useCallback((tokenName: TokenName) => {
+    if (!themeEditorEntitled) return;
+    setCustomTokens((prev) => {
+      const next = { ...prev };
+      delete next[tokenName];
+      return next;
+    });
+  }, [themeEditorEntitled]);
+
   const resetTokens = useCallback(() => {
     if (!themeEditorEntitled) return;
     setCustomTokens({});
@@ -185,10 +196,12 @@ export function ThemeProvider({ children, initialPreference, themeEditorEntitled
         mode,
         themeId,
         tokens,
+        customTokens,
         canUseThemeEditor: themeEditorEntitled,
         setMode,
         setTheme,
         updateTokens,
+        removeToken,
         resetTokens,
         save,
         saving,

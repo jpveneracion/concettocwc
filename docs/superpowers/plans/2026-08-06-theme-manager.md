@@ -2493,7 +2493,7 @@ When all steps pass, update this task's status to:
 > **Estimated effort:** ~1.5 days
 
 ## Task 5.1: Create Theme Editor Component
-**Status:** ⏳ PENDING
+**Status:** ⏳ PARTIAL - code complete + build green; browser verification pending (needs entitled user session)
 **Size:** ~1.8k tokens
 **Files:** Create: `src/components/theme/ThemeEditor.tsx`; Modify: `src/app/settings/appearance/AppearanceSettings.tsx`
 
