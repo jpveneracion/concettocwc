@@ -5,6 +5,7 @@ import {
   validateAndSanitizeThemePreference,
   isThemePreferenceSizeValid,
 } from '@/lib/theme-schema';
+import { canUseThemeEditor, PREMIUM_FEATURE_ERROR } from '@/lib/theme-entitlement';
 
 const DEFAULT_PREFERENCE = {
   themeId: 'light',
@@ -16,7 +17,8 @@ const DEFAULT_PREFERENCE = {
  * GET /api/user/theme
  *
  * Retrieves the authenticated user's theme preference.
- * Returns the default preference when none has been saved.
+ * Custom tokens are stripped unless the user is entitled to the theme editor
+ * (redeemed an activation code). Returns the default preference when none saved.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -25,6 +27,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const entitled = await canUseThemeEditor(session.userId);
+
     const result = await query(
       'SELECT theme_preference FROM users WHERE id = $1',
       [session.userId],
@@ -32,9 +36,17 @@ export async function GET(req: NextRequest) {
       session.role || 'user'
     );
 
-    const preference = result.rows[0]?.theme_preference;
+    const preference = (result.rows[0]?.theme_preference as Record<string, unknown> | undefined)
+      || DEFAULT_PREFERENCE;
+
+    // Defense in depth: never leak custom tokens to non-entitled users
+    if (!entitled && preference && typeof preference === 'object') {
+      delete (preference as { customTokens?: unknown }).customTokens;
+    }
+
     return NextResponse.json({
-      preference: preference || DEFAULT_PREFERENCE,
+      preference,
+      entitlement: { themeEditor: entitled },
     });
   } catch (error) {
     console.error('Error fetching theme preference:', error);
@@ -49,6 +61,8 @@ export async function GET(req: NextRequest) {
  * PUT /api/user/theme
  *
  * Validates and persists the authenticated user's theme preference.
+ * Mode and themeId are free; customTokens (the theme editor) require
+ * activation code entitlement (403 otherwise).
  */
 export async function PUT(req: NextRequest) {
   try {
@@ -72,6 +86,14 @@ export async function PUT(req: NextRequest) {
         { error: 'Theme preference too large (max 4KB)' },
         { status: 400 }
       );
+    }
+
+    // Server enforcement: customTokens require the premium tier
+    if (sanitized.customTokens && Object.keys(sanitized.customTokens).length > 0) {
+      const entitled = await canUseThemeEditor(session.userId);
+      if (!entitled) {
+        return NextResponse.json(PREMIUM_FEATURE_ERROR, { status: 403 });
+      }
     }
 
     await query(
