@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ModePicker from '@/components/theme/ModePicker';
 import PresetPicker from '@/components/theme/PresetPicker';
+import ThemeEditorLock from '@/components/theme/ThemeEditorLock';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AppearanceSettings() {
@@ -40,6 +41,8 @@ export default function AppearanceSettings() {
         <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
           <PresetPicker />
         </div>
+
+        <ThemeEditorLock />
       </div>
     </AppLayout>
   );

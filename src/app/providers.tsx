@@ -19,12 +19,13 @@ const OnboardingModal = dynamic(
 interface ProvidersProps {
   children: React.ReactNode;
   themePreference?: ThemePreference | null;
+  themeEditorEntitled?: boolean;
 }
 
-export function Providers({ children, themePreference }: ProvidersProps) {
+export function Providers({ children, themePreference, themeEditorEntitled }: ProvidersProps) {
   return (
     <TrialRestrictionProvider>
-      <ThemeProvider initialPreference={themePreference}>
+      <ThemeProvider initialPreference={themePreference} themeEditorEntitled={themeEditorEntitled}>
         <OnboardingProvider
           enabled={true}
           respectAdminExclusion={true}

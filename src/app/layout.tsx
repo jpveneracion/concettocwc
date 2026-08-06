@@ -5,6 +5,7 @@ import { Providers } from './providers';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { canUseThemeEditor } from '@/lib/theme-entitlement';
 import { resolveEffectiveThemeId, THEME_COOKIE_NAME, type ThemeMode } from '@/lib/theme-utils';
 import type { ThemePreference } from '@/lib/theme-schema';
 
@@ -38,6 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   let themePreference: ThemePreference | null = null;
   let anonymousMode: ThemeMode | null = null;
+  let themeEditorEntitled = false;
 
   if (session?.userId) {
     try {
@@ -51,6 +53,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     } catch (error) {
       console.error('Failed to load theme preference for FOUC seed:', error);
     }
+
+    // Defense in depth: custom tokens are premium; never seed them without entitlement
+    themeEditorEntitled = await canUseThemeEditor(session.userId);
   } else {
     const cookieStore = await cookies();
     const cookieMode = cookieStore.get(THEME_COOKIE_NAME)?.value;
@@ -61,10 +66,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   let themeScript = '';
   if (themePreference) {
-    // Server cannot detect prefers-color-scheme; client re-resolves system mode
+    const hasTokens =
+      !!themePreference.customTokens &&
+      Object.keys(themePreference.customTokens).length > 0;
     themeScript = buildFoucScript(
       resolveEffectiveThemeId(themePreference.themeId, themePreference.mode, false),
-      themePreference.customTokens
+      themeEditorEntitled && hasTokens ? themePreference.customTokens : undefined
     );
   } else if (anonymousMode) {
     themeScript = buildFoucScript(resolveEffectiveThemeId('light', anonymousMode, false));
@@ -80,7 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ErrorBoundary>
-          <Providers themePreference={themePreference}>
+          <Providers themePreference={themePreference} themeEditorEntitled={themeEditorEntitled}>
             {children}
           </Providers>
         </ErrorBoundary>

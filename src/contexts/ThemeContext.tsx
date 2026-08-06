@@ -23,6 +23,7 @@ interface ThemeContextValue {
   mode: ThemeMode;
   themeId: string;
   tokens: ThemeTokens;
+  canUseThemeEditor: boolean;
   setMode: (mode: ThemeMode) => void;
   setTheme: (themeId: string) => void;
   updateTokens: (tokens: Partial<ThemeTokens>) => void;
@@ -44,9 +45,10 @@ export function useTheme() {
 interface ThemeProviderProps {
   children: React.ReactNode;
   initialPreference?: ThemePreference | null;
+  themeEditorEntitled?: boolean;
 }
 
-export function ThemeProvider({ children, initialPreference }: ThemeProviderProps) {
+export function ThemeProvider({ children, initialPreference, themeEditorEntitled = false }: ThemeProviderProps) {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     if (initialPreference?.mode && isThemeMode(initialPreference.mode)) {
       return initialPreference.mode;
@@ -85,16 +87,18 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
   useEffect(() => {
     document.documentElement.dataset.theme = effectiveThemeId;
 
-    Object.entries(customTokens).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(`--${key}`, value);
-    });
+    if (themeEditorEntitled) {
+      Object.entries(customTokens).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${key}`, value);
+      });
 
-    TOKEN_NAMES.forEach((tokenName) => {
-      if (!(tokenName in customTokens)) {
-        document.documentElement.style.removeProperty(`--${tokenName}`);
-      }
-    });
-  }, [effectiveThemeId, customTokens]);
+      TOKEN_NAMES.forEach((tokenName) => {
+        if (!(tokenName in customTokens)) {
+          document.documentElement.style.removeProperty(`--${tokenName}`);
+        }
+      });
+    }
+  }, [effectiveThemeId, customTokens, themeEditorEntitled]);
 
   const save = useCallback(async () => {
     if (!isLoggedIn) return;
@@ -106,7 +110,10 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
         body: JSON.stringify({
           themeId,
           mode,
-          customTokens: Object.keys(customTokens).length > 0 ? customTokens : undefined,
+          customTokens:
+            themeEditorEntitled && Object.keys(customTokens).length > 0
+              ? customTokens
+              : undefined,
         }),
       });
 
@@ -119,7 +126,7 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
     } finally {
       setSaving(false);
     }
-  }, [isLoggedIn, themeId, mode, customTokens]);
+  }, [isLoggedIn, themeId, mode, customTokens, themeEditorEntitled]);
 
   const setMode = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);
@@ -140,12 +147,15 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
   }, [isLoggedIn]);
 
   const updateTokens = useCallback((newTokens: Partial<ThemeTokens>) => {
+    // Premium gate: free users cannot preview or persist custom tokens
+    if (!themeEditorEntitled) return;
     setCustomTokens((prev) => ({ ...prev, ...newTokens }));
-  }, []);
+  }, [themeEditorEntitled]);
 
   const resetTokens = useCallback(() => {
+    if (!themeEditorEntitled) return;
     setCustomTokens({});
-  }, []);
+  }, [themeEditorEntitled]);
 
   // Debounced save for token edits; immediate save for mode/theme changes
   useEffect(() => {
@@ -175,6 +185,7 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
         mode,
         themeId,
         tokens,
+        canUseThemeEditor: themeEditorEntitled,
         setMode,
         setTheme,
         updateTokens,
