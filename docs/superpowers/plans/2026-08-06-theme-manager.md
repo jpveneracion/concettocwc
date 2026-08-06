@@ -19,10 +19,11 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 11/62 tasks completed (18%)
+## Overall Progress: 23/62 tasks completed (37%)
 
 ### Phase 1: Design tokens & Tailwind wiring - 6/6 tasks (100%) ✅ COMPLETE
 ### Phase 2: Database: per-user theme storage - 5/8 tasks (63%) (2.6 blocked: needs owner-privilege apply)
+### Phase 3: Server + client plumbing & picker UI - 12/17 tasks (71%) (3.3, 3.11 blocked on migration 093; 3.16/3.17 pending)
 ### Phase 3: Server + client plumbing & picker UI - 0/17 tasks (0%)
 ### Phase 4: Theme editor paywall gating - 0/8 tasks (0%)
 ### Phase 5: Theme editor UI (premium) - 0/10 tasks (0%)
@@ -847,7 +848,7 @@ When all steps pass, update this task's status to:
 > **Estimated effort:** ~1 day
 
 ## Task 3.1: Create GET /api/user/theme Route
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.1k tokens
 **Files:** Create: `src/app/api/user/theme/route.ts`
 
@@ -921,7 +922,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.2: Create PUT /api/user/theme Route
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.3k tokens
 **Files:** Modify: `src/app/api/user/theme/route.ts`
 
@@ -1005,7 +1006,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.3: Test API Routes
-**Status:** ⏳ PENDING
+**Status:** ⏳ BLOCKED - needs migration 093 applied (owner-privilege)
 **Size:** ~900 tokens
 **Files:** Testing only
 
@@ -1065,7 +1066,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.4: Create ThemeContext
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.5k tokens
 **Files:** Create: `src/contexts/ThemeContext.tsx`
 
@@ -1254,7 +1255,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.5: Wire ThemeProvider into App
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~900 tokens
 **Files:** Modify: `src/app/providers.tsx`
 
@@ -1325,7 +1326,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.6: Create Server-Side FOUC Prevention Script
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1k tokens
 **Files:** Modify: `src/app/layout.tsx`
 
@@ -1417,7 +1418,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.7: Add Cookie Fallback for Anonymous Pages
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~800 tokens
 **Files:** Modify: `src/contexts/ThemeContext.tsx`, `src/app/api/user/theme/route.ts`
 
@@ -1494,7 +1495,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.8: Test FOUC Prevention
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~800 tokens
 **Files:** Testing only
 
@@ -1545,7 +1546,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.9: Unit Test Theme Reducer
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1k tokens
 **Files:** Create: `src/__tests__/theme/theme-reducer.test.ts`
 
@@ -1616,7 +1617,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.10: Commit Phase 3 Core Files
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~600 tokens
 **Files:** Commit: API routes, ThemeContext, providers, layout
 
@@ -1647,7 +1648,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.11: Test Phase 3 End-to-End
-**Status:** ⏳ PENDING
+**Status:** ⏳ BLOCKED - needs migration 093 applied + browser
 **Size:** ~900 tokens
 **Files:** Testing only
 
@@ -1693,7 +1694,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.12: Commit Phase 3 Test Files
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (deviation: src/__tests__ is gitignored by repo convention; tests stay untracked)
 **Size:** ~400 tokens
 **Files:** Commit: Test files
 
@@ -1711,7 +1712,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.13: Create Appearance Settings Page (real, no TODOs)
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.3k tokens
 **Files:** Create: `src/app/settings/appearance/page.tsx`, `src/app/settings/appearance/AppearanceSettings.tsx`; Modify: `src/app/settings/page.tsx`
 
@@ -1788,7 +1789,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.14: Create ModePicker Component (real, working)
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.1k tokens
 **Files:** Create: `src/components/theme/ModePicker.tsx`
 
@@ -1870,7 +1871,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 3.15: Create PresetPicker Component (real, working)
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.2k tokens
 **Files:** Create: `src/components/theme/PresetPicker.tsx`
 
