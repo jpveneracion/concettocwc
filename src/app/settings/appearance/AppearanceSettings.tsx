@@ -1,14 +1,35 @@
 'use client';
 
+import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ModePicker from '@/components/theme/ModePicker';
 import PresetPicker from '@/components/theme/PresetPicker';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AppearanceSettings() {
+  const { save, saving } = useTheme();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    await save();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   return (
     <AppLayout>
-      <div className="mb-4 md:mb-6">
+      <div className="mb-4 md:mb-6 flex items-center justify-between">
         <h1 className="text-lg md:text-xl font-semibold">Appearance</h1>
+        <div className="flex items-center gap-3">
+          {saved && <span className="text-sm text-green-600">Saved</span>}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Save changes'}
+          </button>
+        </div>
       </div>
 
       <div className="max-w-2xl">
