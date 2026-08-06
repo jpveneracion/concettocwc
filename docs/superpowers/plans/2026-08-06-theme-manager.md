@@ -19,10 +19,10 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 6/62 tasks completed (10%)
+## Overall Progress: 11/62 tasks completed (18%)
 
 ### Phase 1: Design tokens & Tailwind wiring - 6/6 tasks (100%) ✅ COMPLETE
-### Phase 2: Database: per-user theme storage - 0/8 tasks (0%)
+### Phase 2: Database: per-user theme storage - 5/8 tasks (63%) (2.6 blocked: needs owner-privilege apply)
 ### Phase 3: Server + client plumbing & picker UI - 0/17 tasks (0%)
 ### Phase 4: Theme editor paywall gating - 0/8 tasks (0%)
 ### Phase 5: Theme editor UI (premium) - 0/10 tasks (0%)
@@ -420,7 +420,7 @@ When all steps pass, update this task's status to:
 > **Estimated effort:** ~0.5 day
 
 ## Task 2.1: Check Latest Migration Number
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~400 tokens
 **Files:** Read: Migrations directory
 
@@ -447,7 +447,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 2.2: Create User Theme Preferences Migration
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.3k tokens
 **Files:** Create: `migrations/XXX_user_theme_preferences.sql`
 
@@ -500,73 +500,47 @@ When both spec compliance check and code quality review pass, update this task's
 
 ---
 
-## Task 2.3: Create RLS Policy for Theme Preferences
-**Status:** ⏳ PENDING
-**Size:** ~1.1k tokens
-**Files:** Create: `src/migrations/apply-user-theme-rls.ts`
+## Task 2.3: Verify RLS Coverage for Theme Preferences (no new policies needed)
+**Status:** ✅ COMPLETED
+**Size:** ~500 tokens
+**Files:** None (verification only — see deviation note below)
 
-- [ ] **Step 1: Create RLS application script**
+> **DEVIATION from original draft:** The original plan created `users_theme_read_policy` /
+> `users_theme_update_policy` via `src/migrations/apply-user-theme-rls.ts`. This was
+> rejected during implementation:
+> 1. `users` already has `users_self_isolation` (FOR ALL, `id = get_current_user_id()`,
+>    015_enable_rls_users_oauth.sql) which already scopes SELECT/UPDATE to the user's own
+>    row — the new `theme_preference` column inherits this protection automatically.
+> 2. PostgreSQL policies are OR-ed together, so ADDING permissive policies would dilute
+>    (not reinforce) the existing isolation.
+> 3. The draft referenced `current_setting('rls.current_user_id', ...)` directly, bypassing
+>    the canonical `get_current_user_id()` helper.
+> 4. The draft's file path (`src/migrations/apply-user-theme-rls.ts`) doesn't exist in the
+>    codebase — migrations live in `migrations/*.sql`.
+> The migration 093 file documents this in a comment.
 
-```typescript
-// src/migrations/apply-user-theme-rls.ts
-import { sql } from '@/lib/db';
+- [ ] **Step 1: Confirm existing coverage**
+- [ ] ✓ 2.1: `users_self_isolation` policy exists (FOR ALL, scoped to `get_current_user_id()`)
+- [ ] ✓ 2.1: RLS enforcement verified at app level (DML-only grants for app role `concetto_boms`; DDL via owner)
 
-export async function applyUserThemeRLS() {
-  // Users can only read their own theme_preference
-  await sql(`
-    DROP POLICY IF EXISTS users_theme_read_policy ON users;
-    CREATE POLICY users_theme_read_policy ON users
-    FOR SELECT
-    USING (id = current_setting('rls.current_user_id', true)::uuid);
-  `);
+- [ ] **Step 2: Spec compliance check**
+- [ ] ✓ 2.1: Users can only read/update their own `theme_preference` (existing policy)
+- [ ] ✓ 2.1: No permissive OR-policies added that would weaken isolation
 
-  // Users can only update their own theme_preference
-  await sql(`
-    DROP POLICY IF EXISTS users_theme_update_policy ON users;
-    CREATE POLICY users_theme_update_policy ON users
-    FOR UPDATE
-    USING (id = current_setting('rls.current_user_id', true)::uuid)
-    WITH CHECK (id = current_setting('rls.current_user_id', true)::uuid);
-  `);
+- [ ] **Step 3: Code quality review**
+- [ ] ✓ Follows existing RLS conventions (get_current_user_id helper, fail-secure)
+- [ ] ✓ Deviation documented in plan and migration comment
 
-  console.log('✅ User theme RLS policies applied');
-}
-
-// Run if called directly
-if (require.main === module) {
-  applyUserThemeRLS().catch(console.error);
-}
-```
-
-- [ ] **Step 2: Verify TypeScript compiles**
-
-```bash
-npm run build
-```
-
-Expected: Build succeeds
-
-- [ ] **Step 3: Spec compliance check**
-- [ ] ✓ 2.1: RLS pattern follows existing conventions (apply-*-rls.ts)
-- [ ] ✓ 2.1: Users can only read their own theme_preference
-- [ ] ✓ 2.1: Users can only update their own theme_preference
-
-- [ ] **Step 4: Code quality review**
-- [ ] ✓ Follows existing RLS pattern in codebase
-- [ ] ✓ SQL properly parameterized
-- [ ] ✓ Error handling present
-- [ ] ✓ Console logging for debugging
-
-- [ ] **Step 5: Mark task as completed**
+- [ ] **Step 4: Mark task as completed**
 When both spec compliance check and code quality review pass, update this task's status to:
 **Status:** ✅ COMPLETED
 
 ---
 
 ## Task 2.4: Create Rollback Migration
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~800 tokens
-**Files:** Create: `migrations/db-rollback-user-theme.sql`
+**Files:** Create: `migrations/093_rollback_user_theme_preferences.sql` (follows `NNN_rollback_*.sql` convention, not `db-rollback-*.sql`)
 
 - [ ] **Step 1: Create rollback file**
 
@@ -598,7 +572,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 2.5: Create Theme Schema Validation
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED
 **Size:** ~1.2k tokens
 **Files:** Create: `src/lib/theme-schema.ts`
 
@@ -700,9 +674,16 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 2.6: Apply Migration and Verify
-**Status:** ⏳ PENDING
+**Status:** ⏳ BLOCKED — needs owner-privilege apply
 **Size:** ~900 tokens
 **Files:** Apply: Migration files
+
+> **BLOCKER (2026-08-06):** The app role `concetto_boms` has only DML grants
+> (INSERT/SELECT/UPDATE/DELETE) on `users`; `users` is owned by `neondb_owner`.
+> `ALTER TABLE users` fails with "must be owner of table users". Migration 093 must be
+> applied by the developer via the Neon SQL editor (or psql as `neondb_owner`), same as
+> migrations 089-092. Remaining steps below apply to both `093_user_theme_preferences.sql`
+> and the RLS verification (policy coverage already confirmed in Task 2.3).
 
 - [ ] **Step 1: Apply migration to database**
 
@@ -714,13 +695,13 @@ psql $DATABASE_URL -f $MIG_FILE
 
 Expected: Migration applies successfully
 
-- [ ] **Step 2: Run RLS application script**
+- [ ] **Step 2: Verify RLS coverage (no script needed — see Task 2.3 deviation)**
 
 ```bash
-node -r ts-node/register src/migrations/apply-user-theme-rls.ts
+node -e "const {neon}=require('@neondatabase/serverless');require('dotenv').config({path:'.env.local'});const sql=neon(process.env.DATABASE_URL);sql\`SELECT policyname FROM pg_policies WHERE tablename='users' AND policyname='users_self_isolation'\`.then(r=>console.log(r.length? 'RLS covered by users_self_isolation':'MISSING'))"
 ```
 
-Expected: RLS policies applied successfully
+Expected: `users_self_isolation` policy present (covers `theme_preference` reads/writes)
 
 - [ ] **Step 3: Verify column exists**
 
