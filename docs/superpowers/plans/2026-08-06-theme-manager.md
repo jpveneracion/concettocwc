@@ -19,12 +19,12 @@
 
 # PROGRESS TRACKING
 
-## Overall Progress: 28/62 tasks completed (45%)
+## Overall Progress: 31/62 tasks completed (50%)
 
 ### Phase 1: Design tokens & Tailwind wiring - 6/6 tasks (100%) ✅ COMPLETE
 ### Phase 2: Database: per-user theme storage - 5/8 tasks (63%) (2.6 apply verified 2026-08-06 via Neon console; 2.7/2.8 pending)
 ### Phase 3: Server + client plumbing & picker UI - 17/17 tasks (100%) ✅ COMPLETE
-### Phase 4: Theme editor paywall gating - 3/8 tasks (38%) (4.1/4.2/4.3 done incl. 403/200 curl matrix)
+### Phase 4: Theme editor paywall gating - 6/8 tasks (75%) (4.1-4.6 done; 4.7/4.8 pending)
 ### Phase 5: Theme editor UI (premium) - 0/10 tasks (0%)
 ### Phase 6: Migrate hardcoded colors - 0/8 tasks (0%)
 ### Phase 7: Tests & docs - 0/5 tasks (0%)
@@ -2173,7 +2173,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.3: Gate GET + SSR Seed (defense in depth)
-**Status:** ⏳ PARTIAL - GET gating done + curl-verified (unactivated GET strips customTokens, returns entitlement.themeEditor=false); SSR seed gate in layout.tsx NOT yet implemented
+**Status:** ✅ COMPLETED (curl-verified 2026-08-06: malicious customTokens injected directly into DB for unactivated user - GET strips them, SSR seeds data-theme but never leaks token styles)
 **Size:** ~1.1k tokens
 **Files:** Modify: `src/app/api/user/theme/route.ts`, `src/app/layout.tsx`
 
@@ -2220,7 +2220,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.4: Entitlement-Aware ThemeContext
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (themeEditorEntitled flows layout → Providers → ThemeProvider; save() omits customTokens, updateTokens/resetTokens no-op, apply effect skips tokens when not entitled)
 **Size:** ~1.1k tokens
 **Files:** Modify: `src/contexts/ThemeContext.tsx`, `src/app/providers.tsx`
 
@@ -2271,7 +2271,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.5: Premium Lock UI (upsell, real links)
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (deviation: /subscription route does not exist; secondary link uses real /subscription/checkout - the actual plans page)
 **Size:** ~1.2k tokens
 **Files:** Create: `src/components/theme/ThemeEditorLock.tsx`; Modify: `src/app/settings/appearance/AppearanceSettings.tsx`
 
@@ -2352,7 +2352,7 @@ When both spec compliance check and code quality review pass, update this task's
 ---
 
 ## Task 4.6: Entitlement Tests
-**Status:** ⏳ PENDING
+**Status:** ✅ COMPLETED (4/4 unit tests pass; suite total 13/13)
 **Size:** ~1.1k tokens
 **Files:** Create: `src/__tests__/theme/entitlement.test.ts`
 
