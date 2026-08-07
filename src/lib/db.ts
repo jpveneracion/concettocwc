@@ -234,8 +234,8 @@ export async function updateUser(userId: string, updates: {
   trial_expires_at?: string;
   subscription_activated?: boolean;
   activation_code?: string;
-  discount_percent?: number;
-  subscription_plan?: string;
+  discount_percent?: number | null;
+  subscription_plan?: string | null;
 }): Promise<void> {
   const startTime = Date.now();
 

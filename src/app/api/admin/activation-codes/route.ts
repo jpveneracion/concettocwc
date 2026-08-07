@@ -67,15 +67,6 @@ export async function POST(req: NextRequest) {
     const body: GenerateActivationCodeRequest = await req.json();
     const userId = session.userId;
 
-    // Validate required fields
-    if (!body.discount_percent || !body.applicable_plans.length ||
-        !body.payment_amount || !body.payment_method || !body.payment_reference) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
     const rlsContext = {
       companyId: session.companyId,
       userRole: (session.role || (session.isAdmin ? 'superadmin' : 'admin')) as 'user' | 'admin' | 'superadmin',

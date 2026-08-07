@@ -129,6 +129,7 @@ export async function GET(req: NextRequest) {
       profitMargin: profitAndCost.profitMargin,
       conversionRate,
       totalQuotes: quoteStats.total,
+      approvedQuotes: quoteStats.delivered,
       deliveredQuotes: quoteStats.delivered,
       pendingQuotes: quoteStats.pending,
       averageOrderValue,

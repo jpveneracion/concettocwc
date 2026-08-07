@@ -188,8 +188,10 @@ export async function linkOAuthAccount(userId: string, accountData: AccountLinkR
     }
 
     // Get the full OAuth account record to return
+    // SECURITY DEFINER lookup: oauth_accounts RLS (user isolation) would filter
+    // this out because no tenant context exists yet during OAuth sign-in.
     const fullAccount = await query<OAuthAccount>(
-      `SELECT * FROM oauth_accounts WHERE id = $1`,
+      `SELECT * FROM get_oauth_account_by_id($1)`,
       [accountResult.rows[0].oauth_account_id]
     );
 

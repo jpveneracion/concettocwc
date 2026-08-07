@@ -5,16 +5,9 @@ import { useRouter } from 'next/navigation';
 export default function ActivateCodePage() {
   const router = useRouter();
   const [code, setCode] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-
-  const plans = [
-    { value: 'monthly', label: 'Monthly', description: 'Flexible monthly subscription' },
-    { value: 'quarterly', label: 'Quarterly', description: 'Save 25% with quarterly billing' },
-    { value: 'annual', label: 'Annual', description: 'Best value - save 35% with annual billing' }
-  ];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,8 +19,7 @@ export default function ActivateCodePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          code: code.toUpperCase().trim(),
-          subscription_plan: selectedPlan
+          code: code.toUpperCase().trim()
         }),
       });
 
@@ -71,45 +63,14 @@ export default function ActivateCodePage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base uppercase tracking-wider"
-                  placeholder="XXXX-XXXX-XXXX-XXXX"
-                  maxLength={19}
+                  placeholder="e.g. z0ixtuwb"
+                  maxLength={32}
                   required
                   autoFocus
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  Enter the code provided after payment
+                  Enter the code you received to unlock premium features
                 </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Plan *
-                </label>
-                <div className="space-y-2">
-                  {plans.map((plan) => (
-                    <label
-                      key={plan.value}
-                      className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedPlan === plan.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="plan"
-                        value={plan.value}
-                        checked={selectedPlan === plan.value}
-                        onChange={(e) => setSelectedPlan(e.target.value)}
-                        className="mr-3"
-                      />
-                      <div>
-                        <div className="font-medium text-sm">{plan.label}</div>
-                        <div className="text-xs text-gray-500">{plan.description}</div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
               </div>
 
               {error && (

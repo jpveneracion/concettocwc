@@ -16,6 +16,7 @@ const navItems = [
   { href: '/company-products', label: 'Company Products', icon: '🏢', requiresFutureOrders: false },
   { href: '/account/subscription', label: 'My Subscriptions', icon: '📋', requiresFutureOrders: false },
   { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳', requiresFutureOrders: false },
+  { href: '/activate-code', label: 'Redeem Code', icon: '🎟️', requiresFutureOrders: false },
   { href: '/settings', label: 'Settings', icon: '⚙️', requiresFutureOrders: false },
 ];
 

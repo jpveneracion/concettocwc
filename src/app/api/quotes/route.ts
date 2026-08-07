@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { sql } from '@/lib/db';
+import { sql, query } from '@/lib/db';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
 import { validateQuoteCreation, restrictionErrorResponse } from '@/lib/api-restrictions';
@@ -21,6 +21,20 @@ export async function GET() {
     try {
       // Check subscription access
       const access = await checkSubscriptionAccess(session);
+
+      // Self-heal company code: stale sessions (cookie set before companies.code
+      // existed, or RLS-hidden lookups) carry 'UNKNOWN'. Resolve fresh from the
+      // DB with tenant context so quote prefixes are never UNKNOWN.
+      let companyCode = session.companyCode;
+      if (!companyCode || companyCode === 'UNKNOWN') {
+        const codeResult = await query<{ code: string }>(
+          `SELECT code FROM companies WHERE id = $1`,
+          [session.companyId],
+          session.companyId,
+          session.role || 'user'
+        );
+        companyCode = codeResult.rows[0]?.code || 'UNKNOWN';
+      }
 
       // Allow read access even in readonly mode
       // Get quotes using SECURITY DEFINER function
@@ -72,7 +86,7 @@ export async function GET() {
       });
 
       return NextResponse.json({
-        companyCode: session.companyCode,
+        companyCode,
         quotes: decryptedQuotes,
         accessMode: access.mode,
         subscriptionRequired: !access.allowed && access.mode !== 'readonly'

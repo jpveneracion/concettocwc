@@ -179,17 +179,17 @@ export async function createActivationCode(
   const status_history: StatusHistoryEntry[] = [{
     status: 'created',
     timestamp: now,
-    note: `Generated for ${request.payment_method} payment ${request.payment_reference}`
+    note: `Generated for ${request.payment_method ?? 'n/a'} payment ${request.payment_reference ?? 'n/a'}`
   }];
 
   const sqlParams: any[] = [
     code,
-    request.discount_percent,
-    JSON.stringify(request.applicable_plans),
-    request.payment_amount,
-    request.payment_currency,
-    request.payment_method,
-    request.payment_reference,
+    request.discount_percent ?? 0,
+    JSON.stringify(request.applicable_plans ?? []),
+    request.payment_amount ?? null,
+    request.payment_currency ?? 'PHP',
+    request.payment_method ?? null,
+    request.payment_reference ?? null,
     now.toISOString(),
     createdBy,
     request.expires_at ? request.expires_at.toISOString() : null,
@@ -230,12 +230,12 @@ export async function createActivationCode(
       RETURNING *`,
       [
         code,
-        request.discount_percent,
-        JSON.stringify(request.applicable_plans),
-        request.payment_amount,
-        request.payment_currency,
-        request.payment_method,
-        request.payment_reference,
+        request.discount_percent ?? 0,
+        JSON.stringify(request.applicable_plans ?? []),
+        request.payment_amount ?? null,
+        request.payment_currency ?? 'PHP',
+        request.payment_method ?? null,
+        request.payment_reference ?? null,
         now.toISOString(),
         createdBy,
         request.expires_at ? request.expires_at.toISOString() : null,
@@ -255,49 +255,30 @@ export async function createActivationCode(
 }
 
 /**
- * Validate activation code with enhanced usage limiting support
+ * Validate activation code with enhanced usage limiting support.
+ * Access-grant codes carry no applicable_plans, so the plan check is skipped
+ * when the code has none (or no plan was requested).
+ * Lookup goes through the SECURITY DEFINER get_activation_code_by_code()
+ * function (migration 094) so codes created by the superadmin company are
+ * visible to redeemers in other companies.
  */
 export async function validateActivationCode(
   code: string,
-  plan: string | SubscriptionPlan,
+  plan?: string | SubscriptionPlan,
   rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode | null> {
-  // Resolve plan identifier to SubscriptionPlan enum
-  const resolvedPlan = await resolvePlanIdentifier(plan);
+  const resolvedPlan = plan ? await resolvePlanIdentifier(plan) : undefined;
 
-  let result;
-  if (rlsContext) {
-    const queryResult = await query<ActivationCodeRecord>(
-      `SELECT * FROM activation_codes
-       WHERE code = $1
-       AND is_active = true
+  const result = await sql(
+    `SELECT * FROM get_activation_code_by_code($1)
+     WHERE is_active = true
        AND (expires_at IS NULL OR expires_at > NOW())
        AND (
-         -- One-time use codes (existing system)
          (usage_limit IS NULL AND used_by IS NULL) OR
-         -- Usage-limited codes (new system)
          (usage_limit IS NOT NULL AND current_usage < usage_limit)
        )`,
-      [code],
-      rlsContext.companyId,
-      rlsContext.userRole
-    );
-    result = queryResult.rows;
-  } else {
-    result = await sql(
-      `SELECT * FROM activation_codes
-       WHERE code = $1
-       AND is_active = true
-       AND (expires_at IS NULL OR expires_at > NOW())
-       AND (
-         -- One-time use codes (existing system)
-         (usage_limit IS NULL AND used_by IS NULL) OR
-         -- Usage-limited codes (new system)
-         (usage_limit IS NOT NULL AND current_usage < usage_limit)
-       )`,
-      [code]
-    );
-  }
+    [code]
+  );
 
   if (result.length === 0) {
     return null;
@@ -305,8 +286,10 @@ export async function validateActivationCode(
 
   const activationCode = mapActivationCodeFromDb(result[0] as ActivationCodeRecord);
 
-  // Check if code applies to requested plan
-  if (!activationCode.applicable_plans.includes(resolvedPlan)) {
+  // Check if code applies to requested plan (legacy discount codes only)
+  if (resolvedPlan &&
+      activationCode.applicable_plans.length > 0 &&
+      !activationCode.applicable_plans.includes(resolvedPlan)) {
     return null;
   }
 
@@ -318,27 +301,15 @@ export async function validateActivationCode(
  */
 export async function validateActivationCodeWithDetails(
   code: string,
-  plan: string | SubscriptionPlan,
+  plan?: string | SubscriptionPlan,
   rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<{ valid: boolean; activationCode?: ActivationCode; error?: string }> {
-  // Resolve plan identifier to SubscriptionPlan enum
-  const resolvedPlan = await resolvePlanIdentifier(plan);
+  const resolvedPlan = plan ? await resolvePlanIdentifier(plan) : undefined;
 
-  let result;
-  if (rlsContext) {
-    const queryResult = await query<ActivationCodeRecord>(
-      `SELECT * FROM activation_codes WHERE code = $1`,
-      [code],
-      rlsContext.companyId,
-      rlsContext.userRole
-    );
-    result = queryResult.rows;
-  } else {
-    result = await sql(
-      `SELECT * FROM activation_codes WHERE code = $1`,
-      [code]
-    );
-  }
+  const result = await sql(
+    `SELECT * FROM get_activation_code_by_code($1)`,
+    [code]
+  );
 
   if (result.length === 0) {
     return { valid: false, error: 'Promo code not found' };
@@ -356,8 +327,10 @@ export async function validateActivationCodeWithDetails(
     return { valid: false, error: 'Promo code has expired' };
   }
 
-  // Check if code applies to requested plan
-  if (!activationCode.applicable_plans.includes(resolvedPlan)) {
+  // Check if code applies to requested plan (legacy discount codes only)
+  if (resolvedPlan &&
+      activationCode.applicable_plans.length > 0 &&
+      !activationCode.applicable_plans.includes(resolvedPlan)) {
     return { valid: false, error: `Promo code not applicable to ${resolvedPlan} plan` };
   }
 
@@ -384,7 +357,7 @@ export async function redeemActivationCode(
   code: string,
   userId: string,
   ipAddress: string,
-  plan: string | SubscriptionPlan,
+  plan?: string | SubscriptionPlan,
   rlsContext?: { companyId: string; userRole: 'user' | 'admin' | 'superadmin' }
 ): Promise<ActivationCode> {
   const validation = await validateActivationCodeWithDetails(code, plan, rlsContext);
@@ -410,8 +383,9 @@ export async function redeemActivationCode(
   // redeemed by another (payment approval runs as the acting admin's company,
   // and a direct UPDATE would otherwise affect 0 rows and stay at 0 usage).
   // The function handles both usage-limited (current_usage+1) and one-time
-  // (used_by/used_at) codes.
-  const incrementParams = [code, userId, ipAddress, JSON.stringify(statusHistory)];
+  // (used_by/used_at) codes. The canonical stored code is passed so the
+  // case-insensitive lookup above matches the exact-row increment.
+  const incrementParams = [activationCode.code, userId, ipAddress, JSON.stringify(statusHistory)];
   if (rlsContext) {
     const queryResult = await query<ActivationCodeRecord>(
       `SELECT * FROM increment_promo_usage($1, $2, $3, $4::jsonb)`,

@@ -38,19 +38,25 @@ async function setCustomSessionCookie(userId: string, companyId: string, email: 
 
     // Try to get company code and user role, but don't fail if we can't
     try {
-      const { sql } = await import('@/lib/db');
+      // Must use query() with RLS context: a raw sql() call has no tenant
+      // context, so companies RLS hides the row and companyCode falls back
+      // to 'UNKNOWN' (quote prefixes would be UNKNOWN-...).
+      const { query } = await import('@/lib/db');
       console.log('🔍 Fetching company and user data...');
 
-      const [companyAndUser] = await sql`
-        SELECT
+      const result = await query<{ company_code: string; user_role: string }>(
+        `SELECT
           companies.code as company_code,
           users.role as user_role
         FROM companies
         JOIN users ON users.company_id = companies.id
-        WHERE companies.id = ${companyId} AND users.id = ${userId}
-      `;
+        WHERE companies.id = $1 AND users.id = $2`,
+        [companyId, userId],
+        companyId,
+        normalizedRole
+      );
 
-      console.log('🔍 Company and user data:', companyAndUser);
+      const companyAndUser = result.rows[0];
 
       if (companyAndUser) {
         companyCode = companyAndUser.company_code || 'UNKNOWN';

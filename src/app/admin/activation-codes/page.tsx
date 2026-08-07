@@ -3,7 +3,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { AccountLockedBanner } from '@/components/subscription/AccountLockedBanner';
-import { PaymentMethod, SubscriptionPlan } from '@/types/subscription';
 import AdminLayout from '@/components/AdminLayout';
 
 interface DashboardAnalytics {
@@ -24,15 +23,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // New code generation form
+  // New code generation form - access codes, no plan/discount/payment fields
   const [showCodeForm, setShowCodeForm] = useState(false);
   const [codeForm, setCodeForm] = useState({
-    discount_percent: 25,
-    applicable_plans: ['quarterly'] as SubscriptionPlan[],
-    payment_amount: 0,
-    payment_method: 'gcash' as PaymentMethod,
-    payment_currency: 'PHP',
-    payment_reference: '',
     campaign_name: '',
     notes: ''
   });
@@ -158,68 +151,11 @@ export default function AdminDashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Generate New Activation Code
             </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Access-grant codes unlock premium features (e.g. theme editor) when redeemed. No plan or payment details needed.
+            </p>
             <form onSubmit={generateCode} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Discount Percent *
-                  </label>
-                  <input
-                    type="number"
-                    value={codeForm.discount_percent}
-                    onChange={(e) => setCodeForm({...codeForm, discount_percent: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    min="0"
-                    max="100"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Amount *
-                  </label>
-                  <input
-                    type="number"
-                    value={codeForm.payment_amount}
-                    onChange={(e) => setCodeForm({...codeForm, payment_amount: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Method *
-                  </label>
-                  <select
-                    value={codeForm.payment_method}
-                    onChange={(e) => setCodeForm({...codeForm, payment_method: e.target.value as PaymentMethod})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    required
-                  >
-                    <option value="gcash">GCash</option>
-                    <option value="crypto">Crypto</option>
-                    <option value="usd_bank">USD Bank</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Reference *
-                  </label>
-                  <input
-                    type="text"
-                    value={codeForm.payment_reference}
-                    onChange={(e) => setCodeForm({...codeForm, payment_reference: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Campaign Name
@@ -228,6 +164,7 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={codeForm.campaign_name}
                     onChange={(e) => setCodeForm({...codeForm, campaign_name: e.target.value})}
+                    placeholder="e.g. Theme beta launch"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -287,7 +224,7 @@ function MetricCard({ title, value, color }: { title: string; value: string | nu
 
 // Type definitions for the dashboard
 interface PaymentMethodStats {
-  method: PaymentMethod;
+  method: string;
   amount: number;
   count: number;
   percentage: number;
@@ -300,7 +237,7 @@ interface DiscountStats {
 }
 
 interface PlanStats {
-  plan: SubscriptionPlan;
+  plan: string;
   count: number;
   revenue: number;
   percentage: number;

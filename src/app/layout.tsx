@@ -15,6 +15,10 @@ export const metadata: Metadata = {
 };
 
 function buildFoucScript(effectiveThemeId: string, customTokens?: Record<string, string>): string {
+  // Body only - the <script id="theme-prevent-fouc"> wrapper lives on the
+  // React element itself. Embedding <script> tags in dangerouslySetInnerHTML
+  // produces nested <script> elements, which the HTML parser truncates and
+  // React hydration rejects as a server/client mismatch.
   const tokenStyles = customTokens
     ? Object.entries(customTokens)
         .map(
@@ -25,12 +29,10 @@ function buildFoucScript(effectiveThemeId: string, customTokens?: Record<string,
     : '';
 
   return [
-    '<script id="theme-prevent-fouc">',
     '(function() {',
     `  document.documentElement.dataset.theme = '${effectiveThemeId}';`,
     `  ${tokenStyles}`,
     '})();',
-    '</script>',
   ].join('');
 }
 
@@ -78,16 +80,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         {themeScript && (
-          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+          <script
+            id="theme-prevent-fouc"
+            dangerouslySetInnerHTML={{ __html: themeScript }}
+          />
         )}
       </head>
       <body>
         <ErrorBoundary>
-          <Providers themePreference={themePreference} themeEditorEntitled={themeEditorEntitled}>
+          <Providers themePreference={themePreference} themeEditorEntitled={themeEditorEntitled} isLoggedIn={Boolean(session?.userId)}>
             {children}
           </Providers>
         </ErrorBoundary>

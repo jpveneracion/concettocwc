@@ -48,9 +48,10 @@ interface ThemeProviderProps {
   children: React.ReactNode;
   initialPreference?: ThemePreference | null;
   themeEditorEntitled?: boolean;
+  isLoggedIn?: boolean;
 }
 
-export function ThemeProvider({ children, initialPreference, themeEditorEntitled = false }: ThemeProviderProps) {
+export function ThemeProvider({ children, initialPreference, themeEditorEntitled = false, isLoggedIn = false }: ThemeProviderProps) {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     if (initialPreference?.mode && isThemeMode(initialPreference.mode)) {
       return initialPreference.mode;
@@ -71,7 +72,9 @@ export function ThemeProvider({ children, initialPreference, themeEditorEntitled
   const [prefersDark, setPrefersDark] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isLoggedIn = Boolean(initialPreference);
+  // isLoggedIn comes from the session (layout), not from initialPreference:
+  // users with no saved preference yet must still be able to persist their
+  // first save.
 
   // Track OS dark mode preference (for 'system' mode)
   useEffect(() => {

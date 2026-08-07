@@ -98,11 +98,26 @@ export async function setTrialExpiration(userId: number | string, days: number =
 
   // For OAuth users with UUID strings, use direct SQL query to avoid type conversion issues
   if (typeof userId === 'string' && userId.includes('-')) {
-    // This is a UUID - use direct SQL to handle string IDs
-    await sql(
-      'UPDATE users SET trial_expires_at = $1 WHERE id = $2',
-      [trial_expires_at.toISOString(), userId]
+    // Raw SQL with no tenant context silently updates 0 rows under RLS, so
+    // resolve the user's company/role via the SECURITY DEFINER lookup and
+    // apply the update with proper tenant context.
+    const userResult = await query<{ user_company_id: string; user_role: string | null }>(
+      'SELECT user_company_id, user_role FROM find_user_by_id($1)',
+      [userId]
     );
+    if (!userResult.rows[0]) {
+      throw new Error(`Failed to set trial expiration: user ${userId} not found`);
+    }
+
+    const result = await query(
+      'UPDATE users SET trial_expires_at = $1 WHERE id = $2::uuid',
+      [trial_expires_at.toISOString(), userId],
+      userResult.rows[0].user_company_id,
+      (userResult.rows[0].user_role || 'user') as 'user' | 'admin' | 'superadmin'
+    );
+    if ((result.rowCount ?? 0) === 0) {
+      throw new Error('Failed to set trial expiration: user not found or RLS blocked update');
+    }
     console.log('✅ Set trial expiration for UUID user:', userId);
     return trial_expires_at;
   }
@@ -117,22 +132,24 @@ export async function setTrialExpiration(userId: number | string, days: number =
 }
 
 /**
- * Activate user subscription with code
+ * Activate user subscription with code.
+ * Access-grant codes carry no plan/discount - those are stored as NULL.
  * Uses query() with RLS context so the users update actually applies under RLS
  */
 export async function activateSubscription(
   userId: string,
   code: string,
-  discount_percent: number,
-  subscription_plan: SubscriptionPlan,
+  discount_percent?: number,
+  subscription_plan?: SubscriptionPlan,
   rlsContext?: RLSContext
 ): Promise<void> {
   if (rlsContext) {
     const result = await query(
       `UPDATE users
-       SET subscription_activated = true, activation_code = $2, discount_percent = $3, subscription_plan = $4
+       SET subscription_activated = true, activation_code = $2,
+           discount_percent = $3, subscription_plan = $4
        WHERE id = $1::uuid`,
-      [userId, code, discount_percent, subscription_plan],
+      [userId, code, discount_percent ?? null, subscription_plan ?? null],
       rlsContext.companyId,
       rlsContext.userRole
     );
@@ -146,8 +163,8 @@ export async function activateSubscription(
   await updateUser(userId, {
     subscription_activated: true,
     activation_code: code,
-    discount_percent,
-    subscription_plan
+    discount_percent: discount_percent ?? null,
+    subscription_plan: subscription_plan ?? null
   });
 }
 

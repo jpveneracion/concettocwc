@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
     const body: RedeemActivationCodeRequest = await req.json();
     const { code, subscription_plan } = body;
 
-    if (!code || !subscription_plan) {
+    if (!code) {
       return NextResponse.json(
-        { error: 'Code and subscription plan are required' },
+        { error: 'Code is required' },
         { status: 400 }
       );
     }
@@ -45,11 +45,11 @@ export async function POST(req: NextRequest) {
         }
       );
 
-      // Activate user subscription
+      // Activate user subscription (plan/discount are legacy - null for access codes)
       await activateSubscription(
         userId,
         code,
-        redeemedCode.discount_percent,
+        redeemedCode.discount_percent ?? undefined,
         subscription_plan,
         {
           companyId: session.companyId,

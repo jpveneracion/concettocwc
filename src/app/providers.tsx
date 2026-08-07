@@ -20,12 +20,13 @@ interface ProvidersProps {
   children: React.ReactNode;
   themePreference?: ThemePreference | null;
   themeEditorEntitled?: boolean;
+  isLoggedIn?: boolean;
 }
 
-export function Providers({ children, themePreference, themeEditorEntitled }: ProvidersProps) {
+export function Providers({ children, themePreference, themeEditorEntitled, isLoggedIn }: ProvidersProps) {
   return (
     <TrialRestrictionProvider>
-      <ThemeProvider initialPreference={themePreference} themeEditorEntitled={themeEditorEntitled}>
+      <ThemeProvider initialPreference={themePreference} themeEditorEntitled={themeEditorEntitled} isLoggedIn={isLoggedIn}>
         <OnboardingProvider
           enabled={true}
           respectAdminExclusion={true}

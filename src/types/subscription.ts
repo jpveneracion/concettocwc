@@ -105,12 +105,13 @@ export interface TrialStatusResponse {
  * Activation code generation request
  */
 export interface GenerateActivationCodeRequest {
-  discount_percent: number;
-  applicable_plans: string[];
-  payment_amount: number;
-  payment_method: PaymentMethod;
-  payment_currency: string;
-  payment_reference: string;
+  /** Access-grant codes: no discount/plans/payment required. Leftover legacy fields, optional. */
+  discount_percent?: number;
+  applicable_plans?: string[];
+  payment_amount?: number;
+  payment_method?: PaymentMethod;
+  payment_currency?: string;
+  payment_reference?: string;
   expires_at?: Date;
   campaign_name?: string;
   notes?: string;
@@ -121,7 +122,8 @@ export interface GenerateActivationCodeRequest {
  */
 export interface RedeemActivationCodeRequest {
   code: string;
-  subscription_plan: SubscriptionPlan;
+  /** Legacy: kept optional - access codes no longer require a plan */
+  subscription_plan?: SubscriptionPlan;
 }
 
 /**

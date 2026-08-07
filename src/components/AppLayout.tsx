@@ -3,7 +3,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import MobileNav from './MobileNav';
-import WarningBanner from './subscription/WarningBanner';
 import { TrialRestrictionBanner } from './TrialRestrictionBanner';
 
 const navItems = [
@@ -14,6 +13,7 @@ const navItems = [
   { href: '/company-products', label: 'Company Products', icon: '🏢' },
   { href: '/account/subscription', label: 'My Subscriptions', icon: '📋' },
   { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳' },
+  { href: '/activate-code', label: 'Redeem Code', icon: '🎟️' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -102,9 +102,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col md:h-screen bg-gray-50">
-      {/* Subscription Warning Banner */}
-      <WarningBanner />
-
       {/* Trial Restriction Banner */}
       <TrialRestrictionBanner />
 
