@@ -97,7 +97,8 @@ export async function POST(req: Request) {
       throw new Error('User creation failed');
     }
 
-    const user = JSON.parse(userResult[0].user_data);
+    const userDataRaw = userResult[0].user_data;
+    const user = typeof userDataRaw === 'string' ? JSON.parse(userDataRaw) : userDataRaw;
     const userData = {
       id: user.id,
       email: user.email,
