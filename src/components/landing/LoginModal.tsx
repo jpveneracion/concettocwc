@@ -32,6 +32,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleOAuthSignIn = async (providerId: string) => {
     setIsLoading(true);
     try {
+      // Pi uses its own implicit OAuth flow, not NextAuth
+      if (providerId === 'pi') {
+        window.location.href = '/auth/pi/signin';
+        return;
+      }
+
       // Use NextAuth signIn with proper redirect handling
       await signIn(providerId, {
         callbackUrl: '/dashboard'
