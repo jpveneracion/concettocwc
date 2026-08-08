@@ -69,7 +69,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // 3. Validate payment method and amount
-    const allowedPaymentMethods = ['gcash', 'gotyme', 'usdc', 'card', 'bank_transfer'];
+    const allowedPaymentMethods = ['gcash', 'gotyme', 'usdc', 'pi', 'card', 'bank_transfer'];
     if (body.payment_method && !allowedPaymentMethods.includes(body.payment_method.toLowerCase())) {
       return NextResponse.json(
         { error: 'Invalid payment_method. Must be one of: ' + allowedPaymentMethods.join(', ') },

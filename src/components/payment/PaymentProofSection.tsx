@@ -39,22 +39,22 @@ export default function PaymentProofSection({
 
   const validateReferenceNumber = (value: string): string | null => {
     const trimmedValue = value.trim();
-    const methodLabel = paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash';
+    const methodLabel = paymentMethod === 'gotyme' ? 'GoTyme' : paymentMethod === 'pi' ? 'Pi Network' : 'GCash';
 
     if (!trimmedValue) {
-      return `${methodLabel} transaction number is required`;
+      return `${methodLabel} transaction ID is required`;
     }
 
     // Check if value contains only alphanumeric characters
     if (!/^[a-zA-Z0-9]+$/.test(trimmedValue)) {
-      return 'Transaction number must be alphanumeric only (no letters with symbols or special characters)';
+      return 'Transaction ID must be alphanumeric only (no letters with symbols or special characters)';
     }
 
-    // Check length (GCash standard 13 chars, GoTyme standard 17 chars)
-    const maxLength = paymentMethod === 'gotyme' ? 20 : 15;
-    const standardLength = paymentMethod === 'gotyme' ? 17 : 13;
+    // Check length (GCash standard 13 chars, GoTyme standard 17 chars, Pi txid up to 64 chars)
+    const maxLength = paymentMethod === 'gotyme' ? 20 : paymentMethod === 'pi' ? 64 : 15;
+    const standardLength = paymentMethod === 'gotyme' ? 17 : paymentMethod === 'pi' ? 0 : 13;
     if (trimmedValue.length < 10 || trimmedValue.length > maxLength) {
-      return `Transaction number must be 10-${maxLength} characters (standard ${methodLabel} format is ${standardLength} characters)`;
+      return `Transaction ID must be 10-${maxLength} characters${standardLength ? ` (standard ${methodLabel} format is ${standardLength} characters)` : ''}`;
     }
 
     return null;
@@ -202,14 +202,14 @@ export default function PaymentProofSection({
         {/* Reference Number */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} Transaction Number <span className="text-red-500">*</span>
+            {paymentMethod === 'gotyme' ? 'GoTyme' : paymentMethod === 'pi' ? 'Pi Network' : 'GCash'} Transaction ID <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={referenceNumber}
             onChange={handleReferenceNumberChange}
             onBlur={handleReferenceNumberBlur}
-            placeholder="e.g., 1234567890123"
+            placeholder={paymentMethod === 'pi' ? "e.g., txid from your Pi Wallet" : "e.g., 1234567890123"}
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:outline-none font-mono ${
               referenceError
                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
@@ -223,7 +223,9 @@ export default function PaymentProofSection({
           )}
           {!referenceError && (
             <p className="mt-1 text-xs text-gray-500">
-              Enter the 13-digit transaction number from your {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} receipt. Required for automatic verification and speeds up processing.
+              {paymentMethod === 'pi'
+                ? 'Enter the transaction ID (txid) from your Pi Wallet payment confirmation. Required for verification.'
+                : `Enter the ${paymentMethod === 'gotyme' ? '17-digit' : '13-digit'} transaction number from your ${paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} receipt. Required for automatic verification and speeds up processing.`}
             </p>
           )}
         </div>
@@ -262,7 +264,7 @@ export default function PaymentProofSection({
         <div className="bg-yellow-50 rounded-lg p-3">
           <p className="text-xs text-yellow-700">
             <strong>Important:</strong> Please ensure your screenshot clearly shows the payment amount,
-            date, and transaction reference. The {paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} transaction number is required for automatic verification.
+            date, and transaction reference. The {paymentMethod === 'gotyme' ? 'GoTyme' : paymentMethod === 'pi' ? 'Pi Network txid' : 'GCash'} transaction ID is required for verification.
             Blurred or incomplete screenshots may delay verification.
           </p>
         </div>

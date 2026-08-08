@@ -18,6 +18,7 @@ export async function GET(req: Request) {
       // Convert row-based format to our API format
       const gcashRow = result.find(r => r.payment_method === 'gcash');
       const gotymeRow = result.find(r => r.payment_method === 'gotyme');
+      const piRow = result.find(r => r.payment_method === 'pi');
 
       const settings = {
         mobile: {
@@ -32,6 +33,12 @@ export async function GET(req: Request) {
             accountName: gotymeRow?.account_name || process.env.GOTYME_ACCOUNT_NAME || 'Concetto Inc.',
             qrCodeUrl: gotymeRow?.qr_code_url || process.env.GOTYME_QR_CODE_URL || '',
             enabled: gotymeRow?.active ?? true
+          },
+          pi: {
+            number: piRow?.account_number || process.env.PI_WALLET_ADDRESS || '',
+            accountName: piRow?.account_name || process.env.PI_ACCOUNT_NAME || 'Concetto Inc.',
+            qrCodeUrl: piRow?.qr_code_url || process.env.PI_WALLET_QR_URL || '',
+            enabled: piRow?.active ?? true
           }
         },
         crypto: {
@@ -72,6 +79,12 @@ export async function GET(req: Request) {
           number: process.env.GOTYME_NUMBER || '0928-987-6543',
           accountName: process.env.GOTYME_ACCOUNT_NAME || 'Concetto Inc.',
           qrCodeUrl: process.env.GOTYME_QR_CODE_URL || '',
+          enabled: true
+        },
+        pi: {
+          number: process.env.PI_WALLET_ADDRESS || '',
+          accountName: process.env.PI_ACCOUNT_NAME || 'Concetto Inc.',
+          qrCodeUrl: process.env.PI_WALLET_QR_URL || '',
           enabled: true
         }
       },

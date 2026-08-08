@@ -6,6 +6,7 @@ import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import QRCodeDisplay from '@/components/payment/QRCodeDisplay';
 import CryptoPaymentInfo from '@/components/payment/CryptoPaymentInfo';
 import PiPaymentFlow from '@/components/payment/PiPaymentFlow';
+import PiWalletPayment from '@/components/payment/PiWalletPayment';
 import PromoCodeInput from '@/components/payment/PromoCodeInput';
 import PaymentProofSection from '@/components/payment/PaymentProofSection';
 import { PaymentMethod } from '@/types/payment';
@@ -335,20 +336,36 @@ function PaymentInstructionsContent() {
               planName={plan.name}
             />
           ) : selectedMethod === 'pi' ? (
-            <PiPaymentFlow
-              amountPhp={finalAmount}
-              planId={plan.id}
-              planName={plan.name}
-              promoCode={promoCode || undefined}
-              onSuccess={() => setVerificationStatus('success')}
-              onError={() => setVerificationStatus('error')}
-            />
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 mb-2">
+                  Option A — Pay in Pi Browser <span className="font-normal text-gray-500">(automatic verification)</span>
+                </p>
+                <PiPaymentFlow
+                  amountPhp={finalAmount}
+                  planId={plan.id}
+                  planName={plan.name}
+                  promoCode={promoCode || undefined}
+                  onSuccess={() => setVerificationStatus('success')}
+                  onError={() => setVerificationStatus('error')}
+                />
+              </div>
+              <div className="border-t border-gray-200 pt-6">
+                <p className="text-sm font-semibold text-gray-900 mb-2">
+                  Option B — Pay from your Pi Wallet <span className="font-normal text-gray-500">(scan QR, manual verification)</span>
+                </p>
+                <PiWalletPayment
+                  amount={finalAmount}
+                  planName={plan.name}
+                  promoCode={promoCode}
+                />
+              </div>
+            </div>
           ) : null}
         </div>
 
         {/* Payment Proof Submission */}
-        {selectedMethod !== 'pi' && (
-          <PaymentProofSection
+        <PaymentProofSection
             planId={plan.id}
             planName={plan.name}
             finalAmount={finalAmount}
@@ -356,8 +373,7 @@ function PaymentInstructionsContent() {
             promoCode={promoCode}
             onSubmit={handlePaymentProofSubmit}
           />
-        )}
-
+        
         {/* Help Section */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
           <h3 className="font-semibold text-gray-900 mb-3">Need Help?</h3>
@@ -399,7 +415,7 @@ function PaymentInstructionsContent() {
                 Waiting for network confirmation...
               </h3>
               <p className="text-gray-600 mb-4">
-                Checking for {selectedMethod === 'gotyme' ? 'GoTyme' : 'GCash'} notification ({gracePeriodCountdown}s remaining)
+                Checking for {selectedMethod === 'gotyme' ? 'GoTyme' : selectedMethod === 'pi' ? 'Pi Network' : 'GCash'} notification ({gracePeriodCountdown}s remaining)
               </p>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
