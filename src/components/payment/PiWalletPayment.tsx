@@ -218,9 +218,12 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
       {/* Rate Disclaimer */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-xs text-blue-800 text-center">
-          <strong>Rate Notice:</strong> 1 Pi = 1 USD equivalent. Conversion from PHP uses the rate at
-          the time of payment. The payment verification team will use the rate at the time of
-          transaction confirmation.
+          <strong>Rate Notice:</strong>{' '}
+          {quote?.pi_price_usd
+            ? `1 Pi = $${Number(quote.pi_price_usd).toFixed(4)} USD (live market price).`
+            : '1 Pi = $1.00 USD equivalent.'}{' '}
+          Conversion from PHP uses the rate at the time of payment. The payment verification team
+          will use the rate at the time of transaction confirmation.
         </p>
       </div>
 

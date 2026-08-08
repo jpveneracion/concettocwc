@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       effectivePrice = Math.max(0, planPrice * (1 - discountPercent / 100));
     }
 
-    const expectedPi = computePiAmount(effectivePrice);
+    const expectedPi = await computePiAmount(effectivePrice);
 
     const paidPi = Number(amount ?? 0);
     if (Math.abs(paidPi - expectedPi) > AMOUNT_EPSILON) {

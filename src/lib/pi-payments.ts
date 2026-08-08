@@ -8,6 +8,7 @@ const PI_API_BASE = 'https://api.minepi.com/v2';
 
 // 1 Pi = 1 USD equivalent; plans are priced in PHP, so convert PHP -> USD -> Pi.
 const DEFAULT_PHP_TO_USD_RATE = 0.0178571; // ~56 PHP per USD
+const DEFAULT_PI_USD_PRICE = 1.0; // Fallback if the live price feed is unavailable
 
 export function getPhpToUsdRate(): number {
   const raw = process.env.PHP_TO_USD_RATE;
@@ -18,10 +19,51 @@ export function getPhpToUsdRate(): number {
   return rate;
 }
 
-export function computePiAmount(amountPhp: number): number {
+// ============================================================================
+// Live Pi price (USD), cached for 60s. Falls back to 1 USD on failure.
+// ============================================================================
+
+let cachedPiUsdPrice: number | null = null;
+let cachedPiUsdPriceAt = 0;
+const PI_PRICE_TTL_MS = 60_000;
+const PI_PRICE_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=pi-network&vs_currencies=usd';
+
+export async function getPiUsdPrice(): Promise<number> {
+  const now = Date.now();
+  if (cachedPiUsdPrice !== null && now - cachedPiUsdPriceAt < PI_PRICE_TTL_MS) {
+    return cachedPiUsdPrice;
+  }
+
+  try {
+    const res = await fetch(PI_PRICE_URL);
+    if (!res.ok) {
+      throw new Error(`CoinGecko responded with status ${res.status}`);
+    }
+    const data = await res.json();
+    const price = Number(data?.['pi-network']?.usd);
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new Error('Invalid Pi price payload from CoinGecko');
+    }
+    cachedPiUsdPrice = price;
+    cachedPiUsdPriceAt = now;
+    return price;
+  } catch (error) {
+    console.error('Failed to fetch live Pi price, falling back to 1 USD:', error);
+    cachedPiUsdPrice = DEFAULT_PI_USD_PRICE;
+    cachedPiUsdPriceAt = now;
+    return DEFAULT_PI_USD_PRICE;
+  }
+}
+
+/**
+ * Pi amount for a PHP plan price: (PHP -> USD) / live Pi price.
+ * Pass piUsdPrice to reuse a single fetch across callers.
+ */
+export async function computePiAmount(amountPhp: number, piUsdPrice?: number): Promise<number> {
   const usd = amountPhp * getPhpToUsdRate();
+  const price = piUsdPrice ?? (await getPiUsdPrice());
   // Round to 6 decimals (Pi platform precision)
-  return Math.round(usd * 1_000_000) / 1_000_000;
+  return Math.round((usd / price) * 1_000_000) / 1_000_000;
 }
 
 export function getPiApiKey(): string | null {

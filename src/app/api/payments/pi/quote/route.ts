@@ -1,9 +1,9 @@
 // src/app/api/payments/pi/quote/route.ts
-// Returns the Pi amount for a PHP plan price (1 Pi = 1 USD equivalent).
+// Returns the Pi amount for a PHP plan price using the live Pi price.
 
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { computePiAmount, getPhpToUsdRate } from '@/lib/pi-payments';
+import { computePiAmount, getPhpToUsdRate, getPiUsdPrice } from '@/lib/pi-payments';
 
 export async function GET(req: Request) {
   try {
@@ -19,13 +19,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const amountPi = computePiAmount(amountPhp);
+    const piUsdPrice = await getPiUsdPrice();
+    const amountPi = await computePiAmount(amountPhp, piUsdPrice);
 
     return NextResponse.json({
       success: true,
       amount_php: amountPhp,
       amount_usd: Math.round(amountPhp * getPhpToUsdRate() * 100) / 100,
       amount_pi: amountPi,
+      pi_price_usd: piUsdPrice,
     });
   } catch (error) {
     console.error('GET /api/payments/pi/quote error:', error);
