@@ -28,6 +28,13 @@ const paymentMethods = [
     description: 'Crypto payment',
     icon: '₿',
     color: 'green'
+  },
+  {
+    id: 'pi' as PaymentMethod,
+    name: 'Pi Network',
+    description: 'Pay with Pi (sandbox)',
+    icon: 'π',
+    color: 'purple'
   }
 ];
 
@@ -41,7 +48,7 @@ export default function PaymentMethodSelector({
         Select Payment Method
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {paymentMethods.map((method) => (
           <button
             key={method.id}

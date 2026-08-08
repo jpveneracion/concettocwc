@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import QRCodeDisplay from '@/components/payment/QRCodeDisplay';
 import CryptoPaymentInfo from '@/components/payment/CryptoPaymentInfo';
+import PiPaymentFlow from '@/components/payment/PiPaymentFlow';
 import PromoCodeInput from '@/components/payment/PromoCodeInput';
 import PaymentProofSection from '@/components/payment/PaymentProofSection';
 import { PaymentMethod } from '@/types/payment';
@@ -333,18 +334,29 @@ function PaymentInstructionsContent() {
               amount={finalAmount}
               planName={plan.name}
             />
+          ) : selectedMethod === 'pi' ? (
+            <PiPaymentFlow
+              amountPhp={finalAmount}
+              planId={plan.id}
+              planName={plan.name}
+              promoCode={promoCode || undefined}
+              onSuccess={() => setVerificationStatus('success')}
+              onError={() => setVerificationStatus('error')}
+            />
           ) : null}
         </div>
 
         {/* Payment Proof Submission */}
-        <PaymentProofSection
-          planId={plan.id}
-          planName={plan.name}
-          finalAmount={finalAmount}
-          paymentMethod={selectedMethod}
-          promoCode={promoCode}
-          onSubmit={handlePaymentProofSubmit}
-        />
+        {selectedMethod !== 'pi' && (
+          <PaymentProofSection
+            planId={plan.id}
+            planName={plan.name}
+            finalAmount={finalAmount}
+            paymentMethod={selectedMethod}
+            promoCode={promoCode}
+            onSubmit={handlePaymentProofSubmit}
+          />
+        )}
 
         {/* Help Section */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">

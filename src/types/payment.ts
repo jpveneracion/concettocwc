@@ -1,7 +1,7 @@
 /**
  * Payment method enumeration
  */
-export type PaymentMethod = 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer';
+export type PaymentMethod = 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer' | 'pi';
 
 /**
  * Payment verification status enumeration
@@ -32,7 +32,7 @@ export interface PaymentVerification {
   updated_at: Date;
   promo_code?: string; // Promo code used for this payment verification, if any
   amount?: number; // Amount paid (captured at submission)
-  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer'
+  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer' | 'pi'
 
   // Joined fields for API responses
   user_email?: string;
@@ -156,7 +156,7 @@ export interface CreateVerificationRequest {
   reference_number?: string;
   notes?: string;
   final_amount?: number; // Amount actually paid (after discounts)
-  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer'
+  payment_method?: string; // 'gcash' | 'gotyme' | 'usdc' | 'card' | 'bank_transfer' | 'pi'
 }
 
 /**
