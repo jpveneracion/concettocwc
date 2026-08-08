@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { AccountChoiceData } from '@/types/oauth';
-import { validateCompanyCode, createCompany, linkOAuthAccount, findUserByEmail } from '@/lib/oauth';
+import { validateCompanyCode, createCompany, linkOAuthAccount, findUserByEmail, findOAuthAccount } from '@/lib/oauth';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
-import { sql } from '@/lib/db';
+import { sql, query } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +18,48 @@ export async function POST(req: Request) {
 
     if (!tempProvider || !tempProviderId) {
       return NextResponse.json({ error: 'Session expired' }, { status: 400 });
+    }
+
+    // If this OAuth identity is already linked to an account (e.g. a repeat
+    // Pi/Google sign-in or a stale account-choice tab), sign the user in
+    // instead of creating a duplicate user/company. Previously this path
+    // created a new user and then failed to link the OAuth account with a
+    // duplicate key violation.
+    const existingOAuthAccount = await findOAuthAccount(tempProvider, tempProviderId);
+    if (existingOAuthAccount) {
+      const existingUserResult = await query<{
+        user_id: string;
+        user_email: string | null;
+        user_company_id: string | null;
+      }>(
+        'SELECT * FROM find_user_by_id($1)',
+        [existingOAuthAccount.user_id]
+      );
+      const existingUser = existingUserResult.rows[0];
+
+      if (existingUser && existingUser.user_company_id) {
+        // Set session cookie for the existing account
+        cookieStore.set('session', JSON.stringify({
+          userId: existingUser.user_id,
+          companyId: existingUser.user_company_id,
+          email: existingUser.user_email,
+          provider: tempProvider
+        }), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: '/',
+        });
+
+        return NextResponse.json({ success: true, redirect: '/dashboard' });
+      }
+
+      // OAuth link exists but the user has no company - cannot proceed
+      return NextResponse.json(
+        { error: 'This sign-in is already linked to an incomplete account. Please contact support.' },
+        { status: 409 }
+      );
     }
 
     // Validate email
