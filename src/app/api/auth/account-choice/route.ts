@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { AccountChoiceData } from '@/types/oauth';
 import { validateCompanyCode, createCompany, linkOAuthAccount, findUserByEmail, findOAuthAccount } from '@/lib/oauth';
+import { setTrialExpiration } from '@/lib/subscription';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
@@ -149,6 +150,11 @@ export async function POST(req: Request) {
 
     // Link OAuth account
     await linkOAuthAccount(userData.id, accountData);
+
+    // Activate 3-day trial for the new user (parity with /api/signup and the
+    // NextAuth OAuth flow in src/auth.ts)
+    await setTrialExpiration(userData.id, 3);
+    console.log(`✅ 3-day trial activated for new user ${userData.id}`);
 
     // Set session cookie
     cookieStore.set('session', JSON.stringify({
