@@ -37,11 +37,29 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// Neon's PgBouncer-style pooler doesn't support SCRAM channel binding, so a
+// connection string containing `channel_binding=require` makes the pg Pool
+// hang or terminate ("Connection terminated unexpectedly"). Strip it for the
+// pg client (the neon HTTP driver handles it fine on its own).
+function sanitizeConnectionString(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete('channel_binding');
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: sanitizeConnectionString(process.env.DATABASE_URL),
   ssl: process.env.DATABASE_URL?.includes('localhost') ? false : {
     rejectUnauthorized: false,
   },
+  max: 5,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  keepAlive: true,
 });
 
 export type QueryParams = string | number | boolean | Date | null | Buffer;
@@ -54,6 +72,38 @@ export type QueryParams = string | number | boolean | Date | null | Buffer;
 export async function query<T extends QueryResultRow = Record<string, unknown>>(
   sql: string,
   params: QueryParams[] = [],
+  companyId?: string,
+  userRole?: 'user' | 'admin' | 'superadmin'
+): Promise<QueryResult<T>> {
+  // Retry transient connection failures (Neon pooler can drop idle or
+  // slow-to-establish connections, which surfaces as "Connection terminated
+  // unexpectedly" and previously killed the OAuth sign-in flow).
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      return await runQuery(sql, params, companyId, userRole);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const isTransient =
+        message.includes('Connection terminated') ||
+        message.includes('connection timeout') ||
+        message.includes('ECONNRESET') ||
+        message.includes('ETIMEDOUT') ||
+        message.includes('Connection refused') ||
+        message.includes('connect ETIMEDOUT') ||
+        message.includes('pool is draining') ||
+        message.includes('timeout expired');
+      lastError = error;
+      if (!isTransient || attempt === 2) break;
+      await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+async function runQuery<T extends QueryResultRow = Record<string, unknown>>(
+  sql: string,
+  params: QueryParams[],
   companyId?: string,
   userRole?: 'user' | 'admin' | 'superadmin'
 ): Promise<QueryResult<T>> {
