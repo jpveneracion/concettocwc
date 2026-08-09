@@ -73,41 +73,45 @@ export async function POST(req: Request) {
 
     let companyId: string;
 
-    if (data.action === 'join') {
-      // Join existing company
-      if (!data.company_code) {
-        return NextResponse.json({ error: 'Company code required' }, { status: 400 });
-      }
-
-      const company = await validateCompanyCode(data.company_code);
-      if (!company) {
-        return NextResponse.json({ error: 'Invalid company code' }, { status: 400 });
-      }
-
-      companyId = company.id;
-    } else {
-      // Create new company
-      if (!data.company_name) {
-        return NextResponse.json({ error: 'Company name required' }, { status: 400 });
-      }
-      const minimumArea = Number(data.minimum_area_sqft);
-      if (!Number.isFinite(minimumArea) || minimumArea < 0) {
-        return NextResponse.json({ error: 'Minimum area is required and must be 0 or greater' }, { status: 400 });
-      }
-
-      // Generate unique company code
-      const companyCode = await generateUniqueCompanyCode();
-      const company = await createCompany({
-        code: companyCode,
-        name: data.company_name,
-        address: data.company_address || '',
-        mobile: data.company_mobile || '',
-        email: data.company_email || '',
-        minimum_area_sqft: minimumArea
-      });
-
-      companyId = company.id;
+    // Join company flow - DISABLED for now (commented out)
+    // if (data.action === 'join') {
+    //   // Join existing company
+    //   if (!data.company_code) {
+    //     return NextResponse.json({ error: 'Company code required' }, { status: 400 });
+    //   }
+    //
+    //   const company = await validateCompanyCode(data.company_code);
+    //   if (!company) {
+    //     return NextResponse.json({ error: 'Invalid company code' }, { status: 400 });
+    //   }
+    //
+    //   companyId = company.id;
+    // } else {
+    // Create new company
+    if (data.action !== 'create') {
+      return NextResponse.json({ error: 'Unsupported action' }, { status: 400 });
     }
+    if (!data.company_name) {
+      return NextResponse.json({ error: 'Company name required' }, { status: 400 });
+    }
+    const minimumArea = Number(data.minimum_area_sqft);
+    if (!Number.isFinite(minimumArea) || minimumArea < 0) {
+      return NextResponse.json({ error: 'Minimum area is required and must be 0 or greater' }, { status: 400 });
+    }
+
+    // Generate unique company code
+    const companyCode = await generateUniqueCompanyCode();
+    const company = await createCompany({
+      code: companyCode,
+      name: data.company_name,
+      address: data.company_address || '',
+      mobile: data.company_mobile || '',
+      email: data.company_email || '',
+      minimum_area_sqft: minimumArea
+    });
+
+    companyId = company.id;
+    // }
 
     // Create user with OAuth account
     const accountData = {
@@ -173,7 +177,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       redirect: '/dashboard',
-      company: { code: data.action === 'join' ? data.company_code : null }
+      // company: { code: data.action === 'join' ? data.company_code : null } // Join flow disabled
     });
 
   } catch (error) {

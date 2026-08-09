@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AccountChoicePage() {
   const router = useRouter();
-  const [action, setAction] = useState<'join' | 'create'>('join');
+  const [action, setAction] = useState<'join' | 'create'>('create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [piUser, setPiUser] = useState<any>(null);
@@ -72,15 +72,16 @@ export default function AccountChoicePage() {
         body: JSON.stringify({
           action,
           email: formData.email,
-          ...(action === 'join' ? {
-            company_code: formData.company_code
-          } : {
-            company_name: formData.company_name,
-            company_address: formData.company_address,
-            company_mobile: formData.company_mobile,
-            company_email: formData.company_email,
-            minimum_area_sqft: parseFloat(formData.minimum_area_sqft) || 0
-          })
+          // Join company payload - DISABLED for now (commented out)
+          // ...(action === 'join' ? {
+          //   company_code: formData.company_code
+          // } : {
+          company_name: formData.company_name,
+          company_address: formData.company_address,
+          company_mobile: formData.company_mobile,
+          company_email: formData.company_email,
+          minimum_area_sqft: parseFloat(formData.minimum_area_sqft) || 0
+          // })
         })
       });
 
@@ -114,15 +115,16 @@ export default function AccountChoicePage() {
         </div>
 
         {/* Action Toggle */}
+        {/* Join company flow is disabled for now - every company is self-created */}
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-          <button
+          {/* <button
             onClick={() => setAction('join')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               action === 'join' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
             }`}
           >
             Join Company
-          </button>
+          </button> */}
           <button
             onClick={() => setAction('create')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -150,7 +152,7 @@ export default function AccountChoicePage() {
           </div>
 
           {action === 'join' ? (
-            /* Join Existing Company */
+            /* Join Existing Company - DISABLED for now (commented out)
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Company Code *
@@ -164,6 +166,8 @@ export default function AccountChoicePage() {
                 required
               />
             </div>
+            */
+            <></>
           ) : (
             /* Create New Company */
             <>
@@ -250,7 +254,7 @@ export default function AccountChoicePage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 md:py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
-            {loading ? 'Creating Account...' : (action === 'join' ? 'Join Company' : 'Create Account')}
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
       </div>
