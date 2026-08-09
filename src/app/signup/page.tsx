@@ -1,11 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+type CodeStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 export default function SignUpPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [codeStatus, setCodeStatus] = useState<CodeStatus>('idle');
 
   // Company info
   const [companyCode, setCompanyCode] = useState('');
@@ -21,6 +24,26 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Debounced async availability check for the company code
+  useEffect(() => {
+    const code = companyCode.trim().toUpperCase();
+    if (code.length < 2) {
+      setCodeStatus('idle');
+      return;
+    }
+    setCodeStatus('checking');
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/company-code-available?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        setCodeStatus(res.ok && data.available ? 'available' : 'taken');
+      } catch {
+        setCodeStatus('idle');
+      }
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [companyCode]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -28,6 +51,10 @@ export default function SignUpPage() {
     // Validation
     if (!companyCode.trim() || !companyName.trim()) {
       setError('Company code and name are required');
+      return;
+    }
+    if (codeStatus === 'taken') {
+      setError('Company code is already taken. Please choose a different code.');
       return;
     }
     const minimumAreaNum = Number(minimumArea);
@@ -116,6 +143,15 @@ export default function SignUpPage() {
                       required
                     />
                     <p className="text-xs text-gray-400 mt-1">Short code for quotes (e.g., CWC)</p>
+                    {codeStatus === 'checking' && (
+                      <p className="text-xs text-gray-500 mt-1">Checking availability...</p>
+                    )}
+                    {codeStatus === 'available' && (
+                      <p className="text-xs text-green-600 mt-1">✓ Code is available</p>
+                    )}
+                    {codeStatus === 'taken' && (
+                      <p className="text-xs text-red-500 mt-1">✗ This code is already taken</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
