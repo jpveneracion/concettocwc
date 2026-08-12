@@ -43,8 +43,25 @@ export interface RestrictionState {
   subscriptionActive: boolean;
   allowedOperations: OperationType[];
   restrictionReason?: string;
+  /**
+   * True when subscribed (no date limit).
+   * When trial is active, dates beyond today are still blocked for trial users
+   * (they can create orders up to today, not into the future).
+   * Previously this meant "can create future orders" but that was wrong —
+   * trial users should be restricted to their trial window.
+   */
   canCreatePastOrders: boolean;
+  /**
+   * True only when subscription is active. For trial users this is false —
+   * they can only create orders within their trial window.
+   */
   canCreateFutureOrders: boolean;
+  /**
+   * Maximum allowed order date (YYYY-MM-DD string for date input max attr).
+   * null = no limit (subscribed or active trial).
+   * For expired trials: last day strictly before trial_expires_at (never rolls).
+   */
+  maxOrderDate: string | null;
 }
 
 /**

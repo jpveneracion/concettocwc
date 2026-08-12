@@ -168,7 +168,7 @@ export function createUTCDate(
  */
 export function addUTCDays(date: Date, days: number): Date {
   const result = new Date(date);
-  result.setDate(result.getUTCDate() + days);
+  result.setUTCDate(result.getUTCDate() + days);
   return result;
 }
 

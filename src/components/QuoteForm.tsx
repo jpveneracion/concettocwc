@@ -3,7 +3,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Quote, QuoteItem, MeasureUnit } from '@/types';
 import { calcFinalSize, calcAreaSqft, calcAmounts, phpFormat } from '@/lib/calc';
-import { isPastDatedQuote as computeIsPastDated } from '@/lib/utc-utils';
+import { isPastDatedQuote as computeIsPastDated, toUTCMidnight } from '@/lib/utc-utils';
+import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
 import ProductCreationModal from './ProductCreationModal';
 
 type ItemRow = Omit<QuoteItem, 'id' | 'quote_id'> & { _key: string };
@@ -51,8 +52,10 @@ interface Props {
 
 export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers }: Props) {
   const router = useRouter();
+  const { maxOrderDate } = useTrialRestrictions();
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [dateError, setDateError] = useState('');
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
   const [customer, setCustomer] = useState(existing?.customer_name ?? '');
@@ -165,6 +168,18 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
   async function handleSubmit() {
     // Clear previous errors
     setFormError('');
+    setDateError('');
+
+    // Trial restriction: block dates beyond the user's hard max (trial_expires_at)
+    if (date && maxOrderDate) {
+      const selectedDate = toUTCMidnight(new Date(date));
+      const maxDate = toUTCMidnight(new Date(maxOrderDate));
+
+      if (selectedDate > maxDate) {
+        setDateError(`Orders are limited to dates on or before ${maxOrderDate}. This limit does not change.`);
+        return;
+      }
+    }
 
     if (!customer.trim()) {
       setFormError('Customer name is required.');
@@ -224,7 +239,16 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
     if (res.ok) {
       router.push('/quotes');
     } else {
-      setFormError('Failed to save quote. Please try again.');
+      try {
+        const data = await res.json();
+        if (res.status === 403 && data.restrictionType === 'future_orders_blocked') {
+          setDateError(data.error || 'Future dates are not allowed after trial expiration.');
+        } else {
+          setFormError(data.error || 'Failed to save quote. Please try again.');
+        }
+      } catch {
+        setFormError('Failed to save quote. Please try again.');
+      }
     }
   }
 
@@ -279,7 +303,17 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Date</label>
-            <input type="date" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input
+              type="date"
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setDateError(''); }}
+              max={maxOrderDate ?? undefined}
+            />
+            {dateError && <p className="text-xs text-red-500 mt-1">{dateError}</p>}
+            {maxOrderDate && !dateError && (
+              <p className="text-xs text-gray-500 mt-1">Orders are limited to dates on or before {maxOrderDate}</p>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

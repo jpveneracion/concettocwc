@@ -117,15 +117,19 @@ export async function POST(req: Request) {
       const { quote_date } = body;
 
       // Validate trial restrictions for quote creation
-      if (quote_date) {
-        const validationResult = await validateQuoteCreation(
-          session,
-          new Date(quote_date)
+      if (!quote_date) {
+        return NextResponse.json(
+          { error: 'quote_date is required', restrictionType: 'validation_error' },
+          { status: 400 }
         );
+      }
+      const validationResult = await validateQuoteCreation(
+        session,
+        new Date(quote_date)
+      );
 
-        if (!validationResult.allowed) {
-          return restrictionErrorResponse(validationResult);
-        }
+      if (!validationResult.allowed) {
+        return restrictionErrorResponse(validationResult);
       }
 
       // Check subscription access - require full access for quote creation

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import type { RestrictionState, RestrictionLevel } from '@/types/trial-restrictions';
 
 interface TrialRestrictionContextType {
@@ -11,6 +12,11 @@ interface TrialRestrictionContextType {
   canCreateFutureOrders: boolean;
   canViewDashboard: boolean;
   canCreatePastOrders: boolean;
+  /**
+   * Maximum allowed order date (YYYY-MM-DD) for the date input max attribute.
+   * null = no limit (subscribed).
+   */
+  maxOrderDate: string | null;
 
   // Loading/error states
   isLoading: boolean;
@@ -27,14 +33,17 @@ interface TrialRestrictionProviderProps {
 }
 
 export function TrialRestrictionProvider({ children }: TrialRestrictionProviderProps) {
+  const pathname = usePathname();
+  // Default to restrictive - block future orders until server confirms trial is active
   const [state, setState] = useState<RestrictionState>({
-    level: 'none' as RestrictionLevel,
-    trialExpired: false,
+    level: 'partial' as RestrictionLevel,
+    trialExpired: true,
     trialExpiresAt: null,
     subscriptionActive: false,
     allowedOperations: [],
     canCreatePastOrders: true,
-    canCreateFutureOrders: true
+    canCreateFutureOrders: false,
+    maxOrderDate: null
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,15 +63,16 @@ export function TrialRestrictionProvider({ children }: TrialRestrictionProviderP
     } catch (err) {
       console.error('Failed to fetch restriction state:', err);
       setError('Failed to load restriction state');
-      // Set safe defaults on error
+      // Fail closed - assume user is restricted if we can't verify their trial status
       setState({
-        level: 'none' as RestrictionLevel,
-        trialExpired: false,
+        level: 'partial' as RestrictionLevel,
+        trialExpired: true,
         trialExpiresAt: null,
         subscriptionActive: false,
         allowedOperations: [],
         canCreatePastOrders: true,
-        canCreateFutureOrders: true
+        canCreateFutureOrders: false,
+        maxOrderDate: null
       });
     } finally {
       setIsLoading(false);
@@ -71,7 +81,7 @@ export function TrialRestrictionProvider({ children }: TrialRestrictionProviderP
 
   useEffect(() => {
     fetchRestrictionState();
-  }, [fetchRestrictionState]);
+  }, [fetchRestrictionState, pathname]);
 
   const refreshRestrictions = useCallback(async () => {
     await fetchRestrictionState();
@@ -83,6 +93,7 @@ export function TrialRestrictionProvider({ children }: TrialRestrictionProviderP
     canCreateFutureOrders: state.canCreateFutureOrders,
     canViewDashboard: true, // Always true after trial
     canCreatePastOrders: state.canCreatePastOrders,
+    maxOrderDate: state.maxOrderDate,
     isLoading,
     error,
     refreshRestrictions
@@ -102,17 +113,19 @@ export function useTrialRestrictions() {
     console.warn('useTrialRestrictions called outside of TrialRestrictionProvider - using safe defaults');
     return {
       state: {
-        level: 'none' as RestrictionLevel,
-        trialExpired: false,
+        level: 'partial' as RestrictionLevel,
+        trialExpired: true,
         trialExpiresAt: null,
         subscriptionActive: false,
         allowedOperations: [],
         canCreatePastOrders: true,
-        canCreateFutureOrders: true
+        canCreateFutureOrders: false,
+        maxOrderDate: null
       },
-      canCreateFutureOrders: true,
+      canCreateFutureOrders: false,
       canViewDashboard: true,
       canCreatePastOrders: true,
+      maxOrderDate: null,
       isLoading: false,
       error: null,
       refreshRestrictions: async () => {

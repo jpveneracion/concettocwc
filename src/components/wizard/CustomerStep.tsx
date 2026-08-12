@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useWizard } from '@/components/QuoteWizard';
 import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
-import { getUTCMidnight, toUTCMidnight, isFutureUTCDate, isPastDatedQuote } from '@/lib/utc-utils';
+import { toUTCMidnight, isPastDatedQuote } from '@/lib/utc-utils';
 
 interface CustomerData {
   customer_name: string;
@@ -21,7 +21,7 @@ interface CustomerStepProps {
 
 export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existingData }: CustomerStepProps) {
   const { setStepData } = useWizard();
-  const { canCreateFutureOrders, isLoading: restrictionsLoading } = useTrialRestrictions();
+  const { maxOrderDate, isLoading: restrictionsLoading } = useTrialRestrictions();
 
   const [customer, setCustomer] = useState(existingData?.customer_name ?? '');
   const [address, setAddress] = useState(existingData?.customer_address ?? '');
@@ -61,19 +61,18 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
       setStepData('customer', data);
     }
 
-    // Check for future date restrictions
-    if (!restrictionsLoading && date) {
-      const selectedDate = new Date(date);
-      const todayUTC = getUTCMidnight();
-      const selectedDateUTC = toUTCMidnight(selectedDate);
+    // Check date against the user's max order date (trial_expires_at based)
+    if (!restrictionsLoading && date && maxOrderDate) {
+      const selectedDate = toUTCMidnight(new Date(date));
+      const maxDate = toUTCMidnight(new Date(maxOrderDate));
 
-      if (selectedDateUTC > todayUTC && !canCreateFutureOrders) {
-        setDateWarning('Future dates are not allowed after trial expiration. Please select today or a past date, or activate your subscription.');
+      if (selectedDate > maxDate) {
+        setDateWarning(`Orders are limited to dates on or before ${maxOrderDate}. Please choose an earlier date or activate your subscription.`);
       } else {
         setDateWarning(null);
       }
     }
-  }, [customer, address, date, ref, status, quoteNumberValue, setStepData, canCreateFutureOrders, restrictionsLoading]);
+  }, [customer, address, date, ref, status, quoteNumberValue, setStepData, maxOrderDate, restrictionsLoading]);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -90,14 +89,13 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
       }
     }
 
-    // Check if future date is allowed
-    if (date) {
-      const selectedDate = new Date(date);
-      const todayUTC = getUTCMidnight();
-      const selectedDateUTC = toUTCMidnight(selectedDate);
+    // Check if date exceeds the user's max order date
+    if (date && maxOrderDate) {
+      const selectedDate = toUTCMidnight(new Date(date));
+      const maxDate = toUTCMidnight(new Date(maxOrderDate));
 
-      if (selectedDateUTC > todayUTC && !canCreateFutureOrders) {
-        newErrors.date = 'Future dates require an active subscription. Please select today or a past date.';
+      if (selectedDate > maxDate) {
+        newErrors.date = `Orders are limited to dates on or before ${maxOrderDate}. Please choose an earlier date.`;
       }
     }
 
@@ -150,14 +148,14 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
             className={`w-full border ${errors.date ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm`}
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            max={canCreateFutureOrders ? undefined : new Date().toISOString().slice(0, 10)}
+            max={maxOrderDate ?? undefined}
           />
           {errors.date && <p className="text-xs text-red-500 mt-1">{errors.date}</p>}
           {dateWarning && !errors.date && (
             <p className="text-xs text-amber-600 mt-1">{dateWarning}</p>
           )}
-          {!canCreateFutureOrders && !errors.date && !dateWarning && (
-            <p className="text-xs text-gray-500 mt-1">Only today and past dates are available</p>
+          {maxOrderDate && !errors.date && !dateWarning && (
+            <p className="text-xs text-gray-500 mt-1">Orders are limited to dates on or before {maxOrderDate}</p>
           )}
         </div>
 

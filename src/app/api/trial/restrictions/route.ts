@@ -7,13 +7,14 @@ export async function GET(req: NextRequest) {
     const session = await getSession();
     if (!session?.userId) {
       return NextResponse.json({
-        level: 'none',
-        trialExpired: false,
+        level: 'partial',
+        trialExpired: true,
         trialExpiresAt: null,
         subscriptionActive: false,
         allowedOperations: [],
         canCreatePastOrders: true,
-        canCreateFutureOrders: true
+        canCreateFutureOrders: false,
+        maxOrderDate: null
       });
     }
 
