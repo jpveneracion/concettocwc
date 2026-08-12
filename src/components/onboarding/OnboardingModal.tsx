@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, ArrowLeft, Lightbulb, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { X, ArrowRight, ArrowLeft, Lightbulb } from 'lucide-react';
 
 interface OnboardingStep {
   id: string;
@@ -38,9 +38,7 @@ const onboardingSteps: OnboardingStep[] = [
       '📋 Quotes save automatically as you work',
       '📱 Create quotes on-site using your mobile device'
     ],
-    icon: '📝',
-    actionLabel: 'Try Creating a Quote',
-    actionLink: '/quotes/new'
+    icon: '📝'
   },
   {
     id: 'dashboard',
@@ -107,10 +105,11 @@ const onboardingSteps: OnboardingStep[] = [
 interface OnboardingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSkip?: () => void;
   onComplete?: () => void;
 }
 
-export default function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
+export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const handleNext = () => {
@@ -130,7 +129,10 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
   };
 
   const handleSkip = () => {
-    // Just close, don't mark as complete - can show again next time
+    // Permanently dismiss - mark as skipped in storage
+    if (onSkip) {
+      onSkip();
+    }
     onClose();
   };
 
@@ -143,9 +145,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black bg-opacity-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative border-2 border-indigo-200">
-        {/* Close Button */}
+        {/* Close Button - temporary close, no persistence */}
         <button
-          onClick={handleSkip}
+          onClick={onClose}
           className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors"
           aria-label="Close onboarding"
         >

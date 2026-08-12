@@ -1,12 +1,14 @@
 /**
  * First Login Detection System
  * Tracks whether a user has completed their first login onboarding
+ * Uses hybrid persistence: localStorage (fast fallback) + database (permanent)
  */
 
 const FIRST_LOGIN_KEY = 'concetto_first_login_onboarding_completed';
 
 /**
  * Check if user has completed first login onboarding
+ * Checks localStorage first for fast response
  */
 export function hasCompletedFirstLoginOnboarding(): boolean {
   if (typeof window === 'undefined') return false;
@@ -20,14 +22,37 @@ export function hasCompletedFirstLoginOnboarding(): boolean {
 
 /**
  * Mark first login onboarding as completed
+ * Saves to both localStorage and database
  */
-export function markFirstLoginOnboardingCompleted(): void {
+export async function markFirstLoginOnboardingCompleted(): Promise<void> {
   if (typeof window === 'undefined') return;
 
   try {
+    // Save to localStorage immediately for fast response
     localStorage.setItem(FIRST_LOGIN_KEY, 'true');
+
+    // Also save to database for permanent persistence
+    await syncOnboardingStatus({ completed: true, skipped: false });
   } catch (error) {
     console.error('Error marking first login onboarding complete:', error);
+  }
+}
+
+/**
+ * Mark first login onboarding as skipped
+ * Saves to both localStorage and database (permanent dismissal)
+ */
+export async function markFirstLoginOnboardingSkipped(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Save to localStorage immediately
+    localStorage.setItem(FIRST_LOGIN_KEY, 'true');
+
+    // Also save to database for permanent persistence
+    await syncOnboardingStatus({ completed: false, skipped: true });
+  } catch (error) {
+    console.error('Error marking first login onboarding skipped:', error);
   }
 }
 
@@ -41,6 +66,42 @@ export function resetFirstLoginOnboarding(): void {
     localStorage.removeItem(FIRST_LOGIN_KEY);
   } catch (error) {
     console.error('Error resetting first login onboarding:', error);
+  }
+}
+
+/**
+ * Sync onboarding status with database
+ * @param status - Object containing completed and/or skipped flags
+ */
+async function syncOnboardingStatus(status: { completed?: boolean; skipped?: boolean }): Promise<void> {
+  try {
+    const response = await fetch('/api/auth/me/onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(status)
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to sync onboarding status to database');
+    }
+  } catch (error) {
+    console.warn('Error syncing onboarding status:', error);
+  }
+}
+
+/**
+ * Fetch onboarding status from database
+ * Used to sync localStorage with database on app load
+ */
+export async function fetchOnboardingStatus(): Promise<{ completed: boolean; skipped: boolean } | null> {
+  try {
+    const response = await fetch('/api/auth/me/onboarding');
+    if (response.ok) {
+      return await response.json();
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
 

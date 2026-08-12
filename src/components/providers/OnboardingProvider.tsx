@@ -5,7 +5,7 @@ import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger';
 import { useSession } from '@/hooks/useCustomSession';
 import { FeatureOnboardingModal, OnboardingModal } from '@/components/onboarding';
 import { allOnboardingContent } from '@/components/onboarding/onboarding-content';
-import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted } from '@/lib/onboarding/first-login-tracking';
+import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted, markFirstLoginOnboardingSkipped, fetchOnboardingStatus } from '@/lib/onboarding/first-login-tracking';
 
 interface OnboardingContextType {
   triggerOnboarding: (route?: string) => void;
@@ -85,14 +85,42 @@ export function OnboardingProvider({
     // Only consider once the session has been resolved
     if (sessionStatus === 'loading') return;
 
-    // Add delay before showing general onboarding
-    const timer = setTimeout(() => {
-      if (shouldShowFirstLoginOnboarding(session)) {
-        setShowGeneralOnboarding(true);
-      }
-    }, triggerDelay);
+    // Sync onboarding status from database on mount
+    const syncOnboardingFromDB = async () => {
+      try {
+        const dbStatus = await fetchOnboardingStatus();
+        if (dbStatus && (dbStatus.completed || dbStatus.skipped)) {
+          // Sync localStorage with database status
+          if (dbStatus.completed || dbStatus.skipped) {
+            // User has already completed or skipped onboarding
+            // Don't show the modal
+            return;
+          }
+        }
 
-    return () => clearTimeout(timer);
+        // Add delay before showing general onboarding
+        const timer = setTimeout(() => {
+          if (shouldShowFirstLoginOnboarding(session)) {
+            setShowGeneralOnboarding(true);
+          }
+        }, triggerDelay);
+
+        return () => clearTimeout(timer);
+      } catch (error) {
+        console.error('Error syncing onboarding status:', error);
+
+        // Fallback to existing logic if DB sync fails
+        const timer = setTimeout(() => {
+          if (shouldShowFirstLoginOnboarding(session)) {
+            setShowGeneralOnboarding(true);
+          }
+        }, triggerDelay);
+
+        return () => clearTimeout(timer);
+      }
+    };
+
+    syncOnboardingFromDB();
   }, [enabled, triggerDelay, session, sessionStatus]);
 
   // Handle modal close
@@ -115,9 +143,15 @@ export function OnboardingProvider({
     setShowGeneralOnboarding(false);
   };
 
-  // Handle general onboarding skip
+  // Handle general onboarding skip - permanent dismissal
   const handleGeneralOnboardingSkip = () => {
-    // Don't mark as complete - can show again next login
+    // Mark as skipped in both localStorage and database
+    markFirstLoginOnboardingSkipped();
+    setShowGeneralOnboarding(false);
+  };
+
+  // Handle temporary close (X button) - no persistence
+  const handleGeneralOnboardingClose = () => {
     setShowGeneralOnboarding(false);
   };
 
@@ -154,7 +188,8 @@ export function OnboardingProvider({
       {showGeneralOnboarding && (
         <OnboardingModal
           isOpen={showGeneralOnboarding}
-          onClose={handleGeneralOnboardingSkip}
+          onClose={handleGeneralOnboardingClose}
+          onSkip={handleGeneralOnboardingSkip}
         />
       )}
 
