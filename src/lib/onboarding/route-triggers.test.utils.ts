@@ -19,12 +19,12 @@ import {
   shouldTriggerOnboarding,
   getFeatureForRoute,
   getOnboardingTriggers,
-  getHighestPriorityOnboarding,
   resetUserOnboarding,
   getUserOnboardingStats,
   type OnboardingTrigger,
   type UserOnboardingState
 } from './index';
+import { getHighestPriorityOnboarding } from './user-tracking';
 
 /**
  * Test utility to simulate a user session

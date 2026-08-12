@@ -108,8 +108,24 @@ export function useOnboardingTrigger(
       return;
     }
 
+    // Admins are excluded from automatic onboarding
+    if (respectAdminExclusion) {
+      const userRole = session.role || 'user';
+      const isAdminUser = userRole === 'admin' || userRole === 'superadmin' || session.isAdmin === true;
+      if (isAdminUser) {
+        setTriggerState(prev => ({
+          ...prev,
+          shouldShow: false,
+          featureId: null,
+          route: null,
+          isLoading: false
+        }));
+        return;
+      }
+    }
+
     // Get current user ID
-    const userId = getCurrentUserId();
+    const userId = session.userId || getCurrentUserId();
     if (!userId) {
       setTriggerState(prev => ({
         ...prev,
@@ -138,14 +154,14 @@ export function useOnboardingTrigger(
     if (pathname) {
       recordRouteVisit(pathname, userId);
     }
-  }, [enabled, status, session, pathname, autoTrigger]);
+  }, [enabled, status, session, pathname, autoTrigger, respectAdminExclusion]);
 
   /**
    * Manually trigger onboarding for a specific route
    */
   const triggerOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = getCurrentUserId();
+    const userId = session?.userId || getCurrentUserId();
 
     if (!userId) {
       console.warn('Cannot trigger onboarding: no user logged in');
@@ -180,14 +196,14 @@ export function useOnboardingTrigger(
         });
       }
     }
-  }, [pathname]);
+  }, [pathname, session]);
 
   /**
    * Mark onboarding as completed for a route
    */
   const completeOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = getCurrentUserId();
+    const userId = session?.userId || getCurrentUserId();
 
     if (!userId) return;
 
@@ -200,14 +216,14 @@ export function useOnboardingTrigger(
       route: null,
       stats: getUserOnboardingStats(userId)
     }));
-  }, [pathname]);
+  }, [pathname, session]);
 
   /**
    * Skip onboarding for a route
    */
   const skipOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = getCurrentUserId();
+    const userId = session?.userId || getCurrentUserId();
 
     if (!userId) return;
 
@@ -220,7 +236,7 @@ export function useOnboardingTrigger(
       route: null,
       stats: getUserOnboardingStats(userId)
     }));
-  }, [pathname]);
+  }, [pathname, session]);
 
   /**
    * Reset current trigger state
@@ -238,9 +254,9 @@ export function useOnboardingTrigger(
    * Check if onboarding can be shown for a specific route
    */
   const canShowForRoute = useCallback((route: string) => {
-    const userId = getCurrentUserId();
+    const userId = session?.userId || getCurrentUserId();
     return shouldTriggerOnboarding(route, userId);
-  }, []);
+  }, [session]);
 
   // Effect to monitor route changes and update trigger state
   useEffect(() => {
@@ -267,11 +283,11 @@ export function useOnboardingTrigger(
   useEffect(() => {
     if (typeof window === 'undefined' || status !== 'authenticated') return;
 
-    const userId = getCurrentUserId();
+    const userId = session?.userId;
     if (userId && pathname) {
       recordRouteVisit(pathname, userId);
     }
-  }, [status, pathname]);
+  }, [status, session, pathname]);
 
   return {
     ...triggerState,

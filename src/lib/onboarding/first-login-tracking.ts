@@ -45,19 +45,43 @@ export function resetFirstLoginOnboarding(): void {
 }
 
 /**
- * Check if this is eligible for first login onboarding
- * (authenticated + hasn't completed it yet)
+ * Minimal session shape used for the first-login eligibility check.
+ * Avoids importing server-only modules (next/headers) into client code.
  */
-export function shouldShowFirstLoginOnboarding(): boolean {
+export interface FirstLoginSessionLike {
+  userId?: string | null;
+  role?: string | null;
+  isAdmin?: boolean;
+}
+
+/**
+ * Check if this is eligible for first login onboarding
+ * (authenticated + not an admin + hasn't completed it yet)
+ *
+ * @param session The client session (from useSession). When provided, the
+ *        session is trusted; otherwise falls back to the legacy localStorage
+ *        'session' key for backward compatibility.
+ */
+export function shouldShowFirstLoginOnboarding(session?: FirstLoginSessionLike | null): boolean {
   if (typeof window === 'undefined') return false;
 
   try {
-    const sessionStr = localStorage.getItem('session');
-    if (!sessionStr) return false;
+    let isAuthenticated = false;
+    let isAdmin = false;
 
-    const session = JSON.parse(sessionStr);
-    const isAuthenticated = !!session.userId;
-    const isAdmin = session.isAdmin || session.userId === '1';
+    if (session) {
+      isAuthenticated = !!session.userId;
+      const userRole = session.role || 'user';
+      isAdmin = userRole === 'admin' || userRole === 'superadmin' || session.isAdmin === true;
+    } else {
+      // Legacy fallback: read the session from localStorage if present
+      const sessionStr = localStorage.getItem('session');
+      if (!sessionStr) return false;
+
+      const legacySession = JSON.parse(sessionStr);
+      isAuthenticated = !!legacySession.userId;
+      isAdmin = legacySession.isAdmin || legacySession.userId === '1';
+    }
 
     return isAuthenticated && !isAdmin && !hasCompletedFirstLoginOnboarding();
   } catch {

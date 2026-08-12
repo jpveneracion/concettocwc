@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession as useNextAuthSession } from 'next-auth/react';
 
 export interface Session {
   userId: string;
@@ -19,46 +18,65 @@ export interface UseSessionReturn {
 
 /**
  * Custom hook that provides the same interface as next-auth's useSession
- * but works with our custom cookie-based session system
- * Uses document.cookie for client-side session access
+ * but works with our custom cookie-based session system.
+ *
+ * The session cookie is httpOnly, so it cannot be read via document.cookie.
+ * Instead we fetch /api/auth/me which reads the cookie server-side.
  */
 export function useSession(): UseSessionReturn {
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
 
   useEffect(() => {
-    function loadSessionFromCookie() {
-      try {
-        // Access session cookie directly from client-side
-        const sessionCookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('session='));
+    let cancelled = false;
+    let inFlight = false;
 
-        if (!sessionCookie) {
-          setSession(null);
-          setStatus('unauthenticated');
-          return;
+    async function loadSession() {
+      if (inFlight) return;
+      inFlight = true;
+
+      try {
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Session endpoint returned ${response.status}`);
         }
 
-        // Parse the cookie value
-        const cookieValue = sessionCookie.split('=')[1];
-        const sessionData = JSON.parse(decodeURIComponent(cookieValue)) as Session;
+        const data = await response.json();
 
-        setSession(sessionData);
-        setStatus('authenticated');
+        if (cancelled) return;
+
+        if (data.userId) {
+          setSession(data as Session);
+          setStatus('authenticated');
+        } else {
+          setSession(null);
+          setStatus('unauthenticated');
+        }
       } catch (error) {
-        console.error('Failed to parse session cookie:', error);
-        setSession(null);
-        setStatus('unauthenticated');
+        console.error('Failed to fetch session:', error);
+        if (!cancelled) {
+          setSession(null);
+          setStatus('unauthenticated');
+        }
+      } finally {
+        inFlight = false;
       }
     }
 
-    loadSessionFromCookie();
+    void loadSession();
 
-    // Set up interval to check for session changes
-    const interval = setInterval(loadSessionFromCookie, 5000); // Check every 5 seconds
+    // Poll periodically so login/logout are picked up without a page reload
+    const interval = setInterval(() => void loadSession(), 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   return { data: session, status };

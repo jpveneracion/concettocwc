@@ -2,6 +2,7 @@
 
 import React, { useEffect, createContext, useContext, useState } from 'react';
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger';
+import { useSession } from '@/hooks/useCustomSession';
 import { FeatureOnboardingModal, OnboardingModal } from '@/components/onboarding';
 import { allOnboardingContent } from '@/components/onboarding/onboarding-content';
 import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted } from '@/lib/onboarding/first-login-tracking';
@@ -72,6 +73,8 @@ export function OnboardingProvider({
     autoTrigger
   });
 
+  const { data: session, status: sessionStatus } = useSession();
+
   // First login onboarding state
   const [showGeneralOnboarding, setShowGeneralOnboarding] = useState(false);
 
@@ -79,15 +82,18 @@ export function OnboardingProvider({
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
 
+    // Only consider once the session has been resolved
+    if (sessionStatus === 'loading') return;
+
     // Add delay before showing general onboarding
     const timer = setTimeout(() => {
-      if (shouldShowFirstLoginOnboarding()) {
+      if (shouldShowFirstLoginOnboarding(session)) {
         setShowGeneralOnboarding(true);
       }
     }, triggerDelay);
 
     return () => clearTimeout(timer);
-  }, [enabled, triggerDelay]);
+  }, [enabled, triggerDelay, session, sessionStatus]);
 
   // Handle modal close
   const handleClose = () => {
