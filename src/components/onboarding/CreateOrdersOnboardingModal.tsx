@@ -148,9 +148,7 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         '⚡ Switch to Traditional Form once you\'re comfortable with the process',
         '🏆 Both methods create the same professional, accurate quotes'
       ],
-      icon: '🚀',
-      actionLabel: 'Start Creating Quotes',
-      actionLink: '/quotes/new'
+      icon: '🚀'
     }
   ]
 };

@@ -60,9 +60,7 @@ export const dashboardOnboarding: FeatureOnboardingContent = {
         '🎯 Focus on products with high popularity to boost sales',
         '🤝 Reach out to top customers with special offers or new products'
       ],
-      icon: '🚀',
-      actionLabel: 'Go to Dashboard',
-      actionLink: '/dashboard'
+      icon: '🚀'
     }
   ]
 };
@@ -154,9 +152,7 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         '🔔 Check quote status regularly to follow up with customers',
         '📊 Track your conversion rate to improve sales process'
       ],
-      icon: '📋',
-      actionLabel: 'Create Your First Quote',
-      actionLink: '/quotes/new'
+      icon: '📋'
     }
   ]
 };
@@ -236,9 +232,7 @@ export const productsOnboarding: FeatureOnboardingContent = {
         '🔗 Link product selection directly to customer preferences',
         '💰 Product pricing updates automatically in quotes'
       ],
-      icon: '💼',
-      actionLabel: 'Browse Products',
-      actionLink: '/products'
+      icon: '💼'
     }
   ]
 };
@@ -319,9 +313,7 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         '🎯 Well-configured settings save time and improve professionalism',
         '🚀 Your business info now appears consistently in all communications'
       ],
-      icon: '✅',
-      actionLabel: 'Go to Settings',
-      actionLink: '/settings'
+      icon: '✅'
     }
   ]
 };

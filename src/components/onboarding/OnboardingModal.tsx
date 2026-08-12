@@ -51,9 +51,7 @@ const onboardingSteps: OnboardingStep[] = [
       '📊 Check your dashboard daily for quick insights',
       '📈 Use trends to plan inventory and marketing'
     ],
-    icon: '📊',
-    actionLabel: 'Visit Your Dashboard',
-    actionLink: '/dashboard'
+    icon: '📊'
   },
   {
     id: 'products',
@@ -66,9 +64,7 @@ const onboardingSteps: OnboardingStep[] = [
       '🔍 Search and filter to find the right products quickly',
       '🏷️ Product codes make quote creation fast and accurate'
     ],
-    icon: '🏷️',
-    actionLabel: 'Browse Products',
-    actionLink: '/products'
+    icon: '🏷️'
   },
   {
     id: 'settings',
@@ -81,9 +77,7 @@ const onboardingSteps: OnboardingStep[] = [
       '⚙️ Set up once, use everywhere - updates apply automatically',
       '🏢 Your company branding appears on all documents'
     ],
-    icon: '⚙️',
-    actionLabel: 'Configure Settings',
-    actionLink: '/settings'
+    icon: '⚙️'
   },
   {
     id: 'get-started',
@@ -96,9 +90,7 @@ const onboardingSteps: OnboardingStep[] = [
       '🎯 Focus on one feature at a time - quotes are a great starting point',
       '❓ Need help? Each section has its own detailed guide'
     ],
-    icon: '✨',
-    actionLabel: 'Start Creating Quotes',
-    actionLink: '/quotes/new'
+    icon: '✨'
   }
 ];
 
