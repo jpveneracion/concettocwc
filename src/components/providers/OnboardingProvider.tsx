@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, createContext, useContext, useState } from 'react';
+import React, { useEffect, createContext, useContext, useRef, useState } from 'react';
 import { useOnboardingTrigger } from '@/hooks/useOnboardingTrigger';
 import { useSession } from '@/hooks/useCustomSession';
 import { FeatureOnboardingModal, OnboardingModal } from '@/components/onboarding';
 import { allOnboardingContent } from '@/components/onboarding/onboarding-content';
-import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted, markFirstLoginOnboardingSkipped, fetchOnboardingStatus } from '@/lib/onboarding/first-login-tracking';
+import { shouldShowFirstLoginOnboarding, markFirstLoginOnboardingCompleted, markFirstLoginOnboardingSkipped, fetchOnboardingStatus, applyDatabaseOnboardingStatus } from '@/lib/onboarding/first-login-tracking';
 
 interface OnboardingContextType {
   triggerOnboarding: (route?: string) => void;
@@ -74,6 +74,8 @@ export function OnboardingProvider({
   });
 
   const { data: session, status: sessionStatus } = useSession();
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // First login onboarding state
   const [showGeneralOnboarding, setShowGeneralOnboarding] = useState(false);
@@ -82,46 +84,37 @@ export function OnboardingProvider({
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
 
-    // Only consider once the session has been resolved
-    if (sessionStatus === 'loading') return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     // Sync onboarding status from database on mount
     const syncOnboardingFromDB = async () => {
-      try {
-        const dbStatus = await fetchOnboardingStatus();
-        if (dbStatus && (dbStatus.completed || dbStatus.skipped)) {
-          // Sync localStorage with database status
-          if (dbStatus.completed || dbStatus.skipped) {
-            // User has already completed or skipped onboarding
-            // Don't show the modal
-            return;
-          }
-        }
+      if (sessionStatus === 'loading') return;
 
-        // Add delay before showing general onboarding
-        const timer = setTimeout(() => {
-          if (shouldShowFirstLoginOnboarding(session)) {
-            setShowGeneralOnboarding(true);
-          }
-        }, triggerDelay);
+      const dbStatus = await fetchOnboardingStatus();
 
-        return () => clearTimeout(timer);
-      } catch (error) {
-        console.error('Error syncing onboarding status:', error);
-
-        // Fallback to existing logic if DB sync fails
-        const timer = setTimeout(() => {
-          if (shouldShowFirstLoginOnboarding(session)) {
-            setShowGeneralOnboarding(true);
-          }
-        }, triggerDelay);
-
-        return () => clearTimeout(timer);
+      // If the DB says the user already completed/skipped, mirror that
+      // into localStorage so it also applies on devices with stale storage
+      applyDatabaseOnboardingStatus(dbStatus);
+      if (cancelled || (dbStatus && (dbStatus.completed || dbStatus.skipped))) {
+        return;
       }
+
+      // Add delay before showing general onboarding
+      timer = setTimeout(() => {
+        if (!cancelled && shouldShowFirstLoginOnboarding(sessionRef.current)) {
+          setShowGeneralOnboarding(true);
+        }
+      }, triggerDelay);
     };
 
-    syncOnboardingFromDB();
-  }, [enabled, triggerDelay, session, sessionStatus]);
+    void syncOnboardingFromDB();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [enabled, triggerDelay, sessionStatus]);
 
   // Handle modal close
   const handleClose = () => {

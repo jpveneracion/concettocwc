@@ -71,6 +71,8 @@ export function useOnboardingTrigger(
   const router = useRouter();
   const { data: session, status } = useSession();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // State management
   const [triggerState, setTriggerState] = useState<OnboardingTriggerState>({
@@ -89,6 +91,8 @@ export function useOnboardingTrigger(
       setTriggerState(prev => ({ ...prev, isLoading: false }));
       return;
     }
+
+    const session = sessionRef.current;
 
     // Wait for session to be determined
     if (status === 'loading') {
@@ -154,14 +158,14 @@ export function useOnboardingTrigger(
     if (pathname) {
       recordRouteVisit(pathname, userId);
     }
-  }, [enabled, status, session, pathname, autoTrigger, respectAdminExclusion]);
+  }, [enabled, status, pathname, autoTrigger, respectAdminExclusion]);
 
   /**
    * Manually trigger onboarding for a specific route
    */
   const triggerOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = session?.userId || getCurrentUserId();
+    const userId = sessionRef.current?.userId || getCurrentUserId();
 
     if (!userId) {
       console.warn('Cannot trigger onboarding: no user logged in');
@@ -196,14 +200,14 @@ export function useOnboardingTrigger(
         });
       }
     }
-  }, [pathname, session]);
+  }, [pathname]);
 
   /**
    * Mark onboarding as completed for a route
    */
   const completeOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = session?.userId || getCurrentUserId();
+    const userId = sessionRef.current?.userId || getCurrentUserId();
 
     if (!userId) return;
 
@@ -223,7 +227,7 @@ export function useOnboardingTrigger(
    */
   const skipOnboarding = useCallback((route?: string) => {
     const targetRoute = route || pathname;
-    const userId = session?.userId || getCurrentUserId();
+    const userId = sessionRef.current?.userId || getCurrentUserId();
 
     if (!userId) return;
 
@@ -236,7 +240,7 @@ export function useOnboardingTrigger(
       route: null,
       stats: getUserOnboardingStats(userId)
     }));
-  }, [pathname, session]);
+  }, [pathname]);
 
   /**
    * Reset current trigger state
@@ -254,9 +258,9 @@ export function useOnboardingTrigger(
    * Check if onboarding can be shown for a specific route
    */
   const canShowForRoute = useCallback((route: string) => {
-    const userId = session?.userId || getCurrentUserId();
+    const userId = sessionRef.current?.userId || getCurrentUserId();
     return shouldTriggerOnboarding(route, userId);
-  }, [session]);
+  }, []);
 
   // Effect to monitor route changes and update trigger state
   useEffect(() => {
@@ -277,17 +281,7 @@ export function useOnboardingTrigger(
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [pathname, status, session, updateTriggerState, triggerDelay]);
-
-  // Record initial visit on mount
-  useEffect(() => {
-    if (typeof window === 'undefined' || status !== 'authenticated') return;
-
-    const userId = session?.userId;
-    if (userId && pathname) {
-      recordRouteVisit(pathname, userId);
-    }
-  }, [status, session, pathname]);
+  }, [pathname, status, updateTriggerState, triggerDelay]);
 
   return {
     ...triggerState,

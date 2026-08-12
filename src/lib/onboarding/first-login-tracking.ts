@@ -106,6 +106,23 @@ export async function fetchOnboardingStatus(): Promise<{ completed: boolean; ski
 }
 
 /**
+ * Sync localStorage from a database onboarding status.
+ * Called after fetching /api/auth/me/onboarding so that completion/skip
+ * persists on devices where localStorage was cleared or never set.
+ */
+export function applyDatabaseOnboardingStatus(status: { completed: boolean; skipped: boolean } | null): void {
+  if (typeof window === 'undefined') return;
+
+  if (status && (status.completed || status.skipped)) {
+    try {
+      localStorage.setItem(FIRST_LOGIN_KEY, 'true');
+    } catch (error) {
+      console.error('Error syncing onboarding status to localStorage:', error);
+    }
+  }
+}
+
+/**
  * Minimal session shape used for the first-login eligibility check.
  * Avoids importing server-only modules (next/headers) into client code.
  */
