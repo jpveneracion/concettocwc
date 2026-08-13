@@ -44,7 +44,8 @@ export async function GET(req: Request) {
 
     // Merge to show which collections have pricing and which don't
     const merged = allCollections.map((c) => {
-      const collectionData = JSON.parse(Object.values(c)[0]);
+      const raw = Object.values(c)[0];
+      const collectionData = typeof raw === 'string' ? JSON.parse(raw) : raw;
       const pricing = collections.find((p) => p.collection === collectionData.collection);
       return {
         collection: collectionData.collection,
