@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Custom React hook for localStorage with SSR safety and mobile browser error handling
@@ -13,6 +13,9 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Ref mirroring the current value so functional updaters never close over stale state
+  const storedValueRef = useRef<T>(initialValue);
+
   useEffect(() => {
     setIsMounted(true);
 
@@ -22,7 +25,9 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
 
       if (item !== null) {
         // Parse stored json or if none return initialValue
-        setStoredValue(JSON.parse(item));
+        const parsed = JSON.parse(item) as T;
+        storedValueRef.current = parsed;
+        setStoredValue(parsed);
       }
     } catch (error) {
       // Handle mobile browser quirks (iOS Safari private browsing, quota limits, etc.)
@@ -35,7 +40,10 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
   const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
       // Allow value to be a function so we have same API as useState
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      const valueToStore = value instanceof Function ? value(storedValueRef.current) : value;
+
+      // Keep the ref in sync for subsequent functional updates
+      storedValueRef.current = valueToStore;
 
       // Save state
       setStoredValue(valueToStore);
@@ -49,7 +57,7 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val
       console.warn(`Error setting localStorage key "${key}":`, error);
       // State update still succeeds even if localStorage fails
     }
-  }, [key, storedValue, isMounted]);
+  }, [key, isMounted]);
 
   return [storedValue, setValue];
 }
