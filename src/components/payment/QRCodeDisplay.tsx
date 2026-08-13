@@ -8,9 +8,10 @@ interface QRCodeDisplayProps {
   amount: number;
   planName: string;
   promoCode?: string;
+  baseAmount?: number;
 }
 
-export default function QRCodeDisplay({ method, amount, planName, promoCode }: QRCodeDisplayProps) {
+export default function QRCodeDisplay({ method, amount, planName, promoCode, baseAmount }: QRCodeDisplayProps) {
   const [showQR, setShowQR] = useState(true);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
   const [qrCodeInfo, setQrCodeInfo] = useState<any>(null);
@@ -51,7 +52,7 @@ export default function QRCodeDisplay({ method, amount, planName, promoCode }: Q
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           method,
-          amount,
+          amount: baseAmount ?? amount,
           plan_name: planName,
           promo_code: promoCode
         })
@@ -106,7 +107,7 @@ export default function QRCodeDisplay({ method, amount, planName, promoCode }: Q
   const qrCodeUrl = qrCodeInfo?.url || customQrCode || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${details.number.replace(/-/g, '')}`;
   const qrSource = qrCodeInfo?.source || (customQrCode ? 'plan' : 'fallback');
   const isOfficial = qrCodeInfo?.is_official || !!customQrCode;
-  const displayAmount = qrCodeInfo?.amount || amount;
+  const displayAmount = qrSource === 'promo' && qrCodeInfo?.amount ? qrCodeInfo.amount : amount;
 
   return (
     <div className="space-y-6">

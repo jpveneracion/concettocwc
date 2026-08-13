@@ -327,6 +327,7 @@ function PaymentInstructionsContent() {
             <QRCodeDisplay
               method={selectedMethod}
               amount={finalAmount}
+              baseAmount={plan.price}
               planName={plan.name}
               promoCode={promoCode}
             />
