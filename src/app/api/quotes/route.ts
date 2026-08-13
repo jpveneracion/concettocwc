@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql, query } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 import { encryptPII, decryptPII } from '@/lib/crypto';
 import { checkSubscriptionAccess } from '@/lib/subscription';
 import { validateQuoteCreation, restrictionErrorResponse } from '@/lib/api-restrictions';
@@ -202,7 +203,7 @@ export async function POST(req: Request) {
       installation_fee, delivery_fee,
       subtotal, total, total_area, panel_count
     ]);
-    const quoteData = JSON.parse(quote.quote_data);
+    const quoteData = safeParseJSON(quote.quote_data);
 
     // Insert items using SECURITY DEFINER function
     for (let i = 0; i < processedItems.length; i++) {

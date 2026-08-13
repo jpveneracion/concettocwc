@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 
 // GET - Check if company has pricing for products
 export async function GET(req: Request) {
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
       );
 
       if (pricingResult.length > 0) {
-        const pricing = JSON.parse(pricingResult[0].pricing);
+        const pricing = safeParseJSON<{ supplier_cost: number; retail_price: number }>(pricingResult[0].pricing);
         return NextResponse.json(pricing || { supplier_cost: 0, retail_price: 0 });
       }
 
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     );
 
     if (countResult.length > 0) {
-      const countData = JSON.parse(countResult[0].count_data);
+      const countData = safeParseJSON<{ count: number }>(countResult[0].count_data);
       const hasPricing = Number(countData.count) > 0;
       return NextResponse.json({ hasPricing, count: Number(countData.count) });
     }
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
     );
 
     if (result.length > 0) {
-      const pricingResult = JSON.parse(result[0].result);
+      const pricingResult = safeParseJSON<{ success: boolean; error?: string; id?: string; supplier_cost?: number; retail_price?: number }>(result[0].result);
 
       if (!pricingResult.success) {
         return NextResponse.json({ error: pricingResult.error || 'Failed to save pricing' }, { status: 500 });

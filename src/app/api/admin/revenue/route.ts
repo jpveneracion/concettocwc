@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { sql } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 
 export async function GET(req: NextRequest) {
   try {
@@ -65,7 +66,7 @@ async function getRevenueAnalytics(startDate: Date) {
     `, [startDate]);
 
     const summary = totalRevenueResult[0]?.summary_data
-      ? JSON.parse(totalRevenueResult[0].summary_data)
+      ? safeParseJSON(totalRevenueResult[0].summary_data)
       : {
           total_revenue: 0,
           total_transactions: 0,

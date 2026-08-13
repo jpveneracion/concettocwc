@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       [query]
     );
 
-    const products = productsResult.map((row: any) => JSON.parse(row.product));
+    const products = productsResult.map((row: any) => typeof row.product === 'string' ? JSON.parse(row.product) : row.product);
     return NextResponse.json(products);
   } catch (err) {
     console.error('GET /api/products/autocomplete', err);

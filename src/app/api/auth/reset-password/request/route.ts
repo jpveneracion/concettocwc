@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 import crypto from 'crypto';
 
 // Generate a secure random token
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const tokenData = JSON.parse(tokenResult[0].token_data);
+    const tokenData = safeParseJSON(tokenResult[0].token_data);
     if (!tokenData.success) {
       console.error('Password reset token creation failed:', tokenData.error);
     }

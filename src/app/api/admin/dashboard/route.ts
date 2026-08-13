@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requireAdmin } from '@/lib/permissions';
 import { sql } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 import {
   DashboardAnalytics,
   PaymentMethod,
@@ -107,7 +108,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
     let total_gcash_payments = 0, total_crypto_payments = 0, total_usd_payments = 0;
 
     if (paymentMethodResult.length > 0) {
-      const statsData = paymentMethodResult.map((row: any) => JSON.parse(row.stats));
+      const statsData = paymentMethodResult.map((row: any) => safeParseJSON(row.stats));
       total_gcash_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'gcash')?.total_amount || 0;
       total_crypto_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'crypto')?.total_amount || 0;
       total_usd_payments = statsData.find((row: PaymentMethodRow) => row.payment_method === 'usd_bank')?.total_amount || 0;
@@ -115,11 +116,11 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
 
     // Active subscriptions using SECURITY DEFINER function
     const activeSubsResult = await sql('SELECT get_dashboard_active_subscriptions_count() as count');
-    const active_subscriptions = parseInt(activeSubsResult[0]?.count ? JSON.parse(activeSubsResult[0].count).count : '0');
+    const active_subscriptions = parseInt(activeSubsResult[0]?.count ? safeParseJSON(activeSubsResult[0].count).count : '0');
 
     // Pending codes using SECURITY DEFINER function
     const pendingResult = await sql('SELECT get_dashboard_pending_codes_count() as count');
-    const pending_codes = parseInt(pendingResult[0]?.count ? JSON.parse(pendingResult[0].count).count : '0');
+    const pending_codes = parseInt(pendingResult[0]?.count ? safeParseJSON(pendingResult[0].count).count : '0');
 
     // Average revenue per user
     const totalRevenue = total_gcash_payments + total_crypto_payments + total_usd_payments;
@@ -132,7 +133,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       'SELECT get_dashboard_signups_count($1::timestamp with time zone) as count',
       [startDate]
     );
-    const total_signups = parseInt(totalSignupsResult[0]?.count ? JSON.parse(totalSignupsResult[0].count).count : '0');
+    const total_signups = parseInt(totalSignupsResult[0]?.count ? safeParseJSON(totalSignupsResult[0].count).count : '0');
     const trial_to_conversion_rate = total_signups > 0
       ? (active_subscriptions / total_signups) * 100
       : 0;
@@ -143,7 +144,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       [startDate]
     );
 
-    const paymentMethodDistribution = paymentMethodDistributionResult.map((row: any) => JSON.parse(row.distribution));
+    const paymentMethodDistribution = paymentMethodDistributionResult.map((row: any) => safeParseJSON(row.distribution));
 
     // Discount distribution using SECURITY DEFINER function
     const discountDistributionResult = await sql(
@@ -151,7 +152,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       [startDate]
     );
 
-    const discountDistribution = discountDistributionResult.map((row: any) => JSON.parse(row.distribution));
+    const discountDistribution = discountDistributionResult.map((row: any) => safeParseJSON(row.distribution));
 
     // Plan distribution using SECURITY DEFINER function
     const planDistributionResult = await sql(
@@ -159,7 +160,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       [startDate]
     );
 
-    const planDistribution = planDistributionResult.map((row: any) => JSON.parse(row.distribution));
+    const planDistribution = planDistributionResult.map((row: any) => safeParseJSON(row.distribution));
 
     // Revenue over time using SECURITY DEFINER function
     const revenueOverTimeResult = await sql(
@@ -167,7 +168,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       [startDate]
     );
 
-    const revenueOverTime = revenueOverTimeResult.map((row: any) => JSON.parse(row.revenue_data));
+    const revenueOverTime = revenueOverTimeResult.map((row: any) => safeParseJSON(row.revenue_data));
 
     // Activation usage over time using SECURITY DEFINER function
     const usageOverTimeResult = await sql(
@@ -175,7 +176,7 @@ async function getDashboardAnalytics(startDate: Date): Promise<DashboardAnalytic
       [startDate]
     );
 
-    const usageOverTime = usageOverTimeResult.map((row: any) => JSON.parse(row.usage_data));
+    const usageOverTime = usageOverTimeResult.map((row: any) => safeParseJSON(row.usage_data));
 
     // Transform database results to proper typed interfaces
     const paymentMethodStats: PaymentMethodStats[] = paymentMethodDistribution.map((row: any) => ({

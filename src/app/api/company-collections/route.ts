@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { sql } from '@/lib/db';
+import { safeParseJSON } from '@/lib/json';
 
 // GET - Get all collections with pricing
 export async function GET(req: Request) {
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     if (collection) {
       // Get pricing for specific collection using SECURITY DEFINER function
       const [pricing] = await sql('SELECT get_company_collection_pricing($1::uuid, $2) as pricing', [session.companyId, collection]);
-      const pricingData = pricing?.pricing ? JSON.parse(pricing.pricing) : { supplier_cost: 0, retail_price: 0 };
+      const pricingData = pricing?.pricing ? safeParseJSON(pricing.pricing) : { supplier_cost: 0, retail_price: 0 };
       return NextResponse.json(pricingData);
     }
 

@@ -58,7 +58,8 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const product = JSON.parse(result[0].product);
+    const productRaw = result[0].product;
+    const product = typeof productRaw === 'string' ? JSON.parse(productRaw) : productRaw;
     if (!product.id) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json(product);
   } catch (err) {
