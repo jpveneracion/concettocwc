@@ -279,13 +279,7 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
         return {
           quoteNumber,
           existingQuoteNumbers,
-          existingData: existingData?.customer ? {
-            customer_name: existingData.customer.customer_name,
-            customer_address: existingData.customer.customer_address,
-            quote_date: existingData.customer.quote_date,
-            our_ref: existingData.customer.our_ref,
-            status: existingData.customer.status,
-          } : undefined,
+          existingData: stepData.customer || undefined,
         };
       case 'measurements':
         return {

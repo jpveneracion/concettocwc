@@ -43,11 +43,19 @@ export async function GET(req: Request) {
       allCollections = await sql('SELECT get_company_collections_with_products($1::uuid)', [session.companyId]);
     }
 
-    // Merge to show which collections have pricing and which don't
+    // Merge to show which collections have pricing and which don't.
+    // Match case-insensitively (trimmed) because collection names come from
+    // different tables (company_collections vs products) that may vary in
+    // casing/whitespace — an exact match would silently zero out saved prices.
+    const normalizeKey = (name: string) => name.trim().toLowerCase();
+    const pricingByKey = new Map(collections.map((p) => [normalizeKey(p.collection), p]));
+    const seen = new Set<string>();
     const merged = allCollections.map((c) => {
       const raw = Object.values(c)[0];
       const collectionData = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      const pricing = collections.find((p) => p.collection === collectionData.collection);
+      const key = normalizeKey(collectionData.collection);
+      seen.add(key);
+      const pricing = pricingByKey.get(key);
       return {
         collection: collectionData.collection,
         supplier_cost: pricing?.supplier_cost || 0,
@@ -55,6 +63,19 @@ export async function GET(req: Request) {
         has_pricing: !!pricing,
       };
     });
+
+    // Keep saved pricings whose collection isn't in the products list
+    // so they are never lost or shown as 0.
+    for (const p of collections) {
+      if (!seen.has(normalizeKey(p.collection))) {
+        merged.push({
+          collection: p.collection,
+          supplier_cost: p.supplier_cost,
+          retail_price: p.retail_price,
+          has_pricing: true,
+        });
+      }
+    }
 
     return NextResponse.json(merged);
   } catch (err) {

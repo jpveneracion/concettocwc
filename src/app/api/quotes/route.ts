@@ -224,7 +224,7 @@ export async function POST(req: Request) {
         item.measured_width, item.measured_drop, item.final_width, item.final_drop,
         item.area_sqft,
         item.retail_price_sqft, item.supplier_cost_sqft,
-        item.retail_amount, item.supplier_amount, item.minimum_applied
+        item.retail_amount, item.supplier_amount, item.minimum_applied ? 1 : 0
       ]);
     }
 
