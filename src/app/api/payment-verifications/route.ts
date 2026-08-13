@@ -12,7 +12,7 @@ import {
   sql
 } from '@/lib/db';
 import { decryptPII } from '@/lib/crypto';
-import { uploadToPinata, validateScreenshotFile } from '@/lib/pinata';
+import { uploadToPinata, deleteFromPinata, validateScreenshotFile } from '@/lib/pinata';
 import { checkAutomaticVerificationMatch, updateVerificationWithAutomaticResult } from '@/lib/payment-verification';
 import { validateReferenceNumberFormat } from '@/lib/reference-cleaning';
 import { activateSubscriptionWithVerification } from '@/lib/subscription-activation';
@@ -61,9 +61,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     // 2. Parse request body
     const body: { plan_id?: string; screenshot_base64?: string; reference_number?: string; notes?: string; promo_code?: string; final_amount?: number; payment_method?: string } = await req.json();
 
-    if (!body.plan_id || !body.screenshot_base64 || !body.reference_number) {
+    if (!body.plan_id || !body.screenshot_base64) {
       return NextResponse.json(
-        { error: 'plan_id, screenshot_base64, and reference_number are required' },
+        { error: 'plan_id and screenshot_base64 are required' },
         { status: 400 }
       );
     }
@@ -92,34 +92,39 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    // 5. Validate reference number format
-    const referenceNumberValidation = validateReferenceNumberFormat(body.reference_number);
-    if (!referenceNumberValidation.valid) {
-      return NextResponse.json(
-        { error: referenceNumberValidation.message },
-        { status: 400 }
-      );
+    // 5. Validate reference number format (optional field)
+    if (body.reference_number) {
+      const referenceNumberValidation = validateReferenceNumberFormat(body.reference_number);
+      if (!referenceNumberValidation.valid) {
+        return NextResponse.json(
+          { error: referenceNumberValidation.message },
+          { status: 400 }
+        );
+      }
     }
 
     // 6. Validate and sanitize reference number and notes
-    const sanitizedReferenceNumber = sanitizeInput(body.reference_number);
+    const sanitizedReferenceNumber = body.reference_number ? sanitizeInput(body.reference_number) : undefined;
     const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : undefined;
 
     // 7. Validate screenshot base64 and convert to File
     let file: File;
     try {
-      const base64Data = body.screenshot_base64.split(',')[1];
+      const match = body.screenshot_base64.match(/^data:([^;]+);base64,(.+)$/);
+      const mime = match?.[1] ?? 'image/png';
+      const base64Data = (match?.[2] ?? body.screenshot_base64.split(',')[1]) as string;
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/png' });
+      const blob = new Blob([byteArray], { type: mime });
 
-      file = new File([blob], 'screenshot.png', { type: 'image/png' });
+      const extension = mime === 'image/jpeg' || mime === 'image/jpg' ? 'jpg' : 'png';
+      file = new File([blob], `screenshot.${extension}`, { type: mime });
 
-      // Validate file
+      // Validate file (type must match the actual MIME from the data URL)
       const validation = validateScreenshotFile(file);
       if (!validation.valid) {
         return NextResponse.json(
@@ -152,19 +157,30 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // 9. Create verification record
-    const verification = await createPaymentVerification({
-      user_id: session.userId,
-      plan_id: body.plan_id,
-      screenshot_url: uploadResult.cid,
-      reference_number: sanitizedReferenceNumber,
-      notes: sanitizedNotes,
-      promo_code: body.promo_code ? sanitizeInput(body.promo_code).toUpperCase() : undefined,
-      amount: body.final_amount !== undefined ? Number(body.final_amount) : undefined,
-      payment_method: body.payment_method ? body.payment_method.toLowerCase() : undefined
-    }, {
-      companyId: session.companyId,
-      userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
-    });
+    let verification: Awaited<ReturnType<typeof createPaymentVerification>>;
+    try {
+      verification = await createPaymentVerification({
+        user_id: session.userId,
+        plan_id: body.plan_id,
+        screenshot_url: uploadResult.cid,
+        reference_number: sanitizedReferenceNumber,
+        notes: sanitizedNotes,
+        promo_code: body.promo_code ? sanitizeInput(body.promo_code).toUpperCase() : undefined,
+        amount: body.final_amount !== undefined ? Number(body.final_amount) : undefined,
+        payment_method: body.payment_method ? body.payment_method.toLowerCase() : undefined
+      }, {
+        companyId: session.companyId,
+        userRole: (session.role || 'user') as 'user' | 'admin' | 'superadmin'
+      });
+    } catch (dbError) {
+      // Clean up orphaned IPFS upload if the DB record fails
+      try {
+        await deleteFromPinata(uploadResult.cid);
+      } catch (cleanupError) {
+        console.error('Failed to unpin orphaned screenshot:', cleanupError);
+      }
+      throw dbError;
+    }
 
     // 10. Trigger automatic verification (Trigger A)
     let matchResult;
