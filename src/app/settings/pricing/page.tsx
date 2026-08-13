@@ -128,7 +128,7 @@ export default function PricingSettingsPage() {
         )}
 
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-          <div className="p-3 border-b border-gray-100 flex justify-between items-center">
+          <div className="p-3 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <input
               className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-2 text-sm"
               placeholder="Search collections…"
@@ -149,11 +149,64 @@ export default function PricingSettingsPage() {
               No collections found. Add products with collections first.
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <>
+            <div className="sm:hidden divide-y divide-gray-100">
+              {filtered.map((c) => {
+                const margin = c.retailPrice > 0 ? ((c.markup / c.retailPrice) * 100).toFixed(1) : '0.0';
+
+                return (
+                  <div key={c.collection} className="p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="font-medium text-sm">{c.collection}</div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs text-gray-400">Retail</div>
+                        <div className="font-semibold text-blue-700">₱{c.retailPrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Supplier Cost (₱/sq.ft.)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-right text-sm"
+                          value={c.supplierCost || ''}
+                          onChange={(e) => updateCollectionPrice(c.collection, 'supplierCost', e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Markup (₱/sq.ft.)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-right text-sm"
+                          value={c.markup || ''}
+                          onChange={(e) => updateCollectionPrice(c.collection, 'markup', e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500">
+                      Margin:{' '}
+                      {parseFloat(margin) > 0 ? (
+                        <span className="text-blue-700 font-medium">{margin}%</span>
+                      ) : (
+                        <span className="text-gray-400">0.0%</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Collection</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Products</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Products</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 text-right">
                     Supplier Cost
                     <span className="block text-xs text-gray-400 font-normal">(₱/sq.ft.)</span>
@@ -178,7 +231,7 @@ export default function PricingSettingsPage() {
                   return (
                     <tr key={c.collection} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{c.collection}</td>
-                      <td className="px-4 py-3 text-gray-500">
+                      <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
                         {c.collection && (
                           <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                             All {c.collection} blinds
@@ -222,6 +275,8 @@ export default function PricingSettingsPage() {
                 })}
               </tbody>
             </table>
+            </div>
+            </>
           )}
         </div>
 
@@ -231,10 +286,10 @@ export default function PricingSettingsPage() {
           </div>
         )}
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
           <button
             onClick={() => router.push('/settings')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 w-full sm:w-auto"
             disabled={saving}
           >
             Cancel
@@ -242,7 +297,7 @@ export default function PricingSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             {saving ? 'Saving...' : `Save All Pricing (${collections.length} collection${collections.length !== 1 ? 's' : ''})`}
           </button>
