@@ -164,7 +164,7 @@ export async function PUT(
     const quote = existingQuoteResult?.quote;
     if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    await sql('SELECT update_quote($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)', [
+    await sql('SELECT update_quote($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)', [
       id,
       session.companyId,
       quote.quote_number || '',
