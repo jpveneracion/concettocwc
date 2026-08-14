@@ -88,7 +88,7 @@ CREATE OR REPLACE FUNCTION create_quote_item(
   p_product_collection text, p_product_description text, p_unit text, p_is_fixed boolean,
   p_measured_width numeric, p_measured_drop numeric, p_final_width numeric, p_final_drop numeric,
   p_area_sqft numeric, p_retail_price_sqft numeric, p_supplier_cost_sqft numeric,
-  p_retail_amount numeric, p_supplier_amount numeric, p_minimum_applied numeric
+  p_retail_amount numeric, p_supplier_amount numeric, p_minimum_applied boolean
 )
 RETURNS boolean
 LANGUAGE plpgsql
@@ -212,7 +212,7 @@ BEGIN
     (elem->>'final_width')::numeric, (elem->>'final_drop')::numeric,
     (elem->>'area_sqft')::numeric, (elem->>'retail_price_sqft')::numeric,
     (elem->>'supplier_cost_sqft')::numeric, (elem->>'retail_amount')::numeric,
-    (elem->>'supplier_amount')::numeric, (elem->>'minimum_applied')::numeric
+    (elem->>'supplier_amount')::numeric, (elem->>'minimum_applied')::boolean
   FROM json_array_elements(p_items) as elem;
 
   RETURN true;
@@ -287,7 +287,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION get_quote_items(uuid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION create_quote(uuid, text, text, text, bytea, bytea, date, text, numeric, numeric, numeric, numeric, numeric, int) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, boolean) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION clear_quote_plaintext(uuid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION update_quote(uuid, uuid, text, text, text, bytea, bytea, date, text, text, numeric, numeric, numeric, numeric, numeric, int) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION delete_quote(uuid, uuid) TO PUBLIC;

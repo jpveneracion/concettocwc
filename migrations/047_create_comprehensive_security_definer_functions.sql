@@ -557,7 +557,7 @@ CREATE OR REPLACE FUNCTION create_quote_item(
   p_supplier_cost_sqft numeric,
   p_retail_amount numeric,
   p_supplier_amount numeric,
-  p_minimum_applied numeric
+  p_minimum_applied boolean
 )
 RETURNS boolean
 LANGUAGE plpgsql
@@ -585,7 +585,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, boolean) TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION clear_quote_plaintext(p_quote_id uuid)
 RETURNS void
@@ -924,7 +924,7 @@ BEGIN
     (elem->>'supplier_cost_sqft')::numeric,
     (elem->>'retail_amount')::numeric,
     (elem->>'supplier_amount')::numeric,
-    (elem->>'minimum_applied')::numeric
+    (elem->>'minimum_applied')::boolean
   FROM json_array_elements(p_items) as elem;
 
   RETURN true;

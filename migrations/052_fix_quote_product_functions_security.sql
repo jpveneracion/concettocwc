@@ -142,7 +142,7 @@ CREATE OR REPLACE FUNCTION create_quote_item(
   p_supplier_cost_sqft numeric,
   p_retail_amount numeric,
   p_supplier_amount numeric,
-  p_minimum_applied numeric
+  p_minimum_applied boolean
 )
 RETURNS boolean
 LANGUAGE plpgsql
@@ -178,7 +178,7 @@ $$;
 
 COMMENT ON FUNCTION create_quote_item IS 'SECURITY DEFINER function for quote item creation. Role context validation added. Quote ownership controlled by RLS policies on quotes table.';
 
-GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION create_quote_item(uuid, int, text, uuid, text, text, text, text, boolean, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric, boolean) TO PUBLIC;
 
 -- ============================================================================
 -- FIX 4: SECURE clear_quote_plaintext() - Add Role Context Validation
@@ -356,7 +356,7 @@ BEGIN
     (elem->>'supplier_cost_sqft')::numeric,
     (elem->>'retail_amount')::numeric,
     (elem->>'supplier_amount')::numeric,
-    (elem->>'minimum_applied')::numeric
+    (elem->>'minimum_applied')::boolean
   FROM json_array_elements(p_items) as elem;
 
   RETURN true;
