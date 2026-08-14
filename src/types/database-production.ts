@@ -58,6 +58,10 @@ export interface Company {
   cost_categories: string[]; // JSONB array
   currency: string;
   minimum_area_sqft: number; // numeric
+  supplier_name: string | null;
+  supplier_address: string | null;
+  supplier_phone: string | null;
+  supplier_email: string | null;
   subscription_status: SubscriptionStatus;
   trial_end: TimestampWithTimezone | null;
 }

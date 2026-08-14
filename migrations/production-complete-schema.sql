@@ -33,6 +33,10 @@ CREATE TABLE companies (
   cost_categories jsonb DEFAULT '["materials", "labor", "overhead", "shipping"]'::jsonb,
   currency text DEFAULT 'PHP'::text,
   minimum_area_sqft numeric NOT NULL DEFAULT 15,
+  supplier_name text,
+  supplier_address text,
+  supplier_phone text,
+  supplier_email text,
   subscription_status character varying(20) DEFAULT 'demo'::character varying,
   trial_end timestamp with time zone,
   CONSTRAINT companies_pkey PRIMARY KEY (id)

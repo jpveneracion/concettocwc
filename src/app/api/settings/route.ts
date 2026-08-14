@@ -36,14 +36,15 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { code, name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note } = body;
+    const { code, name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note, supplier_name, supplier_address, supplier_phone, supplier_email } = body;
     const minimum_area_sqft = Math.max(0, Number(body.minimum_area_sqft) || 0);
     const companyCode = (code ?? '').trim().toUpperCase();
 
     const result = await query(
-      'SELECT update_company_settings($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) as company',
+      'SELECT update_company_settings($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) as company',
       [
-        session.companyId, companyCode, name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note, minimum_area_sqft
+        session.companyId, companyCode, name, address, mobile, email, currency, prepared_by, terms, del_note, closing_note, minimum_area_sqft,
+        supplier_name ?? '', supplier_address ?? '', supplier_phone ?? '', supplier_email ?? ''
       ],
       session.companyId,
       session.role || 'user'

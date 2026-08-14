@@ -47,8 +47,22 @@ export default function PrintDoc({ quote, settings, type }: Props) {
 
       {/* To */}
       <div style={{ fontSize: '8.5pt', marginBottom: '8px' }}>
-        <strong>To:</strong> {quote.customer_name}<br />
-        <span style={{ paddingLeft: '24px' }}>{quote.customer_address}</span>
+        <strong>To:</strong> {isPO
+          ? settings.supplier_name || quote.customer_name
+          : quote.customer_name}<br />
+        <span style={{ paddingLeft: '24px' }}>
+          {isPO
+            ? settings.supplier_address || quote.customer_address
+            : quote.customer_address}
+          {isPO && (settings.supplier_phone || settings.supplier_email) && (
+            <>
+              <br />
+              {[settings.supplier_phone && `Tel: ${settings.supplier_phone}`, settings.supplier_email && `Email: ${settings.supplier_email}`]
+                .filter(Boolean)
+                .join(' | ')}
+            </>
+          )}
+        </span>
       </div>
 
       <div style={{ fontSize: '8pt', borderBottom: '1px solid #000', marginBottom: '4px', fontStyle: 'italic' }}>Trading</div>

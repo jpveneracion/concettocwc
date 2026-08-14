@@ -23,17 +23,31 @@ interface MeasurementData {
   items: QuoteItem[];
 }
 
-export default function ReviewStep() {
+interface ReviewStepProps {
+  existingData?: {
+    installation_fee?: number;
+    delivery_fee?: number;
+    // Legacy draft shape stored before the fee keys were normalized
+    installation?: number;
+    delivery?: number;
+  };
+}
+
+export default function ReviewStep({ existingData }: ReviewStepProps) {
   const { getStepData, setStepData } = useWizard();
 
-  const [installation, setInstallation] = useState(0);
-  const [delivery, setDelivery] = useState(0);
+  const [installation, setInstallation] = useState(
+    existingData?.installation_fee ?? existingData?.installation ?? 0
+  );
+  const [delivery, setDelivery] = useState(
+    existingData?.delivery_fee ?? existingData?.delivery ?? 0
+  );
 
   const customerData = getStepData('customer') as CustomerData | undefined;
   const measurementsData = getStepData('measurements') as MeasurementData | undefined;
 
   // Track previous data to avoid infinite loop with setStepData
-  const prevReviewRef = useRef<{ installation: number; delivery: number } | null>(null);
+  const prevReviewRef = useRef<{ installation_fee: number; delivery_fee: number } | null>(null);
 
   const [items, setItems] = useState<QuoteItem[]>(
     measurementsData?.items?.map((item, index) => ({
@@ -77,11 +91,11 @@ export default function ReviewStep() {
     (window as any).__reviewStepData = reviewData;
 
     // Only call setStepData if data actually changed to avoid infinite loop
-    const newData = { installation: installation, delivery: delivery };
+    const newData = { installation_fee: installation, delivery_fee: delivery };
     if (
       prevReviewRef.current === null ||
-      prevReviewRef.current.installation !== newData.installation ||
-      prevReviewRef.current.delivery !== newData.delivery
+      prevReviewRef.current.installation_fee !== newData.installation_fee ||
+      prevReviewRef.current.delivery_fee !== newData.delivery_fee
     ) {
       prevReviewRef.current = newData;
       // Store data in wizard step data for proper submission

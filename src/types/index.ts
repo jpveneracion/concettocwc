@@ -13,6 +13,10 @@ export interface Company {
   terms: string;
   del_note: string;
   closing_note: string;
+  supplier_name: string;
+  supplier_address: string;
+  supplier_phone: string;
+  supplier_email: string;
   updated_at: string;
 }
 
@@ -26,6 +30,10 @@ export interface Settings {
   terms: string;
   del_note: string;
   closing_note: string;
+  supplier_name: string;
+  supplier_address: string;
+  supplier_phone: string;
+  supplier_email: string;
   updated_at: string;
   subscription_status: 'demo' | 'trial' | 'active' | 'past_due';
   minimum_area_sqft: number;

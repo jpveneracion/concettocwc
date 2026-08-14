@@ -14,6 +14,10 @@ type CompanyForm = {
   del_note: string;
   closing_note: string;
   minimum_area_sqft: number;
+  supplier_name: string;
+  supplier_address: string;
+  supplier_phone: string;
+  supplier_email: string;
 };
 
 type CodeStatus = 'idle' | 'checking' | 'available' | 'taken';
@@ -204,6 +208,25 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
             </div>
             {field('Prepared by', 'prepared_by', 'John Paul Veneracion')}
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5">
+          <h3 className="font-medium text-sm text-gray-700 mb-4">Supplier info</h3>
+          <p className="text-xs text-gray-500 mb-3">Shown in the "To:" block of Purchase Order printouts</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              {field('Supplier name', 'supplier_name', 'e.g. Window Blinds Trading')}
+            </div>
+            <div className="md:col-span-2">
+              {field('Supplier address', 'supplier_address', 'e.g. 123 Main St, Quezon City')}
+            </div>
+            <div>
+              {field('Supplier phone', 'supplier_phone', 'e.g. 0917-123-4567')}
+            </div>
+            <div>
+              {field('Supplier email', 'supplier_email', 'e.g. sales@supplier.com')}
+            </div>
           </div>
         </div>
 
