@@ -198,7 +198,7 @@ export async function POST(req: Request) {
       ) as quote_data
     `, [
       session.companyId, quote_number, customer_name, customer_address ?? '',
-      Buffer.from(customerNameEncrypted, 'hex'), Buffer.from(customerAddressEncrypted, 'hex'),
+      '\\x' + customerNameEncrypted, '\\x' + customerAddressEncrypted,
       quote_date, our_ref ?? '',
       installation_fee, delivery_fee,
       subtotal, total, total_area, panel_count

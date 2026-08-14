@@ -112,6 +112,21 @@ export function decryptPII(encrypted: string | Buffer): string {
       }
     }
 
+    // Legacy corruption: the neon serverless driver serialized Buffer params
+    // to JSON text ({"type":"Buffer","data":[...]}), which some writers stored
+    // into the bytea column. Recover the original bytes from that JSON.
+    const asLatin1 = encryptedBuffer.toString('latin1');
+    if (asLatin1.startsWith('{"type":"Buffer","data":[')) {
+      try {
+        const parsed = JSON.parse(asLatin1);
+        if (Array.isArray(parsed.data) && parsed.data.length >= ENCRYPTED_POSITION) {
+          encryptedBuffer = Buffer.from(parsed.data);
+        }
+      } catch {
+        // fall through to normal decryption attempt
+      }
+    }
+
     if (encryptedBuffer.length < ENCRYPTED_POSITION) {
       // Return mobile-friendly fallback for corrupted/incomplete encrypted data
       console.warn('Encrypted data too short, returning fallback value');

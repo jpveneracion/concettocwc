@@ -42,8 +42,11 @@ export async function GET(
     try {
       if (quote.customer_name_encrypted) {
         if (typeof quote.customer_name_encrypted === 'string') {
-          // Handle hex string format from JSON
-          customerName = decryptPII(Buffer.from(quote.customer_name_encrypted, 'hex'));
+          // Strip PostgreSQL bytea '\x' prefix; Buffer.from(hex) stops at '\x'
+          const hex = quote.customer_name_encrypted.startsWith('\\x')
+            ? quote.customer_name_encrypted.substring(2)
+            : quote.customer_name_encrypted;
+          customerName = decryptPII(Buffer.from(hex, 'hex'));
         } else {
           customerName = decryptPII(quote.customer_name_encrypted);
         }
@@ -55,8 +58,11 @@ export async function GET(
     try {
       if (quote.customer_address_encrypted) {
         if (typeof quote.customer_address_encrypted === 'string') {
-          // Handle hex string format from JSON
-          customerAddress = decryptPII(Buffer.from(quote.customer_address_encrypted, 'hex'));
+          // Strip PostgreSQL bytea '\x' prefix; Buffer.from(hex) stops at '\x'
+          const hex = quote.customer_address_encrypted.startsWith('\\x')
+            ? quote.customer_address_encrypted.substring(2)
+            : quote.customer_address_encrypted;
+          customerAddress = decryptPII(Buffer.from(hex, 'hex'));
         } else {
           customerAddress = decryptPII(quote.customer_address_encrypted);
         }
@@ -170,8 +176,8 @@ export async function PUT(
       quote.quote_number || '',
       customer_name,
       customer_address ?? '',
-      customerNameEncrypted, // Already in hex format from encryptPII
-      customerAddressEncrypted, // Already in hex format from encryptPII
+      '\\x' + customerNameEncrypted, // bytea hex format required (raw hex text would be stored as-is)
+      '\\x' + customerAddressEncrypted,
       quote_date,
       our_ref ?? '',
       status || 'draft',
