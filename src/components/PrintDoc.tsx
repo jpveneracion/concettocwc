@@ -175,14 +175,18 @@ export default function PrintDoc({ quote, settings, type }: Props) {
               <span style={{ float: 'right' }}>Total Area: {quote.total_area.toFixed(2)} sq.ft. &nbsp;&nbsp; Amount/sq.ft. &nbsp;&nbsp; Php</span>
             </td>
           </tr>
-          <tr>
-            <td style={{ color: 'red', border: '1px solid #999', padding: '3px 5px' }}>Installation</td>
-            <td style={{ textAlign: 'right', color: 'red', border: '1px solid #999', padding: '3px 5px' }}>{quote.installation_fee.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style={{ color: 'red', border: '1px solid #999', padding: '3px 5px' }}>Delivery</td>
-            <td style={{ textAlign: 'right', color: 'red', border: '1px solid #999', padding: '3px 5px' }}>{quote.delivery_fee.toFixed(2)}</td>
-          </tr>
+          {!isPO && (
+            <>
+              <tr>
+                <td style={{ color: 'red', border: '1px solid #999', padding: '3px 5px' }}>Installation</td>
+                <td style={{ textAlign: 'right', color: 'red', border: '1px solid #999', padding: '3px 5px' }}>{quote.installation_fee.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style={{ color: 'red', border: '1px solid #999', padding: '3px 5px' }}>Delivery</td>
+                <td style={{ textAlign: 'right', color: 'red', border: '1px solid #999', padding: '3px 5px' }}>{quote.delivery_fee.toFixed(2)}</td>
+              </tr>
+            </>
+          )}
         </tbody>
       </table>
 
