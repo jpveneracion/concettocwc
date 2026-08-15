@@ -182,20 +182,28 @@ export async function PUT(
       const itemsResult = await sql('SELECT get_quote_items($1) as items', [id]);
       const existingItems = itemsResult.map((row: Record<string, any>) => row.items);
 
+      // Compare only the user-editable commercial inputs. Recomputed outputs
+      // (final sizes, areas, amounts) are excluded to avoid float-precision and
+      // company-settings drift between the stored numeric values and a recompute.
       const itemFields = [
         'location', 'product_id', 'product_code', 'product_collection',
         'product_description', 'unit', 'is_fixed', 'measured_width',
-        'measured_drop', 'final_width', 'final_drop', 'area_sqft',
-        'retail_price_sqft', 'supplier_cost_sqft', 'retail_amount',
-        'supplier_amount', 'minimum_applied',
+        'measured_drop', 'retail_price_sqft', 'supplier_cost_sqft',
       ];
-      const itemSig = (item: any) => itemFields.map((f) => String(item[f] ?? '')).join('|');
+      const itemSig = (item: any) => itemFields.map((f) => {
+        const v = item?.[f];
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'number') return v.toFixed(6);
+        if (typeof v === 'boolean') return v ? '1' : '0';
+        return String(v).trim();
+      }).join('|');
       const itemsSignature = (list: any[]) => list.map((i) => itemSig(i)).sort().join('\n');
 
       const itemsUnchanged = itemsSignature(existingItems) === itemsSignature(processedItems);
+      const numEq = (a: any, b: any) => Math.abs(Number(a) - Number(b)) < 1e-6;
       const chargesUnchanged =
-        Number(quote.installation_fee) === installation_fee &&
-        Number(quote.delivery_fee) === delivery_fee;
+        numEq(quote.installation_fee, installation_fee) &&
+        numEq(quote.delivery_fee, delivery_fee);
 
       if (!itemsUnchanged || !chargesUnchanged) {
         return NextResponse.json(

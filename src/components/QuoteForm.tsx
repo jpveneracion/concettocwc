@@ -245,6 +245,9 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
         const data = await res.json();
         if (res.status === 403 && data.restrictionType === 'future_orders_blocked') {
           setDateError(data.error || 'Future dates are not allowed after trial expiration.');
+        } else if (isDeliveredLocked && res.status === 403) {
+          // The delivered-lock banner already explains this; don't duplicate it.
+          setFormError('');
         } else {
           setFormError(data.error || 'Failed to save quote. Please try again.');
         }
