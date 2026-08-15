@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import AppLayout from '@/components/AppLayout';
 import PlanComparison from '@/components/subscription/PlanComparison';
 import CurrentSubscriptionCard from '@/components/subscription/CurrentSubscriptionCard';
@@ -137,16 +136,6 @@ function CheckoutContent() {
                 {error.type === 'validation' ? 'Action Required' : 'Unable to Complete Request'}
               </h3>
               <p className="text-sm text-red-700">{error.message}</p>
-              {error.type === 'api' && (
-                <div className="mt-3">
-                  <Link
-                    href="/login"
-                    className="text-sm font-medium text-red-700 hover:text-red-900 underline"
-                  >
-                    Go to login page
-                  </Link>
-                </div>
-              )}
             </div>
           </div>
         </div>
