@@ -179,8 +179,8 @@ export async function PUT(
         );
       }
 
-      const [existingItemsResult] = await sql('SELECT get_quote_items($1) as items', [id]);
-      const existingItems = existingItemsResult.map((row: { items: any }) => row.items);
+      const itemsResult = await sql('SELECT get_quote_items($1) as items', [id]);
+      const existingItems = itemsResult.map((row: Record<string, any>) => row.items);
 
       const itemFields = [
         'location', 'product_id', 'product_code', 'product_collection',
