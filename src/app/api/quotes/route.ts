@@ -147,11 +147,20 @@ export async function POST(req: Request) {
     const {
       quote_number, customer_name, customer_address,
       our_ref, installation_fee, delivery_fee, items,
+      status,
     } = body;
 
     if (!customer_name || !items?.length) {
       return NextResponse.json(
         { error: 'customer_name and at least one item are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate status if provided
+    if (status && !['draft', 'sent', 'delivered', 'cancelled'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status. Must be one of: draft, sent, delivered, cancelled' },
         { status: 400 }
       );
     }
@@ -194,14 +203,16 @@ export async function POST(req: Request) {
         $1::uuid, $2, $3, $4,
         $5::bytea, $6::bytea,
         $7, $8, $9, $10,
-        $11, $12, $13, $14
+        $11, $12, $13, $14,
+        $15
       ) as quote_data
     `, [
       session.companyId, quote_number, customer_name, customer_address ?? '',
       '\\x' + customerNameEncrypted, '\\x' + customerAddressEncrypted,
       quote_date, our_ref ?? '',
       installation_fee, delivery_fee,
-      subtotal, total, total_area, panel_count
+      subtotal, total, total_area, panel_count,
+      status || 'draft'
     ]);
     const quoteData = safeParseJSON(quote.quote_data);
 

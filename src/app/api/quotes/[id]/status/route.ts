@@ -53,14 +53,8 @@ export async function PATCH(
         );
       }
 
-      // Update only the status field
-      // RLS policies now handle company_id filtering automatically
-      await sql`
-        UPDATE quotes
-        SET status = ${status},
-            updated_at = now()
-        WHERE id = ${id}::uuid
-      `;
+      // Update status through SECURITY DEFINER function
+      await sql('SELECT update_quote_status($1, $2)', [id, status]);
 
       return NextResponse.json({ success: true, status });
     } finally {
