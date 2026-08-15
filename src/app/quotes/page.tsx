@@ -118,8 +118,9 @@ export default function QuotesPage() {
           <div className="flex gap-2">
             <select
               value={quote.status}
+              disabled={quote.status === 'delivered'}
               onChange={(e) => changeStatus(quote.id, quote.status, e.target.value, quote.quote_number)}
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded bg-white"
+              className={`flex-1 px-3 py-2 text-sm border border-gray-300 rounded bg-white ${quote.status === 'delivered' ? 'bg-gray-50 text-gray-500' : ''}`}
             >
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
@@ -190,8 +191,9 @@ export default function QuotesPage() {
                 <div className="flex flex-wrap gap-1 lg:gap-2 items-center">
                   <select
                     value={q.status}
+                    disabled={q.status === 'delivered'}
                     onChange={(e) => changeStatus(q.id, q.status, e.target.value, q.quote_number)}
-                    className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 bg-white"
+                    className={`px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 bg-white ${q.status === 'delivered' ? 'bg-gray-50 text-gray-500' : ''}`}
                   >
                     <option value="draft">Draft</option>
                     <option value="sent">Sent</option>

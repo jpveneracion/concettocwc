@@ -170,6 +170,41 @@ export async function PUT(
     const quote = existingQuoteResult?.quote;
     if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+    // Delivered quotes are locked: only customer information can be updated.
+    if (quote.status === 'delivered') {
+      if (status && status !== 'delivered') {
+        return NextResponse.json(
+          { error: 'Cannot change status from delivered.' },
+          { status: 403 }
+        );
+      }
+
+      const [existingItemsResult] = await sql('SELECT get_quote_items($1) as items', [id]);
+      const existingItems = existingItemsResult.map((row: { items: any }) => row.items);
+
+      const itemFields = [
+        'location', 'product_id', 'product_code', 'product_collection',
+        'product_description', 'unit', 'is_fixed', 'measured_width',
+        'measured_drop', 'final_width', 'final_drop', 'area_sqft',
+        'retail_price_sqft', 'supplier_cost_sqft', 'retail_amount',
+        'supplier_amount', 'minimum_applied',
+      ];
+      const itemSig = (item: any) => itemFields.map((f) => String(item[f] ?? '')).join('|');
+      const itemsSignature = (list: any[]) => list.map((i) => itemSig(i)).sort().join('\n');
+
+      const itemsUnchanged = itemsSignature(existingItems) === itemsSignature(processedItems);
+      const chargesUnchanged =
+        Number(quote.installation_fee) === installation_fee &&
+        Number(quote.delivery_fee) === delivery_fee;
+
+      if (!itemsUnchanged || !chargesUnchanged) {
+        return NextResponse.json(
+          { error: 'This quote has been delivered and is locked. Only customer information can be updated.' },
+          { status: 403 }
+        );
+      }
+    }
+
     await sql('SELECT update_quote($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)', [
       id,
       session.companyId,

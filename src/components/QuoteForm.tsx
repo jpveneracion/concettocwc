@@ -67,6 +67,8 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
   const isDuplicateQuoteNumber = quoteNumberValue.trim().length > 0 && (existingQuoteNumbers ?? []).includes(quoteNumberValue.trim());
   const [ref, setRef] = useState(existing?.our_ref ?? '');
   const [status, setStatus] = useState(existing?.status ?? 'draft');
+  const isDeliveredLocked = existing?.status === 'delivered';
+  const lockedInputClass = isDeliveredLocked ? 'bg-gray-50 text-gray-500' : '';
   const [installation, setInstallation] = useState(existing?.installation_fee ?? 0);
   const [delivery, setDelivery] = useState(existing?.delivery_fee ?? 0);
   const [rows, setRows] = useState<ItemRow[]>(
@@ -201,8 +203,8 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
       }
     }
 
-    // Prevent changes from delivered status
-    if (existing && existing.status === 'delivered') {
+    // Delivered quotes are locked to customer information only
+    if (isDeliveredLocked && status !== 'delivered') {
       setFormError('Cannot change status from delivered.');
       return;
     }
@@ -261,6 +263,15 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
         </div>
       )}
 
+      {/* Delivered quote lock notice */}
+      {isDeliveredLocked && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+          <p className="text-sm text-blue-700">
+            This quote has been delivered and is locked. Only the customer name, address, and our ref can be edited.
+          </p>
+        </div>
+      )}
+
       {/* Status Change Confirmation Dialog */}
       {showStatusConfirm && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
@@ -305,7 +316,8 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
             <label className="block text-xs text-gray-500 mb-1">Date</label>
             <input
               type="date"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+              disabled={isDeliveredLocked}
+              className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`}
               value={date}
               onChange={(e) => { setDate(e.target.value); setDateError(''); }}
               max={maxOrderDate ?? undefined}
@@ -340,7 +352,7 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Status</label>
-            <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}>
+            <select disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${isDeliveredLocked ? 'bg-gray-50 text-gray-500' : ''}`} value={status} onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}>
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
               <option value="delivered">Delivered</option>
@@ -354,13 +366,15 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-medium text-sm text-gray-700">Window items</h3>
-          <button
-            onClick={() => setRows((p) => [...p, newRow(p.length)])}
-            aria-label="Add new window item"
-            className="text-sm px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]"
-          >
-            ➕ Add window
-          </button>
+          {!isDeliveredLocked && (
+            <button
+              onClick={() => setRows((p) => [...p, newRow(p.length)])}
+              aria-label="Add new window item"
+              className="text-sm px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]"
+            >
+              ➕ Add window
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -368,7 +382,7 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
             <div key={row._key} className="border border-gray-200 rounded-xl p-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-medium text-gray-500">Window #{idx + 1}</span>
-                {rows.length > 1 && (
+                {!isDeliveredLocked && rows.length > 1 && (
                   <button
                     onClick={() => setRows((p) => p.filter((r) => r._key !== row._key))}
                     aria-label={`Remove window ${idx + 1}`}
@@ -382,12 +396,13 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Location</label>
-                  <input className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.location} onChange={(e) => updateRow(row._key, { location: e.target.value })} placeholder="e.g. Living Room" />
+                  <input disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={row.location} onChange={(e) => updateRow(row._key, { location: e.target.value })} placeholder="e.g. Living Room" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Product code</label>
                   <input
-                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm uppercase min-h-[44px]"
+                    disabled={isDeliveredLocked}
+                    className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm uppercase min-h-[44px] ${lockedInputClass}`}
                     value={row.product_code}
                     onChange={(e) => {
                       updateRow(row._key, { product_code: e.target.value.toUpperCase() });
@@ -428,7 +443,8 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
                       type="number"
                       min="0"
                       step="0.01"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+                      disabled={isDeliveredLocked}
+                      className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`}
                       value={row.retail_price_sqft || ''}
                       onChange={(e) => updateRow(row._key, { retail_price_sqft: parseFloat(e.target.value) || 0 })}
                     />
@@ -439,7 +455,8 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
                       type="number"
                       min="0"
                       step="0.01"
-                      className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]"
+                      disabled={isDeliveredLocked}
+                      className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`}
                       value={row.supplier_cost_sqft || ''}
                       onChange={(e) => updateRow(row._key, { supplier_cost_sqft: parseFloat(e.target.value) || 0 })}
                     />
@@ -450,25 +467,25 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Measure unit</label>
-                  <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.unit} onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}>
+                  <select disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={row.unit} onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}>
                     <option value="in">Inches</option>
                     <option value="cm">Centimeters</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Fixed measure?</label>
-                  <select className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.is_fixed ? 'yes' : 'no'} onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}>
+                  <select disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={row.is_fixed ? 'yes' : 'no'} onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}>
                     <option value="yes">Yes (as-is)</option>
                     <option value="no">No (+{row.unit === 'cm' ? '15cm' : '6in'} overlap)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Width ({row.unit})</label>
-                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.measured_width || ''} onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })} />
+                  <input type="number" min="0" step="0.1" disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={row.measured_width || ''} onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Drop ({row.unit})</label>
-                  <input type="number" min="0" step="0.1" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={row.measured_drop || ''} onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })} />
+                  <input type="number" min="0" step="0.1" disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={row.measured_drop || ''} onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })} />
                 </div>
               </div>
 
@@ -506,11 +523,11 @@ export default function QuoteForm({ existing, quoteNumber, existingQuoteNumbers 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Installation (₱)</label>
-            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={installation} onChange={(e) => setInstallation(parseFloat(e.target.value) || 0)} />
+            <input type="number" min="0" step="0.01" disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={installation} onChange={(e) => setInstallation(parseFloat(e.target.value) || 0)} />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Delivery (₱)</label>
-            <input type="number" min="0" step="0.01" className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px]" value={delivery} onChange={(e) => setDelivery(parseFloat(e.target.value) || 0)} />
+            <input type="number" min="0" step="0.01" disabled={isDeliveredLocked} className={`w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] ${lockedInputClass}`} value={delivery} onChange={(e) => setDelivery(parseFloat(e.target.value) || 0)} />
           </div>
         </div>
       </div>

@@ -41,6 +41,18 @@ export async function PATCH(
         );
       }
 
+      // Delivered quotes are locked and cannot change status
+      const [existingQuoteResult] = await sql('SELECT get_company_quote_by_id($1, $2) as quote', [session.companyId, id]);
+      const quote = existingQuoteResult?.quote;
+      if (!quote) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+      if (quote.status === 'delivered' && status !== 'delivered') {
+        return NextResponse.json(
+          { error: 'Cannot change status from delivered.' },
+          { status: 403 }
+        );
+      }
+
       // Update only the status field
       // RLS policies now handle company_id filtering automatically
       await sql`
