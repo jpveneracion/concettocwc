@@ -314,7 +314,7 @@ export default function VerificationDetail({
                 <span className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"><ClipboardList className="w-4 h-4 text-emerald-600" /></span>
                 Plan Information
               </h3>
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-50 rounded-lg p-4 border border-emerald-200 space-y-2">
+              <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200 space-y-2">
                 <div className="flex items-start justify-between">
                   <span className="text-sm font-medium text-stone-700">Plan:</span>
                   <span className="text-sm text-stone-900 font-medium">{verification.plan_name || 'Unknown'}</span>

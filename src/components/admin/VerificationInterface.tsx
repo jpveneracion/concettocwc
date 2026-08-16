@@ -463,7 +463,7 @@ export default function VerificationInterface({
             </div>
 
             {/* Plan Information */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+            <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-200">
               <h3 className="text-sm font-medium text-stone-700 mb-2">Plan Information</h3>
               <div className="space-y-1">
                 <p className="text-stone-900 font-medium">{verification.plan_name || 'Unknown'}</p>
