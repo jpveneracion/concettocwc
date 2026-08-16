@@ -145,8 +145,31 @@ function CheckoutContent() {
       <div className="lg:grid lg:grid-cols-3 lg:gap-6">
         {/* Main column: plans + action (full width on mobile, 2/3 on desktop) */}
         <div className="lg:col-span-2">
+          {/* Plan Comparison */}
+          <div className="mb-6">
+            <PlanComparison
+              onPlanSelect={handlePlanSelect}
+              selectedPlan={selectedPlan}
+            />
+          </div>
+
+          {/* Selected Plan Summary */}
+          {selectedPlan && (
+            <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-indigo-900">Selected Plan</p>
+                  <p className="text-xs text-indigo-700 capitalize">{selectedPlan} subscription</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action Section */}
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-6 mb-6">
               <button
                 onClick={handleSubscribe}
                 disabled={isButtonDisabled}
@@ -186,29 +209,6 @@ function CheckoutContent() {
                 </div>
               </div>
             </div>
-
-          {/* Plan Comparison */}
-          <div className="mb-6">
-            <PlanComparison
-              onPlanSelect={handlePlanSelect}
-              selectedPlan={selectedPlan}
-            />
-          </div>
-
-          {/* Selected Plan Summary */}
-          {selectedPlan && (
-            <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-indigo-900">Selected Plan</p>
-                  <p className="text-xs text-indigo-700 capitalize">{selectedPlan} subscription</p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Additional Information */}
           <div className="bg-white border border-stone-200 rounded-xl p-6">
