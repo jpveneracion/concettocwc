@@ -1,0 +1,2059 @@
+{
+  "nodes": [
+    {
+      "id": "admin_layout_testing_checklist",
+      "label": "Admin Layout Testing Checklist",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "source_location": null
+    },
+    {
+      "id": "adminlayout_responsive_behavior",
+      "label": "AdminLayout Responsive Behavior Testing",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_access_control",
+      "label": "Admin Access Control System",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_console_badge",
+      "label": "Admin Console Badge",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "source_location": null
+    },
+    {
+      "id": "application_security_audit",
+      "label": "Application Security Audit",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\APPLICATION_SECURITY_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "security_vulnerabilities",
+      "label": "Security Vulnerabilities",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\APPLICATION_SECURITY_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "authorization_checks",
+      "label": "Authorization Checks",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\APPLICATION_SECURITY_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "audit_completion_summary",
+      "label": "Audit Completion Summary",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_security_violations",
+      "label": "RLS Security Violations",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "code_quality_crisis",
+      "label": "Code Quality Crisis",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "security_definer_functions",
+      "label": "SECURITY DEFINER Functions",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "build_rules",
+      "label": "Build Rules",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\BUILD_RULES.md",
+      "source_location": null
+    },
+    {
+      "id": "typescript_explicit_types",
+      "label": "TypeScript Explicit Types",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\BUILD_RULES.md",
+      "source_location": null
+    },
+    {
+      "id": "database_operations_audit",
+      "label": "Database Operations Audit",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPLETE_DATABASE_OPERATIONS_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "direct_sql_operations",
+      "label": "Direct SQL Operations",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPLETE_DATABASE_OPERATIONS_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "comprehensive_fix_report",
+      "label": "Comprehensive Fix Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "migration_047_security_crisis",
+      "label": "Migration 047 Security Crisis",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "code_duplication_patterns",
+      "label": "Code Duplication Patterns",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "comprehensive_security_audit",
+      "label": "Comprehensive Security Audit",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "password_hash_exposure",
+      "label": "Password Hash Exposure",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_bypass_vulnerabilities",
+      "label": "RLS Bypass Vulnerabilities",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "comprehensive_sql_audit_design",
+      "label": "Comprehensive SQL Audit Design",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "source_location": null
+    },
+    {
+      "id": "zero_rls_violations_goal",
+      "label": "Zero RLS Violations Goal",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "source_location": null
+    },
+    {
+      "id": "sql_operation_categorization",
+      "label": "SQL Operation Categorization",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "source_location": null
+    },
+    {
+      "id": "comprehensive_sql_audit_plan",
+      "label": "Comprehensive SQL Audit Plan",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_PLAN.md",
+      "source_location": null
+    },
+    {
+      "id": "bite_sized_test_driven_analysis",
+      "label": "Bite-Sized Test-Driven Analysis",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_PLAN.md",
+      "source_location": null
+    },
+    {
+      "id": "constraint_format_status",
+      "label": "Constraint Format Status Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\CONSTRAINT-FORMAT-STATUS-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "postgresql_constraint_normalization",
+      "label": "PostgreSQL Constraint Normalization",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\CONSTRAINT-FORMAT-STATUS-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "database_parity_verification",
+      "label": "Database Parity Verification",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\DATABASE-PARITY-VERIFICATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "schema_alignment",
+      "label": "Schema Alignment",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\DATABASE-PARITY-VERIFICATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "dashboard",
+      "label": "Dashboard Implementation",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\DASHBOARD.md",
+      "source_location": null
+    },
+    {
+      "id": "enterprise_metrics",
+      "label": "Enterprise Metrics",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\DASHBOARD.md",
+      "source_location": null
+    },
+    {
+      "id": "pii_encryption",
+      "label": "PII Encryption",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\DASHBOARD.md",
+      "source_location": null
+    },
+    {
+      "id": "manual_migration",
+      "label": "Manual Database Migration",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\MANUAL-MIGRATION.md",
+      "source_location": null
+    },
+    {
+      "id": "subscription_plans_table",
+      "label": "Subscription Plans Table",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\MANUAL-MIGRATION.md",
+      "source_location": null
+    },
+    {
+      "id": "pricing_system_summary",
+      "label": "Pricing System Summary",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "database_driven_pricing",
+      "label": "Database-Driven Pricing",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "pricing_audit_trail",
+      "label": "Pricing Audit Trail",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "pricing_system_test",
+      "label": "Pricing System Test Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "production_schema_analysis",
+      "label": "Production Schema Analysis",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRODUCTION-SCHEMA-ANALYSIS.md",
+      "source_location": null
+    },
+    {
+      "id": "database_maturity_assessment",
+      "label": "Database Maturity Assessment",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRODUCTION-SCHEMA-ANALYSIS.md",
+      "source_location": null
+    },
+    {
+      "id": "multi_tenant_architecture",
+      "label": "Multi-Tenant Architecture",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\PRODUCTION-SCHEMA-ANALYSIS.md",
+      "source_location": null
+    },
+    {
+      "id": "promo_code_increment",
+      "label": "Promo Code Usage Increment",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\PROMO_CODE_USAGE_INCREMENT_IMPLEMENTATION.md",
+      "source_location": null
+    },
+    {
+      "id": "usage_limit_enforcement",
+      "label": "Usage Limit Enforcement",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\PROMO_CODE_USAGE_INCREMENT_IMPLEMENTATION.md",
+      "source_location": null
+    },
+    {
+      "id": "readme",
+      "label": "Project README",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "concetto_window_coverings",
+      "label": "Concetto Window Coverings App",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "subscription_system",
+      "label": "Subscription System",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_fix_completion",
+      "label": "RLS Fix Completion",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_context_isolation",
+      "label": "RLS Context Isolation",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "source_location": null
+    },
+    {
+      "id": "transaction_scoped_context",
+      "label": "Transaction-Scoped Context",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_violations_audit",
+      "label": "RLS Violations Audit",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_VIOLATIONS_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "api_route_security",
+      "label": "API Route Security",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_VIOLATIONS_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "route_audit",
+      "label": "Route Audit Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\ROUTE-AUDIT-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "pricing_system_architecture",
+      "label": "Pricing System Architecture",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\ROUTE-AUDIT-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "security_definer_mapping",
+      "label": "Security Definer Mapping",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_DEFINER_MAPPING.md",
+      "source_location": null
+    },
+    {
+      "id": "neon_sql_helper_rewiring",
+      "label": "Neon-SQL Helper Rewiring",
+      "file_type": "concept",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_DEFINER_MAPPING.md",
+      "source_location": null
+    },
+    {
+      "id": "sql_audit_progress",
+      "label": "SQL Audit Progress Tracking",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_PROGRESS.md",
+      "source_location": null
+    },
+    {
+      "id": "comprehensive_database_operations_audit",
+      "label": "Comprehensive Database Operations Audit",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\COMPREHENSIVE_DATABASE_OPERATIONS_AUDIT.md",
+      "source_location": null
+    },
+    {
+      "id": "critical_rls_bypass_issue",
+      "label": "Critical RLS Bypass Issue",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "source_location": null
+    },
+    {
+      "id": "login_fix_recommendations",
+      "label": "Login Fix Recommendations",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "migration_047_security_issues",
+      "label": "Migration 047 Security Issues",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "source_location": null
+    },
+    {
+      "id": "sql_audit_documents_sql_audit_progress",
+      "label": "SQL Audit Documents SQL Audit Progress",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\SQL_AUDIT_PROGRESS.md",
+      "source_location": null
+    },
+    {
+      "id": "security_fix_completion_summary",
+      "label": "Security Fix Completion Summary",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "security_fix_implementation",
+      "label": "Security Fix Implementation",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_IMPLEMENTATION.md",
+      "source_location": null
+    },
+    {
+      "id": "step_a_complete",
+      "label": "Step A Database Functions Complete",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_A_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "id": "step_b_complete",
+      "label": "Step B Application Layer Complete",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_B_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "id": "step_c_complete",
+      "label": "Step C Routes Pattern Complete",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_C_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "id": "task_10_validation_report",
+      "label": "Task 10 Final Testing and Validation Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-10-VALIDATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "task_5_completion_summary",
+      "label": "Task 5 Admin Pricing API Implementation",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-5-COMPLETION-SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "trial_activation_test_report",
+      "label": "Trial Activation Test Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_panel_integration_design",
+      "label": "Admin Panel Integration Design",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_panel_integration_plan",
+      "label": "Admin Panel Integration Implementation Plan",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "fix_email_authentication",
+      "label": "Fix Email Authentication with Encryption",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\fix-email-authentication.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_instructions",
+      "label": "Subscription System Migration Instructions",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\migrations\\INSTRUCTIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "onboarding_readme",
+      "label": "Onboarding Modal System README",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "migration_report",
+      "label": "Company Product Definitions Migration Report",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_readme",
+      "label": "Company Product System Migration README",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "validation_key",
+      "label": "Validation Key File",
+      "file_type": "document",
+      "source_file": "E:\\laragon\\www\\concettowc\\public\\validation-key.txt",
+      "source_location": null
+    },
+    {
+      "id": "sql_security_audit",
+      "label": "SQL Security Audit Process",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_PROGRESS.md",
+      "source_location": null
+    },
+    {
+      "id": "migration_047_vulnerabilities",
+      "label": "Migration 047 Security Vulnerabilities",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "source_location": null
+    },
+    {
+      "id": "security_definer_pattern",
+      "label": "SECURITY DEFINER Pattern Analysis",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "source_location": null
+    },
+    {
+      "id": "rls_bypass_vulnerability",
+      "label": "Row Level Security Bypass Vulnerability",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "source_location": null
+    },
+    {
+      "id": "password_hash_exposure",
+      "label": "Password Hash Exposure Security Issue",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_function_exposure",
+      "label": "Admin Function Data Exposure",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "zero_rls_violations_goal",
+      "label": "Zero RLS Violations Security Goal",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_PROGRESS.md",
+      "source_location": null
+    },
+    {
+      "id": "admin_panel_integration",
+      "label": "Admin Panel Integration Architecture",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "id": "trial_activation_system",
+      "label": "Trial Activation System Design",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "onboarding_system",
+      "label": "User Onboarding Modal System",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "email_authentication_encryption",
+      "label": "Email Authentication Encryption Solution",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\fix-email-authentication.md",
+      "source_location": null
+    },
+    {
+      "id": "company_product_system",
+      "label": "Company Product Definitions System",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "term_discount_calculation",
+      "label": "Term Discount Calculation Logic",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "id": "qr_code_pinata_integration",
+      "label": "QR Code Pinata IPFS Integration",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "promo_code_management",
+      "label": "Promo Code Management System",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-5-COMPLETION-SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "database_migration_process",
+      "label": "Database Migration Process",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\migrations\\INSTRUCTIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "multi_tenant_product_catalog",
+      "label": "Multi-Tenant Product Catalog Architecture",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "oauth_trial_flow",
+      "label": "OAuth Trial Activation Flow",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "subscription_management",
+      "label": "Subscription Management System",
+      "file_type": "rationale",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": ":\\laragon\\www\\concettowc\\src\\lib\\migrations\\apply-company-product-system.ts",
+      "label": "Company Product System Migration Script",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_006_add_configurable_term_discounts.sql",
+      "label": "Configurable Term Discounts Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_047_create_comprehensive_security_definer_functions.sql",
+      "label": "Migration 047 Security Functions",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_048_fix_password_hash_exposure_security.sql",
+      "label": "Password Hash Exposure Fix Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_049_fix_admin_function_exposure_security.sql",
+      "label": "Admin Function Exposure Fix Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_050_fix_authentication_functions_security.sql",
+      "label": "Authentication Functions Security Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_051_fix_company_data_functions_security.sql",
+      "label": "Company Data Functions Security Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_052_fix_quote_product_functions_security.sql",
+      "label": "Quote Product Functions Security Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "migrations_053_fix_remaining_functions_security.sql",
+      "label": "Remaining Functions Security Migration",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\lib\\db.ts_querywithrlsbypass",
+      "label": "queryWithRLSBypass Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\app\\admin\\payment-settings\\route.ts",
+      "label": "Admin Payment Settings Page",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\app\\admin\\promo-codes\\page.tsx",
+      "label": "Admin Promo Codes Page",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\components\\admin\\AdvancedPaymentSettings.tsx",
+      "label": "Advanced Payment Settings Component",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\components\\admin\\PromoCodeManager.tsx",
+      "label": "Promo Code Manager Component",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\components\\admin\\VerificationInterface.tsx",
+      "label": "Verification Interface Component",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\components\\onboarding\\OnboardingModal",
+      "label": "Onboarding Modal Component",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\components\\onboarding\\FeatureOnboardingModal",
+      "label": "Feature Onboarding Modal Component",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "id": "find_user_by_email_hash",
+      "label": "find_user_by_email_hash Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "find_user_by_id",
+      "label": "find_user_by_id Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "find_user_by_email",
+      "label": "find_user_by_email Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "update_user_email_hash",
+      "label": "update_user_email_hash Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "get_user_admin_status",
+      "label": "get_user_admin_status Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "mark_reset_token_used",
+      "label": "mark_reset_token_used Function",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\auth.ts",
+      "label": "Authentication Module",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "id": "src\\proxy.ts",
+      "label": "Proxy Middleware",
+      "file_type": "code",
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "admin_layout_testing_checklist",
+      "target": "adminlayout_responsive_behavior",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_layout_testing_checklist",
+      "target": "admin_access_control",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_access_control",
+      "target": "admin_console_badge",
+      "relation": "includes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\ADMIN_LAYOUT_TESTING_CHECKLIST.md",
+      "weight": 1.0
+    },
+    {
+      "source": "application_security_audit",
+      "target": "security_vulnerabilities",
+      "relation": "analyzes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\APPLICATION_SECURITY_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "application_security_audit",
+      "target": "authorization_checks",
+      "relation": "examines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\APPLICATION_SECURITY_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_completion_summary",
+      "target": "rls_security_violations",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "audit_completion_summary",
+      "target": "code_quality_crisis",
+      "relation": "identifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_security_violations",
+      "target": "security_definer_functions",
+      "relation": "requires",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "build_rules",
+      "target": "typescript_explicit_types",
+      "relation": "enforces",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\BUILD_RULES.md",
+      "weight": 1.0
+    },
+    {
+      "source": "database_operations_audit",
+      "target": "direct_sql_operations",
+      "relation": "catalogs",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPLETE_DATABASE_OPERATIONS_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_fix_report",
+      "target": "migration_047_security_crisis",
+      "relation": "explains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_fix_report",
+      "target": "code_duplication_patterns",
+      "relation": "identifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_security_audit",
+      "target": "password_hash_exposure",
+      "relation": "discovers",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_security_audit",
+      "target": "rls_bypass_vulnerabilities",
+      "relation": "analyzes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "password_hash_exposure",
+      "target": "security_definer_functions",
+      "relation": "exploits",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SECURITY_AUDIT_FINAL_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_sql_audit_design",
+      "target": "zero_rls_violations_goal",
+      "relation": "establishes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_sql_audit_design",
+      "target": "sql_operation_categorization",
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_sql_audit_plan",
+      "target": "bite_sized_test_driven_analysis",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_PLAN.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_sql_audit_plan",
+      "target": "zero_rls_violations_goal",
+      "relation": "supports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_PLAN.md",
+      "weight": 1.0
+    },
+    {
+      "source": "constraint_format_status",
+      "target": "postgresql_constraint_normalization",
+      "relation": "analyzes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\CONSTRAINT-FORMAT-STATUS-REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "database_parity_verification",
+      "target": "schema_alignment",
+      "relation": "verifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\DATABASE-PARITY-VERIFICATION-REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "dashboard",
+      "target": "enterprise_metrics",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\DASHBOARD.md",
+      "weight": 1.0
+    },
+    {
+      "source": "dashboard",
+      "target": "pii_encryption",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\DASHBOARD.md",
+      "weight": 1.0
+    },
+    {
+      "source": "manual_migration",
+      "target": "subscription_plans_table",
+      "relation": "creates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\MANUAL-MIGRATION.md",
+      "weight": 1.0
+    },
+    {
+      "source": "pricing_system_summary",
+      "target": "database_driven_pricing",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "pricing_system_summary",
+      "target": "pricing_audit_trail",
+      "relation": "includes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "pricing_system_test",
+      "target": "database_driven_pricing",
+      "relation": "validates",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "production_schema_analysis",
+      "target": "database_maturity_assessment",
+      "relation": "provides",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRODUCTION-SCHEMA-ANALYSIS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "production_schema_analysis",
+      "target": "multi_tenant_architecture",
+      "relation": "analyzes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRODUCTION-SCHEMA-ANALYSIS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "promo_code_increment",
+      "target": "usage_limit_enforcement",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\PROMO_CODE_USAGE_INCREMENT_IMPLEMENTATION.md",
+      "weight": 1.0
+    },
+    {
+      "source": "readme",
+      "target": "concetto_window_coverings",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\README.md",
+      "weight": 1.0
+    },
+    {
+      "source": "readme",
+      "target": "subscription_system",
+      "relation": "describes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\README.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_fix_completion",
+      "target": "rls_context_isolation",
+      "relation": "documents",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_fix_completion",
+      "target": "transaction_scoped_context",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_violations_audit",
+      "target": "api_route_security",
+      "relation": "examines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_VIOLATIONS_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_violations_audit",
+      "target": "direct_sql_operations",
+      "relation": "identifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_VIOLATIONS_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "route_audit",
+      "target": "pricing_system_architecture",
+      "relation": "analyzes",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\ROUTE-AUDIT-REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_definer_mapping",
+      "target": "neon_sql_helper_rewiring",
+      "relation": "guides",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_DEFINER_MAPPING.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_definer_mapping",
+      "target": "security_definer_functions",
+      "relation": "maps",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_DEFINER_MAPPING.md",
+      "weight": 1.0
+    },
+    {
+      "source": "rls_security_violations",
+      "target": "api_route_security",
+      "relation": "impacts",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "weight": 0.8
+    },
+    {
+      "source": "code_quality_crisis",
+      "target": "code_duplication_patterns",
+      "relation": "exhibits",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "weight": 0.9
+    },
+    {
+      "source": "multi_tenant_architecture",
+      "target": "rls_context_isolation",
+      "relation": "requires",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "weight": 0.9
+    },
+    {
+      "source": "transaction_scoped_context",
+      "target": "zero_rls_violations_goal",
+      "relation": "supports",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md",
+      "weight": 0.8
+    },
+    {
+      "source": "database_driven_pricing",
+      "target": "pricing_system_architecture",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\PRICING_SYSTEM_SUMMARY.md",
+      "weight": 0.7
+    },
+    {
+      "source": "audit_completion_summary",
+      "target": "comprehensive_fix_report",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_fix_report",
+      "target": "comprehensive_security_audit",
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_FIX_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_sql_audit_design",
+      "target": "database_operations_audit",
+      "relation": "informs",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "E:\\laragon\\www\\concettowc\\COMPREHENSIVE_SQL_AUDIT_DESIGN.md",
+      "weight": 0.7
+    },
+    {
+      "source": "sql_audit_progress",
+      "target": "sql_security_audit",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_PROGRESS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_database_operations_audit",
+      "target": "sql_security_audit",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\COMPREHENSIVE_DATABASE_OPERATIONS_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "comprehensive_database_operations_audit",
+      "target": "zero_rls_violations_goal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\COMPREHENSIVE_DATABASE_OPERATIONS_AUDIT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "critical_rls_bypass_issue",
+      "target": "rls_bypass_vulnerability",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "weight": 1.0
+    },
+    {
+      "source": "critical_rls_bypass_issue",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\db.ts_querywithrlsbypass",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "password_hash_exposure",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "find_user_by_email_hash",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "find_user_by_id",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "find_user_by_email",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "update_user_email_hash",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "get_user_admin_status",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "login_fix_recommendations",
+      "target": "mark_reset_token_used",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "migration_047_security_issues",
+      "target": "migration_047_vulnerabilities",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "weight": 1.0
+    },
+    {
+      "source": "migration_047_security_issues",
+      "target": "migrations_047_create_comprehensive_security_definer_functions.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "weight": 1.0
+    },
+    {
+      "source": "migration_047_security_issues",
+      "target": "security_definer_pattern",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "weight": 1.0
+    },
+    {
+      "source": "sql_audit_documents_sql_audit_progress",
+      "target": "migration_047_vulnerabilities",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\SQL_AUDIT_PROGRESS.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "admin_function_exposure",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_048_fix_password_hash_exposure_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_049_fix_admin_function_exposure_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_050_fix_authentication_functions_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_051_fix_company_data_functions_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_052_fix_quote_product_functions_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_completion_summary",
+      "target": "migrations_053_fix_remaining_functions_security.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "security_fix_implementation",
+      "target": "migration_047_vulnerabilities",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_IMPLEMENTATION.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_design",
+      "target": "admin_panel_integration",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_design",
+      "target": "term_discount_calculation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_design",
+      "target": "migrations_006_add_configurable_term_discounts.sql",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "admin_panel_integration",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "qr_code_pinata_integration",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "src\\app\\admin\\payment-settings\\route.ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "src\\app\\admin\\promo-codes\\page.tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "src\\components\\admin\\AdvancedPaymentSettings.tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "src\\components\\admin\\PromoCodeManager.tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "admin_panel_integration_plan",
+      "target": "src\\components\\admin\\VerificationInterface.tsx",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md",
+      "weight": 1.0
+    },
+    {
+      "source": "task_5_completion_summary",
+      "target": "promo_code_management",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-5-COMPLETION-SUMMARY.md",
+      "weight": 1.0
+    },
+    {
+      "source": "task_10_validation_report",
+      "target": "admin_panel_integration",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-10-VALIDATION-REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "task_10_validation_report",
+      "target": "term_discount_calculation",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-10-VALIDATION-REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "trial_activation_test_report",
+      "target": "trial_activation_system",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "trial_activation_test_report",
+      "target": "oauth_trial_flow",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "trial_activation_test_report",
+      "target": "subscription_management",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "trial_activation_test_report",
+      "target": "src\\auth.ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "trial_activation_test_report",
+      "target": "src\\proxy.ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "weight": 1.0
+    },
+    {
+      "source": "onboarding_readme",
+      "target": "onboarding_system",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "onboarding_readme",
+      "target": "src\\components\\onboarding\\OnboardingModal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "onboarding_readme",
+      "target": "src\\components\\onboarding\\FeatureOnboardingModal",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "fix_email_authentication",
+      "target": "email_authentication_encryption",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\fix-email-authentication.md",
+      "source_location": null
+    },
+    {
+      "source": "migrations_instructions",
+      "target": "database_migration_process",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\migrations\\INSTRUCTIONS.md",
+      "source_location": null
+    },
+    {
+      "source": "migration_report",
+      "target": "company_product_system",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "migration_report",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\migrations\\apply-company-product-system.ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "migration_report",
+      "target": "multi_tenant_product_catalog",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "migrations_readme",
+      "target": "company_product_system",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "step_a_complete",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\migrations\\apply-company-product-system.ts",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_A_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "source": "step_b_complete",
+      "target": "src\\lib\\db.ts_querywithrlsbypass",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_B_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "source": "step_c_complete",
+      "target": "admin_panel_integration",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\STEP_C_COMPLETE.md",
+      "source_location": null
+    },
+    {
+      "source": "sql_security_audit",
+      "target": "zero_rls_violations_goal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_PROGRESS.md",
+      "source_location": null
+    },
+    {
+      "source": "migration_047_vulnerabilities",
+      "target": "security_definer_pattern",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\migration_047_security_issues.md",
+      "source_location": null
+    },
+    {
+      "source": "rls_bypass_vulnerability",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\db.ts_querywithrlsbypass",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\CRITICAL_RLS_BYPASS_ISSUE.md",
+      "source_location": null
+    },
+    {
+      "source": "password_hash_exposure",
+      "target": "find_user_by_email_hash",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "source": "password_hash_exposure",
+      "target": "find_user_by_id",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md",
+      "source_location": null
+    },
+    {
+      "source": "admin_panel_integration",
+      "target": "qr_code_pinata_integration",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "source": "admin_panel_integration",
+      "target": "term_discount_calculation",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-design.md",
+      "source_location": null
+    },
+    {
+      "source": "trial_activation_system",
+      "target": "oauth_trial_flow",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "trial_activation_system",
+      "target": "subscription_management",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "onboarding_system",
+      "target": "src\\components\\onboarding\\OnboardingModal",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "onboarding_system",
+      "target": "src\\components\\onboarding\\FeatureOnboardingModal",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md",
+      "source_location": null
+    },
+    {
+      "source": "company_product_system",
+      "target": "multi_tenant_product_catalog",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "company_product_system",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\migrations\\apply-company-product-system.ts",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\lib\\migrations\\MIGRATION-REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "oauth_trial_flow",
+      "target": "src\\auth.ts",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "subscription_management",
+      "target": "src\\proxy.ts",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md",
+      "source_location": null
+    },
+    {
+      "source": "admin_function_exposure",
+      "target": "password_hash_exposure",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "source": "promo_code_management",
+      "target": "term_discount_calculation",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "E:\\laragon\\www\\concettowc\\TASK-5-COMPLETION-SUMMARY.md",
+      "source_location": null
+    },
+    {
+      "source": "email_authentication_encryption",
+      "target": "password_hash_exposure",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "E:\\laragon\\www\\concettowc\\fix-email-authentication.md",
+      "source_location": null
+    },
+    {
+      "source": "database_migration_process",
+      "target": ":\\laragon\\www\\concettowc\\src\\lib\\migrations\\apply-company-product-system.ts",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "E:\\laragon\\www\\concettowc\\migrations\\INSTRUCTIONS.md",
+      "source_location": null
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "security_migration_pattern",
+      "label": "Security Migration Pattern",
+      "nodes": [
+        "rls_violations_audit",
+        "comprehensive_security_audit",
+        "security_definer_mapping"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_VIOLATIONS_AUDIT.md"
+    },
+    {
+      "id": "audit_ecosystem",
+      "label": "Audit Ecosystem",
+      "nodes": [
+        "audit_completion_summary",
+        "comprehensive_fix_report",
+        "comprehensive_security_audit",
+        "rls_violations_audit"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\AUDIT_COMPLETION_SUMMARY.md"
+    },
+    {
+      "id": "rls_fix_implementation",
+      "label": "RLS Fix Implementation",
+      "nodes": [
+        "rls_fix_completion",
+        "security_definer_mapping",
+        "comprehensive_sql_audit_plan"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "E:\\laragon\\www\\concettowc\\RLS_FIX_COMPLETION.md"
+    },
+    {
+      "id": "security_fix_migration_chain",
+      "label": "Security Fix Migration Chain",
+      "nodes": [
+        "migrations_048_fix_password_hash_exposure_security.sql",
+        "migrations_049_fix_admin_function_exposure_security.sql",
+        "migrations_050_fix_authentication_functions_security.sql",
+        "migrations_051_fix_company_data_functions_security.sql",
+        "migrations_052_fix_quote_product_functions_security.sql",
+        "migrations_053_fix_remaining_functions_security.sql"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\SECURITY_FIX_COMPLETION_SUMMARY.md"
+    },
+    {
+      "id": "admin_component_integration",
+      "label": "Admin Component Integration",
+      "nodes": [
+        "src\\components\\admin\\AdvancedPaymentSettings.tsx",
+        "src\\components\\admin\\PromoCodeManager.tsx",
+        "src\\components\\admin\\VerificationInterface.tsx",
+        "src\\app\\admin\\payment-settings\\route.ts",
+        "src\\app\\admin\\promo-codes\\page.tsx"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\admin-panel-integration-plan.md"
+    },
+    {
+      "id": "vulnerable_authentication_functions",
+      "label": "Vulnerable Authentication Functions",
+      "nodes": [
+        "find_user_by_email_hash",
+        "find_user_by_id",
+        "find_user_by_email",
+        "update_user_email_hash",
+        "get_user_admin_status",
+        "mark_reset_token_used"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\SQL_AUDIT_DOCUMENTS\\LOGIN_FIX_RECOMMENDATIONS.md"
+    },
+    {
+      "id": "onboarding_component_family",
+      "label": "Onboarding Component Family",
+      "nodes": [
+        "src\\components\\onboarding\\OnboardingModal",
+        "src\\components\\onboarding\\FeatureOnboardingModal",
+        "onboarding_system"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "E:\\laragon\\www\\concettowc\\src\\components\\onboarding\\README.md"
+    },
+    {
+      "id": "trial_subscription_flow",
+      "label": "Trial Subscription Flow",
+      "nodes": [
+        "oauth_trial_flow",
+        "subscription_management",
+        "trial_activation_system",
+        "src\\auth.ts",
+        "src\\proxy.ts"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "E:\\laragon\\www\\concettowc\\TRIAL_ACTIVATION_TEST_REPORT.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
