@@ -1,5 +1,7 @@
 'use client';
 
+import { CheckCircle2 } from 'lucide-react';
+
 interface EncryptionModalProps {
   show: boolean;
   message?: string;
@@ -17,7 +19,7 @@ export default function EncryptionModal({
     encrypting: 'Encrypting sensitive data...',
     verifying: 'Verifying encryption integrity...',
     deleting: 'Deleting plaintext data...',
-    complete: 'Encryption complete ✓',
+    complete: 'Encryption complete',
   };
 
   const displayMessage = message || phaseMessages[phase];
@@ -27,19 +29,19 @@ export default function EncryptionModal({
       <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
         <div className="flex items-center gap-3">
           {phase === 'complete' ? (
-            <div className="text-green-600 text-2xl">✓</div>
+            <CheckCircle2 className="w-7 h-7 text-emerald-600" />
           ) : (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
           )}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-stone-900">
               {phase === 'complete' ? 'Complete' : 'Processing'}
             </h3>
-            <p className="text-sm text-gray-600 mt-1">{displayMessage}</p>
+            <p className="text-sm text-stone-600 mt-1">{displayMessage}</p>
           </div>
         </div>
         {phase !== 'complete' && (
-          <p className="text-xs text-gray-500 mt-4">
+          <p className="text-xs text-stone-500 mt-4">
             {phase === 'encrypting' && 'Encrypting and verifying your data...'}
             {phase === 'verifying' && 'Confirming all data encrypted correctly...'}
             {phase === 'deleting' && 'Removing unencrypted copies...'}

@@ -50,7 +50,7 @@ export default function PricingManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading pricing...</p>
+        <p className="text-stone-600">Loading pricing...</p>
       </div>
     );
   }
@@ -83,15 +83,15 @@ export default function PricingManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Base Rate */}
           <div className="space-y-2">
-            <h3 className="font-medium text-gray-700">Base Monthly Rate</h3>
-            <p className="text-2xl font-bold text-blue-600">
+            <h3 className="font-medium text-stone-700">Base Monthly Rate</h3>
+            <p className="text-2xl font-bold text-indigo-600">
               PHP {pricing.current_pricing.monthly_base_rate.toFixed(2)}
             </p>
           </div>
 
           {/* Period Discounts */}
           <div className="space-y-2">
-            <h3 className="font-medium text-gray-700">Period Discounts</h3>
+            <h3 className="font-medium text-stone-700">Period Discounts</h3>
             <div className="space-y-1">
               <p>Quarterly: <span className="font-semibold text-green-600">{pricing.current_pricing.quarterly_discount_percent}%</span></p>
               <p>Annual: <span className="font-semibold text-green-600">{pricing.current_pricing.annual_discount_percent}%</span></p>
@@ -100,7 +100,7 @@ export default function PricingManager() {
 
           {/* QR Thresholds */}
           <div className="space-y-2">
-            <h3 className="font-medium text-gray-700">Billing Period Thresholds</h3>
+            <h3 className="font-medium text-stone-700">Billing Period Thresholds</h3>
             <div className="space-y-1">
               <p>Monthly: &lt; PHP {pricing.current_pricing.monthly_threshold.toFixed(2)}</p>
               <p>Quarterly: &lt; PHP {pricing.current_pricing.quarterly_threshold.toFixed(2)}</p>
@@ -109,12 +109,12 @@ export default function PricingManager() {
 
           {/* Metadata */}
           <div className="space-y-2">
-            <h3 className="font-medium text-gray-700">Last Updated</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-medium text-stone-700">Last Updated</h3>
+            <p className="text-sm text-stone-600">
               {new Date(pricing.current_pricing.updated_at).toLocaleDateString()}
             </p>
             {pricing.current_pricing.change_reason && (
-              <p className="text-sm text-gray-500 italic">
+              <p className="text-sm text-stone-500 italic">
                 "{pricing.current_pricing.change_reason}"
               </p>
             )}
@@ -126,12 +126,12 @@ export default function PricingManager() {
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={() => setShowEditForm(true)}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 min-h-[44px]"
+          className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 min-h-[44px]"
         >
           Update Pricing
         </button>
         <button
-          className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 min-h-[44px]"
+          className="bg-stone-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-stone-700 min-h-[44px]"
           disabled
         >
           View History
@@ -150,7 +150,7 @@ export default function PricingManager() {
                 </span> {' '}
                 PHP {change.monthly_base_rate.toFixed(2)}/month
                 {change.change_reason && (
-                  <span className="italic text-gray-600"> - "{change.change_reason}"</span>
+                  <span className="italic text-stone-600"> - "{change.change_reason}"</span>
                 )}
               </li>
             ))}
@@ -204,13 +204,13 @@ export default function PricingManager() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center p-0 md:p-4 z-50">
           <div className="bg-white rounded-t-xl md:rounded-lg p-6 w-full md:max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">Update Pricing Configuration</h2>
-            <p className="text-gray-600 mb-6 text-sm">
+            <p className="text-stone-600 mb-6 text-sm">
               Pricing form is ready for implementation. Connect to API endpoint when backend is available.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowEditForm(false)}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium min-h-[44px]"
+                className="flex-1 bg-stone-200 text-stone-800 px-4 py-3 rounded-lg font-medium min-h-[44px]"
               >
                 Close
               </button>

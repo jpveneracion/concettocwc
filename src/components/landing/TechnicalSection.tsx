@@ -36,9 +36,9 @@ const iconMap: Record<TechnicalCardProps['icon'], LucideIcon> = {
 
 export default function TechnicalSection() {
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-gray-100">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-stone-100">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">
+        <h2 className="text-3xl sm:text-4xl font-bold text-stone-900 text-center mb-12">
           Built for Business, Designed for Growth
         </h2>
 
@@ -48,17 +48,17 @@ export default function TechnicalSection() {
             return (
               <div
                 key={index}
-                className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-200"
+                className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-stone-200"
               >
                 <div className="flex justify-center mb-4">
-                  <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Icon className="w-7 h-7 text-blue-600" />
+                  <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <Icon className="w-7 h-7 text-indigo-600" />
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                <h3 className="text-lg font-semibold text-stone-900 mb-2 text-center">
                   {tech.title}
                 </h3>
-                <p className="text-gray-600 text-sm text-center">
+                <p className="text-stone-600 text-sm text-center">
                   {tech.description}
                 </p>
               </div>

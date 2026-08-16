@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
+import { CheckCircle2 } from 'lucide-react';
 
 type CollectionRow = {
   collection: string;
@@ -110,47 +111,48 @@ export default function PricingSettingsPage() {
           <div className="flex items-center gap-4 mb-2">
             <a
               href="/settings"
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-stone-500 hover:text-stone-700"
             >
               ← Back to Settings
             </a>
           </div>
           <h1 className="text-xl font-semibold">Product Pricing</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-stone-500 mt-1">
             Manage your supplier costs and markup by blinds family (collection). Retail prices are auto-calculated.
           </p>
         </div>
 
         {successCount > 0 && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm mb-4">
-            ✓ Saved pricing for {successCount} collection{successCount > 1 ? 's' : ''}
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg text-sm mb-4 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            Saved pricing for {successCount} collection{successCount > 1 ? 's' : ''}
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-          <div className="p-3 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="bg-white border border-stone-200 rounded-xl overflow-hidden mb-6">
+          <div className="p-3 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <input
-              className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="w-full max-w-xs border border-stone-200 rounded-lg px-3 py-2 text-sm"
               placeholder="Search collections…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-stone-500">
               {filtered.length} collection{filtered.length !== 1 ? 's' : ''}
             </div>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-gray-400">Loading collections...</div>
+            <div className="p-12 text-center text-stone-400">Loading collections...</div>
           ) : error && !collections.length ? (
             <div className="p-12 text-center text-red-600">{error}</div>
           ) : !collections || collections.length === 0 ? (
-            <div className="p-12 text-center text-gray-400">
+            <div className="p-12 text-center text-stone-400">
               No collections found. Add products with collections first.
             </div>
           ) : (
             <>
-            <div className="sm:hidden divide-y divide-gray-100">
+            <div className="sm:hidden divide-y divide-stone-100">
               {filtered.map((c) => {
                 const margin = c.retailPrice > 0 ? ((c.markup / c.retailPrice) * 100).toFixed(1) : '0.0';
 
@@ -159,42 +161,42 @@ export default function PricingSettingsPage() {
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="font-medium text-sm">{c.collection}</div>
                       <div className="text-right shrink-0">
-                        <div className="text-xs text-gray-400">Retail</div>
-                        <div className="font-semibold text-blue-700">₱{c.retailPrice.toFixed(2)}</div>
+                        <div className="text-xs text-stone-400">Retail</div>
+                        <div className="font-semibold text-indigo-700">₱{c.retailPrice.toFixed(2)}</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Supplier Cost (₱/sq.ft.)</label>
+                        <label className="block text-xs text-stone-500 mb-1">Supplier Cost (₱/sq.ft.)</label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-right text-sm"
+                          className="w-full px-2 py-1.5 border border-stone-300 rounded text-right text-sm"
                           value={c.supplierCost || ''}
                           onChange={(e) => updateCollectionPrice(c.collection, 'supplierCost', e.target.value)}
                           placeholder="0.00"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Markup (₱/sq.ft.)</label>
+                        <label className="block text-xs text-stone-500 mb-1">Markup (₱/sq.ft.)</label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-right text-sm"
+                          className="w-full px-2 py-1.5 border border-stone-300 rounded text-right text-sm"
                           value={c.markup || ''}
                           onChange={(e) => updateCollectionPrice(c.collection, 'markup', e.target.value)}
                           placeholder="0.00"
                         />
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-stone-500">
                       Margin:{' '}
                       {parseFloat(margin) > 0 ? (
-                        <span className="text-blue-700 font-medium">{margin}%</span>
+                        <span className="text-indigo-700 font-medium">{margin}%</span>
                       ) : (
-                        <span className="text-gray-400">0.0%</span>
+                        <span className="text-stone-400">0.0%</span>
                       )}
                     </div>
                   </div>
@@ -204,22 +206,22 @@ export default function PricingSettingsPage() {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm min-w-[640px]">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Collection</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Products</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 text-right">
+                <tr className="border-b border-stone-200 bg-stone-50">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Collection</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 hidden sm:table-cell">Products</th>
+                  <th className="px-4 py-3 text-xs font-medium text-stone-500 text-right">
                     Supplier Cost
-                    <span className="block text-xs text-gray-400 font-normal">(₱/sq.ft.)</span>
+                    <span className="block text-xs text-stone-400 font-normal">(₱/sq.ft.)</span>
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 text-right">
+                  <th className="px-4 py-3 text-xs font-medium text-stone-500 text-right">
                     Markup
-                    <span className="block text-xs text-gray-400 font-normal">(₱/sq.ft.)</span>
+                    <span className="block text-xs text-stone-400 font-normal">(₱/sq.ft.)</span>
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 text-right">
+                  <th className="px-4 py-3 text-xs font-medium text-stone-500 text-right">
                     Retail Price
-                    <span className="block text-xs text-gray-400 font-normal">(₱/sq.ft.)</span>
+                    <span className="block text-xs text-stone-400 font-normal">(₱/sq.ft.)</span>
                   </th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 text-right">
+                  <th className="px-4 py-3 text-xs font-medium text-stone-500 text-right">
                     Margin
                   </th>
                 </tr>
@@ -229,11 +231,11 @@ export default function PricingSettingsPage() {
                   const margin = c.retailPrice > 0 ? ((c.markup / c.retailPrice) * 100).toFixed(1) : '0.0';
 
                   return (
-                    <tr key={c.collection} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={c.collection} className="border-b border-stone-100 hover:bg-stone-50">
                       <td className="px-4 py-3 font-medium">{c.collection}</td>
-                      <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
+                      <td className="px-4 py-3 text-stone-500 hidden sm:table-cell">
                         {c.collection && (
-                          <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          <span className="text-xs bg-stone-100 px-2 py-1 rounded">
                             All {c.collection} blinds
                           </span>
                         )}
@@ -243,7 +245,7 @@ export default function PricingSettingsPage() {
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-sm"
+                          className="w-32 px-2 py-1 border border-stone-300 rounded text-right text-sm"
                           value={c.supplierCost || ''}
                           onChange={(e) => updateCollectionPrice(c.collection, 'supplierCost', e.target.value)}
                           placeholder="0.00"
@@ -254,20 +256,20 @@ export default function PricingSettingsPage() {
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-sm"
+                          className="w-32 px-2 py-1 border border-stone-300 rounded text-right text-sm"
                           value={c.markup || ''}
                           onChange={(e) => updateCollectionPrice(c.collection, 'markup', e.target.value)}
                           placeholder="0.00"
                         />
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-blue-700 bg-blue-50">
+                      <td className="px-4 py-3 text-right font-medium text-indigo-700 bg-indigo-50">
                         ₱{c.retailPrice.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
                         {parseFloat(margin) > 0 ? (
-                          <span className="text-blue-700">{margin}%</span>
+                          <span className="text-indigo-700">{margin}%</span>
                         ) : (
-                          <span className="text-gray-400">0.0%</span>
+                          <span className="text-stone-400">0.0%</span>
                         )}
                       </td>
                     </tr>
@@ -289,7 +291,7 @@ export default function PricingSettingsPage() {
         <div className="flex flex-col sm:flex-row justify-end gap-3">
           <button
             onClick={() => router.push('/settings')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 w-full sm:w-auto"
+            className="px-4 py-2 border border-stone-300 text-stone-700 rounded-lg text-sm hover:bg-stone-50 w-full sm:w-auto"
             disabled={saving}
           >
             Cancel
@@ -297,7 +299,7 @@ export default function PricingSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving || loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
           >
             {saving ? 'Saving...' : `Save All Pricing (${collections.length} collection${collections.length !== 1 ? 's' : ''})`}
           </button>

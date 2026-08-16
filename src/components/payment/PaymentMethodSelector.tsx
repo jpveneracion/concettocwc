@@ -1,5 +1,6 @@
 'use client';
 
+import { Smartphone, Landmark, Coins, Pi, CheckCircle2 } from 'lucide-react';
 import { PaymentMethod } from '@/types/payment';
 
 interface PaymentMethodSelectorProps {
@@ -12,28 +13,28 @@ const paymentMethods = [
     id: 'gcash' as PaymentMethod,
     name: 'GCash',
     description: 'Instant mobile payment',
-    icon: '📱',
+    icon: Smartphone,
     color: 'blue'
   },
   {
     id: 'gotyme' as PaymentMethod,
     name: 'GoTyme',
     description: 'Bank transfer app',
-    icon: '🏦',
+    icon: Landmark,
     color: 'purple'
   },
   {
     id: 'usdc' as PaymentMethod,
     name: 'USDC',
     description: 'Crypto payment',
-    icon: '₿',
+    icon: Coins,
     color: 'green'
   },
   {
     id: 'pi' as PaymentMethod,
     name: 'Pi Network',
     description: 'Pay with Pi (sandbox)',
-    icon: 'π',
+    icon: Pi,
     color: 'purple'
   }
 ];
@@ -43,8 +44,8 @@ export default function PaymentMethodSelector({
   onMethodChange
 }: PaymentMethodSelectorProps) {
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-xl p-6 border border-stone-200 mb-6">
+      <h3 className="text-lg font-semibold text-stone-900 mb-4">
         Select Payment Method
       </h3>
 
@@ -56,20 +57,20 @@ export default function PaymentMethodSelector({
             className={`
               p-4 rounded-lg border-2 transition-all text-left
               ${selectedMethod === method.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                ? 'border-indigo-500 bg-indigo-50'
+                : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'
               }
             `}
           >
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl">{method.icon}</span>
-              <h4 className="font-semibold text-gray-900">{method.name}</h4>
+              <method.icon className="w-6 h-6 text-indigo-600" />
+              <h4 className="font-semibold text-stone-900">{method.name}</h4>
             </div>
-            <p className="text-sm text-gray-600">{method.description}</p>
+            <p className="text-sm text-stone-600">{method.description}</p>
 
             {selectedMethod === method.id && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
-                <span className="text-green-600">✓</span>
+              <div className="mt-3 flex items-center gap-2 text-sm text-indigo-600">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span className="font-medium">Selected</span>
               </div>
             )}

@@ -314,18 +314,18 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
                     aria-current={isCurrent ? 'step' : undefined}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
                       isCurrent
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-indigo-600 text-white'
                         : isCompleted
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'bg-gray-100 text-gray-400'
-                    } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-blue-200'}`}
+                        ? 'bg-indigo-100 text-indigo-600'
+                        : 'bg-stone-100 text-stone-400'
+                    } ${isDisabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-indigo-200'}`}
                   >
                     {index + 1}
                   </button>
                   {index < STEP_ORDER.length - 1 && (
                     <div
                       className={`flex-1 h-1 mx-2 ${
-                        index < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'
+                        index < currentStepIndex ? 'bg-indigo-600' : 'bg-stone-200'
                       }`}
                       aria-hidden="true"
                     />
@@ -334,10 +334,10 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
               );
             })}
           </div>
-          <div className="hidden md:flex justify-between text-sm text-gray-600">
+          <div className="hidden md:flex justify-between text-sm text-stone-600">
             {STEP_ORDER.map((step) => (
               <div key={step} className={`flex-1 text-center ${
-                step === currentStep ? 'font-medium text-blue-600' : ''
+                step === currentStep ? 'font-medium text-indigo-600' : ''
               }`}>
                 {STEP_LABELS[step]}
               </div>
@@ -350,24 +350,24 @@ export default function QuoteWizard({ quoteNumber, existingQuoteNumbers, existin
           {CurrentStepComponent ? (
             <CurrentStepComponent {...getStepProps()} />
           ) : (
-            <div className="text-gray-400">Step component not loaded</div>
+            <div className="text-stone-400">Step component not loaded</div>
           )}
         </div>
 
         {/* Navigation buttons */}
-        <div className="flex justify-between pt-4 border-t border-gray-200">
+        <div className="flex justify-between pt-4 border-t border-stone-200">
           <button
             onClick={previousStep}
             disabled={currentStepIndex === 0}
             aria-label="Go to previous step"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 border border-stone-300 rounded-lg text-sm font-medium hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
             onClick={nextStep}
             aria-label={currentStepIndex >= STEP_ORDER.length - 1 ? 'Submit quote' : 'Go to next step'}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
           >
             {currentStepIndex >= STEP_ORDER.length - 1 ? 'Submit' : 'Next'}
           </button>

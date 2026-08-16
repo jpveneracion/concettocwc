@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 
 interface PromoCode {
   id: number;
@@ -166,7 +167,7 @@ export default function PromoCodeManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading promo codes...</p>
+        <p className="text-stone-600">Loading promo codes...</p>
       </div>
     );
   }
@@ -187,12 +188,12 @@ export default function PromoCodeManager() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Promo Code Management</h2>
-          <p className="text-gray-600">Create and manage promo codes with QR codes</p>
+          <h2 className="text-2xl font-bold text-stone-900">Promo Code Management</h2>
+          <p className="text-stone-600">Create and manage promo codes with QR codes</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+          className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
         >
           + Create Promo Code
         </button>
@@ -205,7 +206,7 @@ export default function PromoCodeManager() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold">{promo.code}</h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-stone-600">
                   {promo.discount_percent}% discount on {promo.applicable_plans.join(', ')} plans
                 </p>
               </div>
@@ -218,7 +219,7 @@ export default function PromoCodeManager() {
                   {promo.is_active ? 'Active' : 'Inactive'}
                 </div>
                 {promo.expires_at && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-stone-500 mt-1">
                     Expires: {new Date(promo.expires_at).toLocaleDateString()}
                   </p>
                 )}
@@ -227,16 +228,16 @@ export default function PromoCodeManager() {
 
             {/* Usage Stats */}
             {promo.usage_limit && (
-              <div className="bg-blue-50 rounded-lg p-4">
+              <div className="bg-indigo-50 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-blue-900">Usage</span>
-                  <span className="text-sm text-blue-700">
+                  <span className="text-sm font-medium text-indigo-900">Usage</span>
+                  <span className="text-sm text-indigo-700">
                     {promo.current_usage || 0} / {promo.usage_limit}
                   </span>
                 </div>
-                <div className="w-full bg-blue-200 rounded-full h-2">
+                <div className="w-full bg-indigo-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full"
+                    className="bg-indigo-600 h-2 rounded-full"
                     style={{
                       width: `${Math.min(((promo.current_usage || 0) / promo.usage_limit) * 100, 100)}%`
                     }}
@@ -249,7 +250,7 @@ export default function PromoCodeManager() {
             <div className="grid md:grid-cols-2 gap-4">
               {['gcash', 'gotyme'].map((method) => (
                 <div key={method} className="border rounded-lg p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-stone-700 mb-2">
                     {method.toUpperCase()} QR Code
                   </label>
 
@@ -260,8 +261,8 @@ export default function PromoCodeManager() {
                         alt={`${method} QR`}
                         className="w-full h-full object-contain"
                       />
-                      <div className="absolute bottom-1 right-1 bg-green-500 text-white text-xs px-1 rounded">
-                        ✓
+                      <div className="absolute bottom-1 right-1 bg-emerald-500 text-white text-xs px-1 rounded">
+                        <Check className="w-3 h-3" />
                       </div>
                     </div>
                   )}
@@ -281,8 +282,8 @@ export default function PromoCodeManager() {
                     htmlFor={`qr-upload-${promo.id}-${method}`}
                     className={`block text-center px-3 py-2 rounded-lg text-sm font-medium cursor-pointer ${
                       uploading
-                        ? 'bg-gray-100 text-gray-400'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-stone-100 text-stone-400'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
                     }`}
                   >
                     {uploading ? 'Uploading...' : 'Upload QR'}
@@ -331,7 +332,7 @@ export default function PromoCodeManager() {
                   pattern="[A-Z0-9]+"
                   maxLength={20}
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty for auto-generated code, or enter your own (6-20 characters, letters and numbers only)</p>
+                <p className="text-xs text-stone-500 mt-1">Leave empty for auto-generated code, or enter your own (6-20 characters, letters and numbers only)</p>
               </div>
 
               <div>
@@ -384,7 +385,7 @@ export default function PromoCodeManager() {
                   className="w-full px-3 py-2 border rounded-lg"
                   min="1"
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty for one-time use codes</p>
+                <p className="text-xs text-stone-500 mt-1">Leave empty for one-time use codes</p>
               </div>
 
               <div>
@@ -395,7 +396,7 @@ export default function PromoCodeManager() {
                   onChange={(e) => setNewPromo({ ...newPromo, expires_at: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1">Leave empty for no expiration</p>
+                <p className="text-xs text-stone-500 mt-1">Leave empty for no expiration</p>
               </div>
 
               <div>
@@ -423,7 +424,7 @@ export default function PromoCodeManager() {
               <div className="flex gap-2 pt-4 border-t">
                 <button
                   onClick={createPromoCode}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
                 >
                   Create Promo Code
                 </button>
@@ -442,7 +443,7 @@ export default function PromoCodeManager() {
                       gotyme_qr_url: ''
                     });
                   }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
+                  className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg font-medium hover:bg-stone-300"
                 >
                   Cancel
                 </button>

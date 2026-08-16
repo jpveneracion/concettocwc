@@ -244,7 +244,7 @@ export default function CreateOrdersOnboardingModal({
         {/* Close Button */}
         <button
           onClick={handleSkip}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-stone-400 hover:text-stone-600 transition-colors"
           aria-label="Close onboarding"
         >
           <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -252,25 +252,25 @@ export default function CreateOrdersOnboardingModal({
 
         {/* Feature Header */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-2">
             <FileText className="w-4 h-4" />
             <span className="font-medium">{createOrdersOnboardingContent.featureName}</span>
           </div>
-          <p className="text-xs text-gray-600">{createOrdersOnboardingContent.description}</p>
+          <p className="text-xs text-stone-600">{createOrdersOnboardingContent.description}</p>
         </div>
 
         {/* Mode Indicators for Choose Method Step */}
         {currentStep === 2 && (
           <div className="flex gap-2 mb-4">
-            <div className="flex-1 p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
+            <div className="flex-1 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-center">
               <div className="text-2xl mb-1">📝</div>
-              <div className="text-xs font-semibold text-blue-900">Traditional Form</div>
-              <div className="text-xs text-blue-700">Experienced Users</div>
+              <div className="text-xs font-semibold text-indigo-900">Traditional Form</div>
+              <div className="text-xs text-indigo-700">Experienced Users</div>
             </div>
-            <div className="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
+            <div className="flex-1 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-center">
               <div className="text-2xl mb-1">🧙</div>
-              <div className="text-xs font-semibold text-purple-900">Wizard Mode</div>
-              <div className="text-xs text-purple-700">Step-by-Step Guide</div>
+              <div className="text-xs font-semibold text-indigo-900">Wizard Mode</div>
+              <div className="text-xs text-indigo-700">Step-by-Step Guide</div>
             </div>
           </div>
         )}
@@ -285,7 +285,7 @@ export default function CreateOrdersOnboardingModal({
                   ? 'w-6 sm:w-8 ' + colorClasses.indicator
                   : index < currentStep
                   ? 'w-1.5 sm:w-2 bg-green-500'
-                  : 'w-1.5 sm:w-2 bg-gray-300'
+                  : 'w-1.5 sm:w-2 bg-stone-300'
               }`}
               aria-label={`Step ${index + 1} of ${createOrdersOnboardingContent.steps.length}`}
             />
@@ -298,14 +298,14 @@ export default function CreateOrdersOnboardingModal({
           <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{step.icon}</div>
 
           {/* Title */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mb-3 sm:mb-4 px-2">
             {step.title}
           </h2>
 
           {/* Content Points */}
           <div className="text-left space-y-2 sm:space-y-3 px-2 mb-4">
             {step.content.map((point, index) => (
-              <p key={index} className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              <p key={index} className="text-sm sm:text-base text-stone-700 leading-relaxed">
                 {point}
               </p>
             ))}
@@ -330,7 +330,7 @@ export default function CreateOrdersOnboardingModal({
         </div>
 
         {/* Progress Indicator */}
-        <div className="text-center text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
+        <div className="text-center text-xs sm:text-sm text-stone-500 mb-4 sm:mb-6">
           Step {currentStep + 1} of {createOrdersOnboardingContent.steps.length}
         </div>
 
@@ -339,7 +339,7 @@ export default function CreateOrdersOnboardingModal({
           {/* Skip Button */}
           <button
             onClick={handleSkip}
-            className="px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base order-3 sm:order-1"
+            className="px-4 sm:px-6 py-2.5 sm:py-3 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors text-sm sm:text-base order-3 sm:order-1"
           >
             Skip
           </button>
@@ -348,7 +348,7 @@ export default function CreateOrdersOnboardingModal({
           {currentStep > 0 && (
             <button
               onClick={handlePrevious}
-              className="px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base flex items-center justify-center gap-2 order-2"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors text-sm sm:text-base flex items-center justify-center gap-2 order-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Previous

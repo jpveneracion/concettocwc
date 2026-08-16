@@ -33,7 +33,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         aria-label={ariaLabel || 'Loading content'}
       >
         <svg
-          className={`animate-spin rounded-full border-gray-300 border-t-blue-600 ${sizeClasses[size]}`}
+          className={`animate-spin rounded-full border-stone-300 border-t-indigo-600 ${sizeClasses[size]}`}
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -55,7 +55,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         </svg>
       </div>
       {text && (
-        <span id={descriptionId} className="text-gray-600">
+        <span id={descriptionId} className="text-stone-600">
           {text}
         </span>
       )}

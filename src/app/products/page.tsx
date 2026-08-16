@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { Trash2, Plus, X, Save } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import type { Product } from '@/types';
@@ -144,32 +145,33 @@ export default function ProductsPage() {
   // Mobile card render function
   const renderMobileCard = useCallback((product: Product, index: number) => {
     return (
-      <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+      <div key={product.id} className="bg-white border border-stone-200 rounded-lg p-4 space-y-3">
         {/* Card header */}
         <div className="flex justify-between items-start">
           <div>
             <div className="font-semibold text-lg font-mono">{product.code}</div>
-            <div className="text-gray-600 text-sm">{product.collection}</div>
+            <div className="text-stone-600 text-sm">{product.collection}</div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500">Unit: {product.unit}</div>
+            <div className="text-xs text-stone-500">Unit: {product.unit}</div>
           </div>
         </div>
 
         {/* Card body */}
         <div className="space-y-1 text-sm">
-          <div className="text-gray-700">{product.description}</div>
+          <div className="text-stone-700">{product.description}</div>
         </div>
 
         {/* Card actions */}
         {canDelete && (
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-stone-100">
             <button
               onClick={() => deleteProduct(product.id, product.code)}
-              className="w-full px-3 py-2 text-sm border border-red-200 text-red-600 rounded hover:bg-red-50"
+              className="w-full px-3 py-2 text-sm border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center justify-center gap-1.5"
               aria-label="Delete product"
             >
-              🗑️ Delete
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
             </button>
           </div>
         )}
@@ -180,29 +182,29 @@ export default function ProductsPage() {
   // Desktop table render function
   const renderDesktopTable = useCallback(() => {
     return (
-      <table className="w-full text-sm">
+      <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b border-gray-200">
+          <tr>
             {['Code', 'Collection', 'Description', 'Unit', ...(canDelete ? [''] : [])].map((h) => (
-              <th key={h} className="text-left px-4 py-3 text-xs font-medium text-gray-500">{h}</th>
+              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-stone-200">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {filtered.map((p) => (
-            <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="px-4 py-3 font-mono font-medium">{p.code}</td>
-              <td className="px-4 py-3 text-gray-500">{p.collection}</td>
-              <td className="px-4 py-3">{p.description}</td>
-              <td className="px-4 py-3">{p.unit}</td>
+            <tr key={p.id} className="hover:bg-slate-50 transition-colors duration-150">
+              <td className="px-4 py-3 font-mono font-medium text-stone-900">{p.code}</td>
+              <td className="px-4 py-3 text-stone-500">{p.collection}</td>
+              <td className="px-4 py-3 text-stone-900">{p.description}</td>
+              <td className="px-4 py-3 text-stone-600">{p.unit}</td>
               {canDelete && (
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => deleteProduct(p.id, p.code)}
-                    className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50"
+                    className="px-2 py-1 text-xs border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center justify-center"
                     aria-label="Delete product"
                   >
-                    🗑️
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </td>
               )}
@@ -220,55 +222,66 @@ export default function ProductsPage() {
         {canDelete && (
           <button
             onClick={() => setShowForm((s) => !s)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 inline-flex items-center gap-2"
             aria-label={showForm ? 'Cancel adding product' : 'Add product'}
           >
-            {showForm ? '✕ Cancel' : '➕ Add product'}
+            {showForm ? (
+              <>
+                <X className="w-4 h-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Add product
+              </>
+            )}
           </button>
         )}
       </div>
 
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-5">
-          <h3 className="font-medium text-sm text-gray-700 mb-4">Add products (batch)</h3>
-          <p className="text-xs text-gray-500 mb-4">Note: Pricing is set per-company in Settings. Products here are shared across all companies.</p>
+        <div className="bg-white border border-stone-200 rounded-xl p-5 mb-5">
+          <h3 className="font-medium text-sm text-stone-700 mb-4">Add products (batch)</h3>
+          <p className="text-xs text-stone-500 mb-4">Note: Pricing is set per-company in Settings. Products here are shared across all companies.</p>
 
           {/* Collection */}
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Collection</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={shared.collection} onChange={(e) => setShared({ ...shared, collection: e.target.value })} placeholder="e.g. Picasso" />
+              <label className="block text-xs text-stone-500 mb-1">Collection</label>
+              <input className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm" value={shared.collection} onChange={(e) => setShared({ ...shared, collection: e.target.value })} placeholder="e.g. Picasso" />
             </div>
           </div>
 
           {/* Product Code + Description rows */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-medium text-gray-600">Products ({productRows.length})</h4>
+              <h4 className="text-xs font-medium text-stone-600">Products ({productRows.length})</h4>
               <button
                 onClick={addProductRow}
-                className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                className="text-xs px-2 py-1 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors inline-flex items-center gap-1"
                 aria-label="Add product row"
               >
-                ➕ Add product
+                <Plus className="w-3 h-3" />
+                Add product
               </button>
             </div>
             <div className="space-y-2">
               {productRows.map((row, idx) => (
                 <div key={row._key} className="grid grid-cols-5 gap-2 items-start">
                   <div className="col-span-1">
-                    <label className="block text-xs text-gray-500 mb-1">#{idx + 1} Code</label>
+                    <label className="block text-xs text-stone-500 mb-1">#{idx + 1} Code</label>
                     <input
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase"
+                      className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm uppercase"
                       value={row.code}
                       onChange={(e) => updateProductRow(row._key, 'code', e.target.value.toUpperCase())}
                       placeholder="e.g. P5012"
                     />
                   </div>
                   <div className="col-span-3">
-                    <label className="block text-xs text-gray-500 mb-1">Description / color</label>
+                    <label className="block text-xs text-stone-500 mb-1">Description / color</label>
                     <input
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm"
                       value={row.description}
                       onChange={(e) => updateProductRow(row._key, 'description', e.target.value)}
                       placeholder="e.g. Picasso Khaki"
@@ -278,10 +291,10 @@ export default function ProductsPage() {
                     {productRows.length > 1 && (
                       <button
                         onClick={() => removeProductRow(row._key)}
-                        className="px-2 py-2 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50 w-full"
+                        className="px-2 py-2 text-xs border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors w-full inline-flex items-center justify-center"
                         aria-label="Remove product row"
                       >
-                        🗑️
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -291,23 +304,28 @@ export default function ProductsPage() {
           </div>
 
           <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-400">All products will be saved with the collection above.</p>
+            <p className="text-xs text-stone-400">All products will be saved with the collection above.</p>
             <button
               onClick={saveProducts}
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-2"
               aria-label="Save products"
             >
-              {saving ? `Saving ${productRows.length} products...` : `💾 Save ${productRows.length} product${productRows.length > 1 ? 's' : ''}`}
+              {saving ? `Saving ${productRows.length} products...` : (
+              <>
+                <Save className="w-4 h-4" />
+                Save {productRows.length} product{productRows.length > 1 ? 's' : ''}
+              </>
+            )}
             </button>
           </div>
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="p-3 border-b border-gray-100">
+      <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
+        <div className="p-3 border-b border-stone-100">
           <input
-            className="w-full max-w-xs border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            className="w-full max-w-xs border border-stone-200 rounded-lg px-3 py-2 text-sm"
             placeholder="Search by code, name, or collection…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -315,11 +333,11 @@ export default function ProductsPage() {
           />
         </div>
         {loading ? (
-          <div className="p-12 text-center text-gray-400">Loading...</div>
+          <div className="p-12 text-center text-stone-400">Loading...</div>
         ) : error ? (
           <div className="p-12 text-center text-red-600">{error}</div>
         ) : products.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">No products found.</div>
+          <div className="p-12 text-center text-stone-400">No products found.</div>
         ) : (
           <ResponsiveTable
             data={filtered}

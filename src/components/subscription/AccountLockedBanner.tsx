@@ -2,6 +2,7 @@
 
 'use client';
 import { useState } from 'react';
+import { Clock, Lock } from 'lucide-react';
 
 interface AccountLockedBannerProps {
   trialDaysRemaining?: number;
@@ -16,7 +17,7 @@ export function AccountLockedBanner({ trialDaysRemaining = 0, onDismiss }: Accou
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <span className="text-yellow-600 text-2xl mr-3">⏰</span>
+            <Clock className="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-yellow-900">
                 Trial Period Active
@@ -55,7 +56,7 @@ export function AccountLockedBanner({ trialDaysRemaining = 0, onDismiss }: Accou
     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <span className="text-red-600 text-2xl mr-3">🔒</span>
+          <Lock className="w-6 h-6 text-red-600 mr-3 flex-shrink-0" />
           <div>
             <h3 className="font-semibold text-red-900">
               Account Locked

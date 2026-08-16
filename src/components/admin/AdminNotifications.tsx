@@ -3,6 +3,7 @@
 'use client';
 
 import type { AdminNotifications } from '@/types/admin';
+import { AlertTriangle } from 'lucide-react';
 
 interface AdminNotificationCenterProps {
   notifications: AdminNotifications;
@@ -16,22 +17,22 @@ export default function AdminNotificationCenter({ notifications }: AdminNotifica
   }
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
       <div className="flex items-start gap-3">
-        <span className="text-2xl" role="img" aria-label="warning">⚠️</span>
+        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
         <div className="flex-1">
-          <h4 className="font-semibold text-yellow-900 mb-2">Admin Notifications</h4>
+          <h4 className="font-semibold text-amber-900 mb-2">Admin Notifications</h4>
 
           {/* Pending approvals */}
           {pendingApprovals > 0 && (
-            <div className="text-sm text-yellow-800 mb-2">
+            <div className="text-sm text-amber-800 mb-2">
               <strong>{pendingApprovals}</strong> product(s) pending approval
             </div>
           )}
 
           {/* System alerts */}
           {systemAlerts.length > 0 && (
-            <ul className="text-sm text-yellow-800 space-y-1">
+            <ul className="text-sm text-amber-800 space-y-1">
               {systemAlerts.map((alert) => (
                 <li key={alert}>• {alert}</li>
               ))}

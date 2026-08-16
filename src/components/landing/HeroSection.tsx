@@ -29,16 +29,16 @@ export default function HeroSection({
   };
 
   return (
-    <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-20 px-4 sm:px-6 lg:px-8">
+    <section className="relative bg-gradient-to-br from-indigo-50 to-indigo-100 py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center">
           {/* Headline */}
-          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-stone-900 mb-6">
             {headline}
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg sm:text-xl lg:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl lg:text-2xl text-stone-700 mb-8 max-w-3xl mx-auto">
             {subheadline}
           </p>
 
@@ -53,7 +53,7 @@ export default function HeroSection({
             <a
               href={secondaryCtaLink}
               onClick={(e) => handleSmoothScroll(e, secondaryCtaLink)}
-              className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors shadow-md hover:shadow-lg text-center flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-stone-50 transition-colors shadow-md hover:shadow-lg text-center flex items-center justify-center gap-2"
             >
               {secondaryCtaText}
               <ArrowRight className="w-5 h-5" />
@@ -64,13 +64,13 @@ export default function HeroSection({
           <div className="mt-12 flex justify-center">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md">
               <div className="flex items-center justify-center gap-4">
-                <FileText className="w-12 h-12 text-gray-400" />
+                <FileText className="w-12 h-12 text-stone-400" />
                 <ArrowRight className="w-8 h-8 text-indigo-600" />
                 <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold">DC</span>
                 </div>
               </div>
-              <p className="text-center text-gray-600 mt-4 text-sm">
+              <p className="text-center text-stone-600 mt-4 text-sm">
                 From paper to digital
               </p>
             </div>

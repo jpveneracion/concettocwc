@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 
 interface PaymentSettings {
   mobile: {
@@ -173,7 +174,7 @@ export default function AdvancedPaymentSettings() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading payment settings...</p>
+        <p className="text-stone-600">Loading payment settings...</p>
       </div>
     );
   }
@@ -182,7 +183,7 @@ export default function AdvancedPaymentSettings() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading QR codes...</p>
+        <p className="text-stone-600">Loading QR codes...</p>
       </div>
     );
   }
@@ -220,8 +221,8 @@ export default function AdvancedPaymentSettings() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300'
               }`}
             >
               {tab.label}
@@ -238,7 +239,7 @@ export default function AdvancedPaymentSettings() {
               <h3 className="text-lg font-semibold capitalize">{method} Settings</h3>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   Generic QR Code (fallback)
                 </label>
                 <input
@@ -263,7 +264,7 @@ export default function AdvancedPaymentSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   Account Number
                 </label>
                 <input
@@ -287,7 +288,7 @@ export default function AdvancedPaymentSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   Account Name
                 </label>
                 <input
@@ -338,9 +339,9 @@ export default function AdvancedPaymentSettings() {
 
       {activeTab === 'plan-qrcodes' && (
         <div className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">Billing Period QR Codes</h4>
-            <p className="text-sm text-blue-700">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+            <h4 className="font-semibold text-indigo-900 mb-2">Billing Period QR Codes</h4>
+            <p className="text-sm text-indigo-700">
               Upload QR codes for each billing period. These will be used automatically based on the customer's chosen billing frequency.
             </p>
           </div>
@@ -357,7 +358,7 @@ export default function AdvancedPaymentSettings() {
                 ].map((plan) => (
                   <div key={plan.field} className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-stone-700 mb-1">
                         {plan.label}
                       </label>
 
@@ -368,8 +369,8 @@ export default function AdvancedPaymentSettings() {
                             alt={`${method} ${plan.period} QR`}
                             className="w-full h-full object-contain"
                           />
-                          <div className="absolute bottom-1 right-1 bg-green-500 text-white text-xs px-1 rounded">
-                            ✓
+                          <div className="absolute bottom-1 right-1 bg-emerald-500 text-white text-xs px-1 rounded">
+                            <Check className="w-3 h-3" />
                           </div>
                         </div>
                       )}
@@ -389,8 +390,8 @@ export default function AdvancedPaymentSettings() {
                         htmlFor={`qr-upload-${plan.field}`}
                         className={`block text-center px-3 py-2 rounded-lg text-sm font-medium cursor-pointer ${
                           uploading
-                            ? 'bg-gray-100 text-gray-400'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-stone-100 text-stone-400'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
                       >
                         {uploading ? 'Uploading...' : 'Upload QR'}
@@ -428,8 +429,8 @@ export default function AdvancedPaymentSettings() {
           disabled={saving || uploading || qrCodesLoading}
           className={`px-6 py-3 rounded-lg font-medium ${
             saving || uploading || qrCodesLoading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
           }`}
         >
           {saving ? 'Saving...' : 'Save Payment Settings'}

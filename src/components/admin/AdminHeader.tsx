@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Key, Tag, Coins, Building, Shield, Bell, Menu } from 'lucide-react';
 import type { AdminUser, AdminNotifications, AdminQuickAction } from '@/types/admin';
 
 interface AdminHeaderProps {
@@ -32,33 +33,33 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
   const quickActions: AdminQuickAction[] = [
     {
       label: 'Generate Code',
-      icon: '🔑',
+      icon: Key,
       href: '/admin/activation-codes',
     },
     {
       label: 'Promo Codes',
-      icon: '🏷️',
+      icon: Tag,
       href: '/admin/promo-codes',
     },
     {
       label: 'Plans',
-      icon: '💰',
+      icon: Coins,
       href: '/admin/plans',
     },
     {
       label: 'Company Products',
-      icon: '🏢',
+      icon: Building,
       href: '/admin/company-products',
       badge: notifications.pendingApprovals > 0 ? notifications.pendingApprovals : undefined,
     },
   ];
 
   return (
-    <header className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30">
+    <header className="bg-gradient-to-r from-indigo-50 to-indigo-50 border-b border-indigo-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30">
       {/* Left: Admin branding */}
       <div className="flex items-center gap-3">
-        <div className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm font-semibold flex items-center gap-2">
-          <span>🛡️</span>
+        <div className="bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm font-semibold flex items-center gap-2">
+          <Shield className="w-4 h-4" />
           <span>Admin Console</span>
         </div>
       </div>
@@ -69,12 +70,12 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
           <Link
             key={action.href}
             href={action.href}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors relative"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors relative"
           >
-            <span>{action.icon}</span>
+            <action.icon className="w-4 h-4" />
             <span>{action.label}</span>
             {action.badge && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {formatBadgeCount(action.badge)}
               </span>
             )}
@@ -86,12 +87,12 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
       <div className="flex items-center gap-3">
         {/* Notification bell */}
         <button
-          className="relative p-2 text-purple-600 hover:bg-purple-100 rounded-lg"
+          className="relative p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg"
           aria-label="Notifications"
         >
-          <span className="text-xl">🔔</span>
+          <Bell className="w-5 h-5" />
           {notifications.unreadCount > 0 && (
-            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute top-1 right-1 bg-rose-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
               {formatBadgeCount(notifications.unreadCount)}
             </span>
           )}
@@ -100,21 +101,21 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
         {/* Mobile menu button */}
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-2 text-purple-600 hover:bg-purple-100 rounded-lg"
+          className="md:hidden p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg"
           aria-label="Open admin menu"
           aria-expanded={mobileMenuOpen}
         >
-          <span className="text-xl">☰</span>
+          <Menu className="w-5 h-5" />
         </button>
 
         {/* Admin profile */}
         {adminUser && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-purple-100 rounded-lg">
-            <span className="text-purple-700 text-sm font-medium">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-indigo-100 rounded-lg">
+            <span className="text-indigo-700 text-sm font-medium">
               {adminUser.adminEmail || 'Admin'}
             </span>
             {adminUser.adminRole && (
-              <span className="text-xs text-purple-600 bg-purple-200 px-2 py-0.5 rounded">
+              <span className="text-xs text-indigo-600 bg-indigo-200 px-2 py-0.5 rounded">
                 {adminUser.adminRole}
               </span>
             )}
@@ -125,20 +126,20 @@ export default function AdminHeader({ adminUser, notifications }: AdminHeaderPro
       {/* Mobile quick actions menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden="true">
-          <div className="fixed top-16 right-0 w-64 bg-white shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-gray-900 mb-3">Admin Quick Actions</h3>
+          <div className="fixed top-16 right-0 w-64 bg-white shadow-xl p-4 rounded-bl-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-stone-900 mb-3">Admin Quick Actions</h3>
             <div className="space-y-2">
               {quickActions.map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-purple-700 hover:bg-purple-50 relative"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-indigo-700 hover:bg-indigo-50 relative"
                 >
-                  <span className="text-xl">{action.icon}</span>
+                  <action.icon className="w-5 h-5" />
                   <span className="font-medium">{action.label}</span>
                   {action.badge && (
-                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                    <span className="ml-auto bg-rose-500 text-white text-xs rounded-full px-2 py-0.5">
                       {formatBadgeCount(action.badge)}
                     </span>
                   )}

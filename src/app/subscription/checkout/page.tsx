@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/AppLayout';
 import PlanComparison from '@/components/subscription/PlanComparison';
 import CurrentSubscriptionCard from '@/components/subscription/CurrentSubscriptionCard';
+import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react';
 
 interface CheckoutError {
   type: 'validation' | 'api' | 'network';
@@ -123,14 +124,14 @@ function CheckoutContent() {
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-xl font-semibold mb-2">Choose Your Plan</h1>
-        <p className="text-gray-500 text-sm">Select a subscription plan that fits your needs. Cancel anytime.</p>
+        <p className="text-stone-500 text-sm">Select a subscription plan that fits your needs. Cancel anytime.</p>
       </div>
 
       {/* Error Display */}
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <span className="text-red-600 text-lg flex-shrink-0">⚠️</span>
+            <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-red-900 mb-1">
                 {error.type === 'validation' ? 'Action Required' : 'Unable to Complete Request'}
@@ -152,8 +153,8 @@ function CheckoutContent() {
                 className={`
                   px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200
                   ${isButtonDisabled
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                    ? 'bg-stone-300 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105'
                   }
                   ${isLoading ? 'cursor-wait' : ''}
                 `}
@@ -161,7 +162,7 @@ function CheckoutContent() {
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-3">
-                    <span className="text-xl animate-spin">⏳</span>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     <span>Processing payment...</span>
                   </div>
                 ) : (
@@ -170,17 +171,17 @@ function CheckoutContent() {
               </button>
 
               {/* Trust Elements */}
-              <div className="flex items-center justify-center gap-6 text-sm text-gray-600">
+              <div className="flex items-center justify-center gap-6 text-sm text-stone-600">
                 <div className="flex items-center gap-2">
-                  <span className="text-green-600">🛡️</span>
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
                   <span>SSL Secured</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   <span>No hidden fees</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   <span>Secure payment</span>
                 </div>
               </div>
@@ -196,34 +197,34 @@ function CheckoutContent() {
 
           {/* Selected Plan Summary */}
           {selectedPlan && (
-            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm">✓</span>
+                <div className="w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-900">Selected Plan</p>
-                  <p className="text-xs text-blue-700 capitalize">{selectedPlan} subscription</p>
+                  <p className="text-sm font-medium text-indigo-900">Selected Plan</p>
+                  <p className="text-xs text-indigo-700 capitalize">{selectedPlan} subscription</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Additional Information */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white border border-stone-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-stone-900 mb-4">
               Why choose our subscription plans?
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Flexible Pricing</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-medium text-stone-900 mb-2">Flexible Pricing</h4>
+                <p className="text-sm text-stone-600">
                   Start with our Basic plan and upgrade as your business grows. No long-term contracts.
                 </p>
               </div>
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Dedicated Support</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-medium text-stone-900 mb-2">Dedicated Support</h4>
+                <p className="text-sm text-stone-600">
                   Get help when you need it with our priority support channels for Pro plan subscribers.
                 </p>
               </div>
@@ -253,8 +254,8 @@ export default function CheckoutPage() {
       <Suspense fallback={
         <div className="flex items-center justify-center p-12">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-500 text-sm">Loading checkout...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p className="mt-4 text-stone-500 text-sm">Loading checkout...</p>
           </div>
         </div>
       }>

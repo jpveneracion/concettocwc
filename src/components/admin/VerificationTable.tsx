@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Inbox } from 'lucide-react';
 import type { PaymentVerification, VerificationStatus } from '@/types/payment';
 
 interface VerificationTableProps {
@@ -36,9 +36,9 @@ export default function VerificationTable({
         icon: <XCircle className="w-3.5 h-3.5" />
       },
       expired: {
-        bgColor: 'bg-gray-50',
-        textColor: 'text-gray-800',
-        borderColor: 'border-gray-200',
+        bgColor: 'bg-stone-50',
+        textColor: 'text-stone-800',
+        borderColor: 'border-stone-200',
         icon: <AlertCircle className="w-3.5 h-3.5" />
       }
     };
@@ -91,10 +91,10 @@ export default function VerificationTable({
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
         <div className="p-8 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-pulse text-purple-600 text-lg mb-2">
+            <div className="animate-pulse text-indigo-600 text-lg mb-2">
               Loading verifications...
             </div>
           </div>
@@ -104,32 +104,32 @@ export default function VerificationTable({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
       {/* Mobile Card View */}
       <div className="md:hidden">
         {verifications.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <div className="text-4xl mb-2">📭</div>
+          <div className="p-8 text-center text-stone-500">
+            <Inbox className="w-12 h-12 mx-auto mb-2 text-stone-400" />
             <p>No payment verifications found</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-stone-200">
             {verifications.map((verification) => (
               <div
                 key={verification.id}
                 onClick={() => onRowClick(verification)}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-4 hover:bg-stone-50 cursor-pointer transition-colors"
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 truncate">
+                      <h3 className="font-semibold text-stone-900 truncate">
                         {verification.user_name || 'Unknown User'}
                       </h3>
                       {getStatusBadge(verification.status)}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-stone-600 truncate">
                       {verification.user_email || 'No email'}
                     </p>
                   </div>
@@ -139,7 +139,7 @@ export default function VerificationTable({
                         e.stopPropagation();
                         onRowClick(verification);
                       }}
-                      className="text-purple-600 hover:text-purple-900 text-sm font-medium"
+                      className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                     >
                       {verification.status === 'pending' ? 'Review' : 'View'}
                     </button>
@@ -149,19 +149,19 @@ export default function VerificationTable({
                 {/* Plan and amount */}
                 <div className="flex items-center gap-3 mb-2">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-stone-900">
                       {verification.plan_name || 'Unknown Plan'}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-stone-600">
                       {formatCurrency(verification.amount ?? verification.plan_amount)}
                       {verification.payment_method && (
-                        <span className="text-gray-400"> · {formatMethod(verification.payment_method)}</span>
+                        <span className="text-stone-400"> · {formatMethod(verification.payment_method)}</span>
                       )}
                     </p>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-gray-500">Submitted</p>
-                    <p className="text-sm text-gray-900">
+                    <p className="text-xs text-stone-500">Submitted</p>
+                    <p className="text-sm text-stone-900">
                       {formatDate(verification.submitted_at)}
                     </p>
                   </div>
@@ -169,9 +169,9 @@ export default function VerificationTable({
 
                 {/* Reference number */}
                 {verification.reference_number && (
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <p className="text-xs text-gray-500">Reference</p>
-                    <p className="text-sm font-mono text-gray-900">
+                  <div className="mt-2 pt-2 border-t border-stone-100">
+                    <p className="text-xs text-stone-500">Reference</p>
+                    <p className="text-sm font-mono text-stone-900">
                       {verification.reference_number}
                     </p>
                   </div>
@@ -185,33 +185,33 @@ export default function VerificationTable({
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-stone-50 border-b border-stone-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-700 uppercase tracking-wider">
                 Submitted
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-700 uppercase tracking-wider">
                 User
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-700 uppercase tracking-wider">
                 Plan
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-700 uppercase tracking-wider">
                 Reference
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-700 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+              <th className="px-4 py-3 text-right text-xs font-medium text-stone-700 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-stone-200">
             {verifications.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  <div className="text-4xl mb-2">📭</div>
+                <td colSpan={6} className="px-4 py-8 text-center text-stone-500">
+                  <Inbox className="w-12 h-12 mx-auto mb-2 text-stone-400" />
                   <p>No payment verifications found</p>
                 </td>
               </tr>
@@ -219,30 +219,30 @@ export default function VerificationTable({
               verifications.map((verification) => (
                 <tr
                   key={verification.id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="hover:bg-stone-50 cursor-pointer transition-colors"
                   onClick={() => onRowClick(verification)}
                 >
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-stone-900">
                     {formatDate(verification.submitted_at)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 text-sm">
+                    <div className="font-medium text-stone-900 text-sm">
                       {verification.user_name || 'Unknown'}
                     </div>
-                    <div className="text-gray-500 text-xs">
+                    <div className="text-stone-500 text-xs">
                       {verification.user_email || 'No email'}
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 text-sm">
+                    <div className="font-medium text-stone-900 text-sm">
                       {verification.plan_name || 'Unknown'}
                     </div>
-                    <div className="text-gray-500 text-xs">
+                    <div className="text-stone-500 text-xs">
                       {formatCurrency(verification.amount ?? verification.plan_amount)}
                       {verification.payment_method && ` · ${formatMethod(verification.payment_method)}`}
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-stone-600 font-mono">
                     {verification.reference_number || 'N/A'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
@@ -254,7 +254,7 @@ export default function VerificationTable({
                         e.stopPropagation();
                         onRowClick(verification);
                       }}
-                      className="text-purple-600 hover:text-purple-900 text-sm font-medium"
+                      className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                     >
                       {verification.status === 'pending' ? 'Review' : 'View'}
                     </button>

@@ -10,9 +10,9 @@ export function ProviderButtons({ className = '' }: ProviderButtonsProps) {
     {
       id: 'google',
       name: 'Google',
-      color: 'bg-white hover:bg-gray-50',
-      textColor: 'text-gray-900',
-      borderColor: 'border-gray-300',
+      color: 'bg-white hover:bg-stone-50',
+      textColor: 'text-stone-900',
+      borderColor: 'border-stone-300',
       icon: 'G',
       available: true
     },
@@ -51,7 +51,7 @@ export function ProviderButtons({ className = '' }: ProviderButtonsProps) {
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <div className="text-center text-sm text-gray-500 mb-4">
+      <div className="text-center text-sm text-stone-500 mb-4">
         Or continue with
       </div>
 

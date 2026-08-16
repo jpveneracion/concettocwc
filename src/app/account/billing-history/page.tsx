@@ -75,20 +75,20 @@ export default function BillingHistoryPage() {
           <div className="flex items-center gap-3 mb-2">
             <Link
               href="/account/subscription"
-              className="text-sm text-blue-600 hover:text-blue-700"
+              className="text-sm text-indigo-600 hover:text-indigo-700"
             >
               ← Back to Subscription
             </Link>
           </div>
           <h1 className="text-xl font-semibold mb-2">Billing History</h1>
-          <p className="text-gray-500 text-sm">Your approved payments and subscriptions.</p>
+          <p className="text-stone-500 text-sm">Your approved payments and subscriptions.</p>
         </div>
 
         {state === 'loading' && (
           <div className="flex items-center justify-center p-12">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-4 text-gray-500 text-sm">Loading billing history...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+              <p className="mt-4 text-stone-500 text-sm">Loading billing history...</p>
             </div>
           </div>
         )}
@@ -104,7 +104,7 @@ export default function BillingHistoryPage() {
             <p className="text-yellow-800 text-sm mb-4">No billing history yet.</p>
             <Link
               href="/subscription/checkout"
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
             >
               Choose a Plan
             </Link>
@@ -120,14 +120,14 @@ export default function BillingHistoryPage() {
               return (
                 <div
                   key={payment.id}
-                  className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5"
+                  className="bg-white border border-stone-200 rounded-xl p-4 sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div>
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-sm font-semibold text-stone-900">
                         {payment.plan_name || 'Subscription'}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-stone-500">
                         {new Date(payment.created_at).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'short',
@@ -138,20 +138,20 @@ export default function BillingHistoryPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-base font-bold text-gray-900">
+                      <div className="text-base font-bold text-stone-900">
                         {formatCurrency(total)}
                       </div>
                       {discount > 0 && (
-                        <div className="text-xs text-gray-500 line-through">
+                        <div className="text-xs text-stone-500 line-through">
                           {formatCurrency(full)}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-gray-100">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-stone-100">
                     {payment.reference_number && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-stone-500">
                         Ref: <span className="font-mono">{payment.reference_number}</span>
                       </span>
                     )}
@@ -165,7 +165,7 @@ export default function BillingHistoryPage() {
                         -{formatCurrency(discount)}
                       </span>
                     )}
-                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium ml-auto">
+                    <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium ml-auto">
                       Paid
                     </span>
                   </div>

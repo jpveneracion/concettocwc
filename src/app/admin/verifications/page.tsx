@@ -6,6 +6,7 @@ import VerificationTable from '@/components/admin/VerificationTable';
 import VerificationStatsCards from '@/components/admin/VerificationStats';
 import VerificationDetail from '@/components/admin/VerificationDetail';
 import VerificationInterface from '@/components/admin/VerificationInterface';
+import { AlertTriangle } from 'lucide-react';
 import type {
   PaymentVerification,
   VerificationStatus,
@@ -205,10 +206,10 @@ export default function AdminVerificationsPage() {
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-pulse text-purple-600 text-lg mb-2">
+            <div className="animate-pulse text-indigo-600 text-lg mb-2">
               Loading verification dashboard...
             </div>
-            <div className="text-sm text-gray-500">Please wait</div>
+            <div className="text-sm text-stone-500">Please wait</div>
           </div>
         </div>
       </AdminLayout>
@@ -221,10 +222,10 @@ export default function AdminVerificationsPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
               Payment Verifications
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-stone-600 mt-1">
               Review and manage payment proof submissions
             </p>
           </div>
@@ -241,11 +242,11 @@ export default function AdminVerificationsPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <span className="text-red-600 text-xl">⚠️</span>
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-red-900">Error</h3>
-              <p className="text-red-700 text-sm">{error}</p>
+              <h3 className="font-semibold text-rose-900">Error</h3>
+              <p className="text-rose-700 text-sm">{error}</p>
             </div>
           </div>
         )}
@@ -257,17 +258,17 @@ export default function AdminVerificationsPage() {
         />
 
         {/* Filters and Search */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-white border border-stone-200 rounded-lg p-4">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Status Filter */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Filter by Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as VerificationStatus | 'all')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -279,7 +280,7 @@ export default function AdminVerificationsPage() {
 
             {/* Search */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Search by Reference or Email
               </label>
               <input
@@ -287,7 +288,7 @@ export default function AdminVerificationsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>

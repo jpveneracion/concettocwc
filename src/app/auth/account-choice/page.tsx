@@ -105,22 +105,22 @@ export default function AccountChoicePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 md:p-8">
         <div className="text-center mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-blue-600 mb-2">Complete Your Account</h1>
-          <p className="text-xs md:text-sm text-gray-500">
+          <h1 className="text-xl md:text-2xl font-bold text-indigo-600 mb-2">Complete Your Account</h1>
+          <p className="text-xs md:text-sm text-stone-500">
             {piUser ? `Welcome, ${piUser.username}!` : 'Choose how you want to continue'}
           </p>
         </div>
 
         {/* Action Toggle */}
         {/* Join company flow is disabled for now - every company is self-created */}
-        <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+        <div className="flex mb-6 bg-stone-100 rounded-lg p-1">
           {/* <button
             onClick={() => setAction('join')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              action === 'join' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+              action === 'join' ? 'bg-white text-indigo-600 shadow' : 'text-stone-600'
             }`}
           >
             Join Company
@@ -128,7 +128,7 @@ export default function AccountChoicePage() {
           <button
             onClick={() => setAction('create')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              action === 'create' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+              action === 'create' ? 'bg-white text-indigo-600 shadow' : 'text-stone-600'
             }`}
           >
             Create Company
@@ -138,14 +138,14 @@ export default function AccountChoicePage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email (always required) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Email Address *
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+              className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
               placeholder="your@email.com"
               required
             />
@@ -154,14 +154,14 @@ export default function AccountChoicePage() {
           {action === 'join' ? (
             /* Join Existing Company - DISABLED for now (commented out)
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Company Code *
               </label>
               <input
                 type="text"
                 value={formData.company_code}
                 onChange={(e) => setFormData({...formData, company_code: e.target.value})}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base uppercase"
+                className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base uppercase"
                 placeholder="COMPANY123"
                 required
               />
@@ -172,60 +172,60 @@ export default function AccountChoicePage() {
             /* Create New Company */
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Company Name *
                 </label>
                 <input
                   type="text"
                   value={formData.company_name}
                   onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                   placeholder="My Window Coverings"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Address (Optional)
                 </label>
                 <input
                   type="text"
                   value={formData.company_address}
                   onChange={(e) => setFormData({...formData, company_address: e.target.value})}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                   placeholder="123 Main St"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Mobile (Optional)
                 </label>
                 <input
                   type="tel"
                   value={formData.company_mobile}
                   onChange={(e) => setFormData({...formData, company_mobile: e.target.value})}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                   placeholder="+63 912 345 6789"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Company Email (Optional)
                 </label>
                 <input
                   type="email"
                   value={formData.company_email}
                   onChange={(e) => setFormData({...formData, company_email: e.target.value})}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                   placeholder="company@email.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Minimum Area (sq.ft.) *
                 </label>
                 <input
@@ -234,11 +234,11 @@ export default function AccountChoicePage() {
                   step="1"
                   value={formData.minimum_area_sqft}
                   onChange={(e) => setFormData({...formData, minimum_area_sqft: e.target.value})}
-                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                  className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                   placeholder="15"
                   required
                 />
-                <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
+                <p className="text-xs text-stone-400 mt-1">Smallest billable area per window (0 disables)</p>
               </div>
             </>
           )}
@@ -252,7 +252,7 @@ export default function AccountChoicePage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 md:py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+            className="w-full bg-indigo-600 text-white py-2 md:py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>

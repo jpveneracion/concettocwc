@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -68,11 +69,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default error UI
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
             <div className="text-center">
-              <div className="text-4xl mb-4">⚠️</div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <AlertTriangle className="w-10 h-10 mx-auto mb-4 text-amber-600" />
+              <h2 className="text-xl font-bold text-stone-900 mb-4">
                 Component Error
               </h2>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
@@ -93,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
               <button
                 onClick={this.handleReset}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
               >
                 Try Again
               </button>

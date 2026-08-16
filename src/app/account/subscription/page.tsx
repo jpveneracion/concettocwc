@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AlertTriangle, Megaphone, Info, ArrowUp, XCircle, CreditCard, Download } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import type { SubscriptionDetails } from '@/types/subscription';
 import { SubscriptionPlanInterval } from '@/types/subscription';
+import { getStatusBadgeClassName, formatStatusLabel } from '@/lib/design-system';
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 type BillingPeriod = 'monthly' | 'quarterly' | 'annual';
@@ -162,19 +164,7 @@ export default function SubscriptionPage() {
   }
 
   function getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'trialing':
-        return 'bg-blue-100 text-blue-800';
-      case 'past_due':
-        return 'bg-red-100 text-red-800';
-      case 'cancelled':
-      case 'suspended':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+    return getStatusBadgeClassName(status);
   }
 
   function formatCurrency(amount: number): string {
@@ -211,8 +201,8 @@ export default function SubscriptionPage() {
       <AppLayout>
         <div className="flex items-center justify-center p-12">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-500">Loading subscription details...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <p className="mt-4 text-stone-500">Loading subscription details...</p>
           </div>
         </div>
       </AppLayout>
@@ -261,7 +251,7 @@ export default function SubscriptionPage() {
         {/* Page Header */}
         <div className="mb-6">
           <h1 className="text-xl font-semibold mb-2">Subscription Management</h1>
-          <p className="text-gray-500 text-sm">Manage your subscription, billing, and usage</p>
+          <p className="text-stone-500 text-sm">Manage your subscription, billing, and usage</p>
         </div>
 
         {/* Warning Banners */}
@@ -275,16 +265,20 @@ export default function SubscriptionPage() {
                     ? 'bg-red-50 border-red-200'
                     : banner.priority === 'medium'
                     ? 'bg-yellow-50 border-yellow-200'
-                    : 'bg-blue-50 border-blue-200'
+                    : 'bg-indigo-50 border-indigo-200'
                 }`}
               >
                 <span className="text-xl">
-                  {banner.priority === 'high' ? '⚠️' : banner.priority === 'medium' ? '📢' : 'ℹ️'}
+                  {banner.priority === 'high'
+                    ? <AlertTriangle className="w-5 h-5 text-red-600" />
+                    : banner.priority === 'medium'
+                    ? <Megaphone className="w-5 h-5 text-yellow-700" />
+                    : <Info className="w-5 h-5 text-indigo-600" />}
                 </span>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${
                     banner.priority === 'high' ? 'text-red-800' :
-                    banner.priority === 'medium' ? 'text-yellow-800' : 'text-blue-800'
+                    banner.priority === 'medium' ? 'text-yellow-800' : 'text-indigo-800'
                   }`}>
                     {banner.message}
                   </p>
@@ -302,32 +296,32 @@ export default function SubscriptionPage() {
         )}
 
         {/* Current Plan Card */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-6">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 md:gap-6 mb-5">
             <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Current Plan</h2>
+              <h2 className="text-lg font-semibold text-stone-900 mb-2">Current Plan</h2>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{planName}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${getStatusBadgeClass(subscription.status)}`}>
-                  {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                <span className="text-xl sm:text-2xl font-bold text-stone-900 break-words">{planName}</span>
+                <span className={getStatusBadgeClass(subscription.status)}>
+                  {formatStatusLabel(subscription.status)}
                 </span>
               </div>
             </div>
             <div className="text-left md:text-right md:flex-shrink-0">
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900">{formatCurrency(planPrice)}</div>
-              <div className="text-sm text-gray-500">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-stone-900">{formatCurrency(planPrice)}</div>
+              <div className="text-sm text-stone-500">per {subscription.plan.interval === SubscriptionPlanInterval.ANNUAL ? 'year' : subscription.plan.interval === SubscriptionPlanInterval.QUARTERLY ? 'quarter' : 'month'}</div>
             </div>
           </div>
 
           {/* Plan Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <h3 className="text-sm text-gray-500 mb-1">Billing Cycle</h3>
-              <p className="text-base text-gray-900">{billingCycleLabel}</p>
+              <h3 className="text-sm text-stone-500 mb-1">Billing Cycle</h3>
+              <p className="text-base text-stone-900">{billingCycleLabel}</p>
             </div>
             <div>
-              <h3 className="text-sm text-gray-500 mb-1">Next Billing Date</h3>
-              <p className="text-base text-gray-900">
+              <h3 className="text-sm text-stone-500 mb-1">Next Billing Date</h3>
+              <p className="text-base text-stone-900">
                 {subscription.current_period_end
                   ? new Date(subscription.current_period_end).toLocaleDateString()
                   : 'N/A'}
@@ -339,7 +333,7 @@ export default function SubscriptionPage() {
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
             <button
               onClick={handleUpdatePlan}
-              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
             >
               Upgrade Plan
             </button>
@@ -352,7 +346,7 @@ export default function SubscriptionPage() {
             </button>
             <button
               onClick={handleUpdatePayment}
-              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-stone-300 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-50"
             >
               Update Payment
             </button>
@@ -360,22 +354,22 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Usage Statistics */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage Statistics</h2>
+        <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">Usage Statistics</h2>
 
           <div className="space-y-4">
             {/* Quotes Created */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Quotes created this period</span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm text-stone-600">Quotes created this period</span>
+                <span className="text-sm font-medium text-stone-900">
                   {subscription.usage_stats.quotes_created_this_period}
                 </span>
               </div>
               {quotesLimit !== 'Unlimited' && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-stone-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full"
+                    className="bg-indigo-600 h-2 rounded-full"
                     style={{
                       width: `${Math.min(
                         (subscription.usage_stats.quotes_created_this_period / 50) * 100,
@@ -389,8 +383,8 @@ export default function SubscriptionPage() {
 
             {/* Quotes Remaining */}
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Quotes remaining</span>
-              <span className={`text-sm font-medium ${quotesLimit === 'Unlimited' ? 'text-green-600' : 'text-gray-900'}`}>
+              <span className="text-sm text-stone-600">Quotes remaining</span>
+              <span className={`text-sm font-medium ${quotesLimit === 'Unlimited' ? 'text-green-600' : 'text-stone-900'}`}>
                 {quotesLimit}
               </span>
             </div>
@@ -398,8 +392,8 @@ export default function SubscriptionPage() {
             {/* Trial Days Remaining */}
             {subscription.status === 'trialing' && subscription.trial_end && (
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Trial days remaining</span>
-                <span className="text-sm font-medium text-blue-600">
+                <span className="text-sm text-stone-600">Trial days remaining</span>
+                <span className="text-sm font-medium text-indigo-600">
                   {Math.ceil((new Date(subscription.trial_end).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
                 </span>
               </div>
@@ -408,34 +402,34 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Billing Summary */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Billing Summary</h2>
+        <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">Billing Summary</h2>
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Current Plan</span>
-              <span className="text-sm font-medium text-gray-900">{planName} Plan</span>
+              <span className="text-sm text-stone-600">Current Plan</span>
+              <span className="text-sm font-medium text-stone-900">{planName} Plan</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Billing Cycle</span>
-              <span className="text-sm font-medium text-gray-900">{billingCycleLabel}</span>
+              <span className="text-sm text-stone-600">Billing Cycle</span>
+              <span className="text-sm font-medium text-stone-900">{billingCycleLabel}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Next Payment Amount</span>
-              <span className="text-sm font-medium text-gray-900">{formatCurrency(planPrice)}</span>
+              <span className="text-sm text-stone-600">Next Payment Amount</span>
+              <span className="text-sm font-medium text-stone-900">{formatCurrency(planPrice)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Next Payment Date</span>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm text-stone-600">Next Payment Date</span>
+              <span className="text-sm font-medium text-stone-900">
                 {subscription.current_period_end
                   ? new Date(subscription.current_period_end).toLocaleDateString()
                   : 'N/A'}
               </span>
             </div>
-            <div className="border-t border-gray-200 pt-3">
+            <div className="border-t border-stone-200 pt-3">
               <Link
                 href="/account/billing-history"
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-indigo-600 hover:text-indigo-700"
               >
                 View billing history →
               </Link>
@@ -444,49 +438,49 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="bg-white border border-stone-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">Quick Actions</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
               onClick={handleUpdatePlan}
-              className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left"
+              className="flex items-center gap-3 p-3 border border-stone-200 rounded-lg hover:bg-stone-50 text-left"
             >
-              <span className="text-xl">⬆️</span>
+              <span className="text-xl"><ArrowUp className="w-5 h-5 text-indigo-600" /></span>
               <div>
-                <div className="text-sm font-medium text-gray-900">Upgrade/Downgrade Plan</div>
-                <div className="text-xs text-gray-500">Change your subscription plan</div>
+                <div className="text-sm font-medium text-stone-900">Upgrade/Downgrade Plan</div>
+                <div className="text-xs text-stone-500">Change your subscription plan</div>
               </div>
             </button>
 
             <button
               onClick={() => setShowCancelConfirm(true)}
               disabled={subscription.cancel_at_period_end}
-              className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-3 p-3 border border-stone-200 rounded-lg hover:bg-stone-50 text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="text-xl">❌</span>
+              <span className="text-xl"><XCircle className="w-5 h-5 text-rose-600" /></span>
               <div>
-                <div className="text-sm font-medium text-gray-900">Cancel Subscription</div>
-                <div className="text-xs text-gray-500">Cancel at the end of your billing period</div>
+                <div className="text-sm font-medium text-stone-900">Cancel Subscription</div>
+                <div className="text-xs text-stone-500">Cancel at the end of your billing period</div>
               </div>
             </button>
 
             <button
               onClick={handleUpdatePayment}
-              className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left"
+              className="flex items-center gap-3 p-3 border border-stone-200 rounded-lg hover:bg-stone-50 text-left"
             >
-              <span className="text-xl">💳</span>
+              <span className="text-xl"><CreditCard className="w-5 h-5 text-indigo-600" /></span>
               <div>
-                <div className="text-sm font-medium text-gray-900">Update Payment Method</div>
-                <div className="text-xs text-gray-500">Add or change your payment method</div>
+                <div className="text-sm font-medium text-stone-900">Update Payment Method</div>
+                <div className="text-xs text-stone-500">Add or change your payment method</div>
               </div>
             </button>
 
-            <button className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
-              <span className="text-xl">📥</span>
+            <button className="flex items-center gap-3 p-3 border border-stone-200 rounded-lg hover:bg-stone-50 text-left">
+              <span className="text-xl"><Download className="w-5 h-5 text-stone-500" /></span>
               <div>
-                <div className="text-sm font-medium text-gray-900">Download Invoice</div>
-                <div className="text-xs text-gray-500">Get your latest invoice</div>
+                <div className="text-sm font-medium text-stone-900">Download Invoice</div>
+                <div className="text-xs text-stone-500">Get your latest invoice</div>
               </div>
             </button>
           </div>
@@ -497,8 +491,8 @@ export default function SubscriptionPage() {
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Subscription</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="text-lg font-semibold text-stone-900 mb-2">Cancel Subscription</h3>
+            <p className="text-sm text-stone-600 mb-4">
               Are you sure you want to cancel your subscription? You'll continue to have access until the end of your current billing period (
               {subscription.current_period_end
                 ? new Date(subscription.current_period_end).toLocaleDateString()
@@ -516,7 +510,7 @@ export default function SubscriptionPage() {
               <button
                 onClick={() => setShowCancelConfirm(false)}
                 disabled={cancelling}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-50 disabled:opacity-50"
               >
                 Keep Subscription
               </button>

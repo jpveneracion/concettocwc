@@ -8,6 +8,7 @@ import AppLayout from '@/components/AppLayout';
 import AdminHeader from './admin/AdminHeader';
 import AdminNotificationCenter from './admin/AdminNotifications';
 import { AdminNotificationProvider, useAdminNotifications } from '@/contexts/AdminNotificationContext';
+import { Ban } from 'lucide-react';
 import type { AdminUser } from '@/types/admin';
 
 interface LayoutProps {
@@ -55,12 +56,12 @@ function AdminLayoutContent({ children }: LayoutProps) {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="text-center">
-          <div className="animate-pulse text-purple-600 text-lg mb-2">
+          <div className="animate-pulse text-indigo-600 text-lg mb-2">
             Verifying admin access...
           </div>
-          <div className="text-sm text-gray-500">Please wait</div>
+          <div className="text-sm text-stone-500">Please wait</div>
         </div>
       </div>
     );
@@ -69,16 +70,16 @@ function AdminLayoutContent({ children }: LayoutProps) {
   // Show access denied if not admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <div className="text-red-600 text-4xl mb-3">🚫</div>
-          <h1 className="text-xl font-bold text-red-900 mb-2">Access Denied</h1>
-          <p className="text-red-700 mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="bg-rose-50 border border-rose-200 rounded-lg p-6 max-w-md">
+          <Ban className="w-12 h-12 mx-auto mb-3 text-rose-600" />
+          <h1 className="text-xl font-bold text-rose-900 mb-2">Access Denied</h1>
+          <p className="text-rose-700 mb-4">
             You don't have permission to access this admin area.
           </p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            className="bg-rose-600 text-white px-4 py-2 rounded-lg hover:bg-rose-700"
           >
             Return to Dashboard
           </button>

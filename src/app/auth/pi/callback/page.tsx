@@ -93,13 +93,13 @@ export default function PiCallbackPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 text-center">
         {status === 'processing' && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#7b2cbf] mx-auto mb-4"></div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Processing Pi Sign-in...</h2>
-            <p className="text-sm text-gray-500">Please wait while we verify your identity</p>
+            <h2 className="text-lg font-semibold text-stone-900 mb-2">Processing Pi Sign-in...</h2>
+            <p className="text-sm text-stone-500">Please wait while we verify your identity</p>
           </>
         )}
 
@@ -110,8 +110,8 @@ export default function PiCallbackPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Sign-in Successful!</h2>
-            <p className="text-sm text-gray-500">Redirecting you to the dashboard...</p>
+            <h2 className="text-lg font-semibold text-stone-900 mb-2">Sign-in Successful!</h2>
+            <p className="text-sm text-stone-500">Redirecting you to the dashboard...</p>
           </>
         )}
 
@@ -122,7 +122,7 @@ export default function PiCallbackPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Sign-in Failed</h2>
+            <h2 className="text-lg font-semibold text-stone-900 mb-2">Sign-in Failed</h2>
             <p className="text-sm text-red-600 mb-4">{error}</p>
             <button
               onClick={() => router.push('/login')}

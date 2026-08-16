@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ScreenshotUpload from './ScreenshotUpload';
+import { CheckCircle2, Info } from 'lucide-react';
 
 interface PaymentProofData {
   screenshot_base64: string;
@@ -126,21 +127,21 @@ export default function PaymentProofSection({
     return (
       <div className="bg-white rounded-xl p-6 border border-green-200 mb-6">
         <div className="text-center mb-6">
-          <div className="text-4xl mb-3">✅</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-600" />
+          <h3 className="text-lg font-semibold text-stone-900 mb-2">
             Payment Proof Submitted!
           </h3>
-          <p className="text-gray-600 text-sm">
+          <p className="text-stone-600 text-sm">
             Your payment proof has been submitted for verification.
           </p>
         </div>
 
-        <div className="bg-blue-50 rounded-lg p-4 mb-6">
+        <div className="bg-indigo-50 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">ℹ️</div>
+            <Info className="w-6 h-6 text-indigo-600 flex-shrink-0" />
             <div className="text-left">
-              <p className="font-medium text-blue-900">What happens next?</p>
-              <ul className="text-sm text-blue-700 mt-2 space-y-1">
+              <p className="font-medium text-indigo-900">What happens next?</p>
+              <ul className="text-sm text-indigo-700 mt-2 space-y-1">
                 <li>• Our team will verify your payment within 24 hours</li>
                 <li>• You'll receive a confirmation email once approved</li>
                 <li>• Your subscription will be activated automatically</li>
@@ -153,7 +154,7 @@ export default function PaymentProofSection({
         <div className="flex gap-3">
           <button
             onClick={() => window.location.href = '/account/subscription'}
-            className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
           >
             Go to My Account
           </button>
@@ -163,31 +164,31 @@ export default function PaymentProofSection({
   }
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-xl p-6 border border-stone-200 mb-6">
+      <h3 className="text-lg font-semibold text-stone-900 mb-4">
         Submit Payment Proof
       </h3>
 
       {/* Payment Summary */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-        <h4 className="font-medium text-gray-900 mb-2">Payment Summary</h4>
+      <div className="bg-stone-50 rounded-lg p-4 mb-4">
+        <h4 className="font-medium text-stone-900 mb-2">Payment Summary</h4>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">Plan:</span>
-            <span className="text-gray-900">{planName}</span>
+            <span className="text-stone-600">Plan:</span>
+            <span className="text-stone-900">{planName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Payment Method:</span>
-            <span className="text-gray-900 capitalize">{paymentMethod}</span>
+            <span className="text-stone-600">Payment Method:</span>
+            <span className="text-stone-900 capitalize">{paymentMethod}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Amount Paid:</span>
-            <span className="text-gray-900 font-medium">{formatCurrency(finalAmount)}</span>
+            <span className="text-stone-600">Amount Paid:</span>
+            <span className="text-stone-900 font-medium">{formatCurrency(finalAmount)}</span>
           </div>
           {promoCode && (
             <div className="flex justify-between">
-              <span className="text-gray-600">Promo Code:</span>
-              <span className="text-gray-900">{promoCode.toUpperCase()}</span>
+              <span className="text-stone-600">Promo Code:</span>
+              <span className="text-stone-900">{promoCode.toUpperCase()}</span>
             </div>
           )}
         </div>
@@ -201,7 +202,7 @@ export default function PaymentProofSection({
 
         {/* Reference Number */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             {paymentMethod === 'gotyme' ? 'GoTyme' : paymentMethod === 'pi' ? 'Pi Network' : 'GCash'} Transaction ID <span className="text-red-500">*</span>
           </label>
           <input
@@ -215,14 +216,14 @@ export default function PaymentProofSection({
                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                 : referenceTouched && referenceNumber
                 ? 'border-green-500 focus:ring-green-500 focus:border-green-500'
-                : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                : 'border-stone-300 focus:ring-indigo-500 focus:border-indigo-500'
             }`}
           />
           {referenceError && (
             <p className="mt-1 text-xs text-red-600">{referenceError}</p>
           )}
           {!referenceError && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-stone-500">
               {paymentMethod === 'pi'
                 ? 'Enter the transaction ID (txid) from your Pi Wallet payment confirmation. Required for verification.'
                 : `Enter the ${paymentMethod === 'gotyme' ? '17-digit' : '13-digit'} transaction number from your ${paymentMethod === 'gotyme' ? 'GoTyme' : 'GCash'} receipt. Required for automatic verification and speeds up processing.`}
@@ -232,7 +233,7 @@ export default function PaymentProofSection({
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Additional Notes (Optional)
           </label>
           <textarea
@@ -240,7 +241,7 @@ export default function PaymentProofSection({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional information about your payment..."
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
 
@@ -255,7 +256,7 @@ export default function PaymentProofSection({
         <button
           onClick={handleSubmit}
           disabled={!screenshot || !referenceNumber || !!referenceError || isSubmitting}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Payment Proof'}
         </button>

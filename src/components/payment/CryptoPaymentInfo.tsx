@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { paymentConfig } from '@/config/payment';
+import { AlertTriangle } from 'lucide-react';
 
 interface CryptoPaymentInfoProps {
   amount: number;
@@ -63,8 +64,8 @@ const fetchPaymentSettings = async () => {
           onClick={() => setSelectedCrypto('USDC')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             selectedCrypto === 'USDC'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
           USDC
@@ -73,8 +74,8 @@ const fetchPaymentSettings = async () => {
           onClick={() => setSelectedCrypto('USDT')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             selectedCrypto === 'USDT'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
           USDT
@@ -105,13 +106,13 @@ const fetchPaymentSettings = async () => {
       </div>
 
       {/* Wallet Address */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h4 className="font-semibold text-gray-900 mb-3">
+      <div className="bg-stone-50 rounded-lg p-4">
+        <h4 className="font-semibold text-stone-900 mb-3">
           {selectedCrypto} Wallet Address
         </h4>
 
-        <div className="bg-white border-2 border-gray-200 rounded-lg p-4 mb-3">
-          <p className="text-sm font-mono text-gray-800 break-all mb-3">
+        <div className="bg-white border-2 border-stone-200 rounded-lg p-4 mb-3">
+          <p className="text-sm font-mono text-stone-800 break-all mb-3">
             {cryptoInfo.address}
           </p>
 
@@ -120,15 +121,15 @@ const fetchPaymentSettings = async () => {
             className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
               addressCopied
                 ? 'bg-green-500 text-white'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
-            {addressCopied ? '✓ Address Copied!' : 'Copy Address'}
+            {addressCopied ? 'Address Copied!' : 'Copy Address'}
           </button>
         </div>
 
-        <div className="flex items-start gap-2 text-xs text-gray-600">
-          <span className="text-yellow-600">⚠️</span>
+        <div className="flex items-start gap-2 text-xs text-stone-600">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
           <p>
             Make sure you're sending on the <strong>{cryptoInfo.network}</strong> network.
             Sending on the wrong network may result in permanent loss.
@@ -137,8 +138,8 @@ const fetchPaymentSettings = async () => {
       </div>
 
       {/* Step by Step Instructions */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h4 className="font-semibold text-gray-900 mb-3">
+      <div className="bg-stone-50 rounded-lg p-4">
+        <h4 className="font-semibold text-stone-900 mb-3">
           How to Pay with {selectedCrypto}
         </h4>
         <ol className="space-y-2">
@@ -151,8 +152,8 @@ const fetchPaymentSettings = async () => {
             'Confirm the transaction',
             'Take a screenshot of the transaction confirmation'
           ].map((instruction, index) => (
-            <li key={index} className="flex items-start gap-3 text-sm text-gray-700">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
+            <li key={index} className="flex items-start gap-3 text-sm text-stone-700">
+              <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
                 {index + 1}
               </span>
               <span>{instruction}</span>
@@ -162,14 +163,14 @@ const fetchPaymentSettings = async () => {
       </div>
 
       {/* Important Notice */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <span className="text-yellow-600 text-xl">⚠️</span>
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <div className="flex-1">
-            <p className="font-medium text-yellow-900 mb-1">
+            <p className="font-medium text-amber-900 mb-1">
               Important Crypto Payment Instructions
             </p>
-            <ul className="text-sm text-yellow-800 space-y-1">
+            <ul className="text-sm text-amber-800 space-y-1">
               <li>• Send the <strong>exact amount</strong> of {selectedCrypto}</li>
               <li>• Use the <strong>{cryptoInfo.network}</strong> network only</li>
               <li>• <strong>Double-check the wallet address</strong> before sending</li>
@@ -182,8 +183,8 @@ const fetchPaymentSettings = async () => {
       </div>
 
       {/* Rate Disclaimer */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-xs text-blue-800 text-center">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+        <p className="text-xs text-indigo-800 text-center">
           <strong>Rate Notice:</strong> Conversion rate of 1 PHP = ${phpToUsdRate.toFixed(4)} USD is used for this transaction.
           Actual market rates may vary slightly. The payment verification team will use the rate at the time of transaction confirmation.
         </p>

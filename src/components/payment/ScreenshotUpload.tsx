@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Camera, X } from 'lucide-react';
 
 interface ScreenshotUploadProps {
   onScreenshotSelect: (base64: string) => void;
@@ -89,7 +90,7 @@ export default function ScreenshotUpload({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-stone-700 mb-2">
         Payment Screenshot *
       </label>
 
@@ -101,8 +102,8 @@ export default function ScreenshotUpload({
           className={`
             relative border-2 border-dashed rounded-lg p-4 sm:p-6 text-center
             ${isDragging
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-indigo-500 bg-indigo-50'
+              : 'border-stone-300 hover:border-stone-400'
             }
             ${error ? 'border-red-300 bg-red-50' : ''}
           `}
@@ -116,12 +117,12 @@ export default function ScreenshotUpload({
           />
 
           <div className="space-y-2">
-            <div className="text-3xl">📸</div>
+            <Camera className="w-10 h-10 mx-auto text-stone-400" />
             <div>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+              <p className="text-sm text-stone-600">
+                <span className="font-medium text-indigo-600">Click to upload</span> or drag and drop
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-stone-500 mt-1">
                 PNG or JPEG, max 5MB
               </p>
             </div>
@@ -133,15 +134,15 @@ export default function ScreenshotUpload({
             <img
               src={preview}
               alt="Payment Screenshot"
-              className="w-full max-h-64 object-contain rounded-lg border border-gray-200"
+              className="w-full max-h-64 object-contain rounded-lg border border-stone-200"
             />
             <button
               onClick={handleRemove}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-3 hover:bg-red-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-3 hover:bg-rose-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Remove screenshot"
               aria-label="Remove screenshot"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
           <button
@@ -160,7 +161,7 @@ export default function ScreenshotUpload({
       )}
 
       {!preview && !error && (
-        <div className="mt-2 text-xs text-gray-500">
+        <div className="mt-2 text-xs text-stone-500">
           <strong>Tips:</strong> Ensure screenshot shows payment amount, date, and transaction reference
         </div>
       )}

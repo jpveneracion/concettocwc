@@ -31,7 +31,7 @@ export interface AdminNotifications {
  */
 export interface AdminQuickAction {
   label: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   href: string;
   badge?: number;
 }

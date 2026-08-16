@@ -28,7 +28,7 @@ export default function AppearanceSettings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save changes'}
           </button>
@@ -36,15 +36,15 @@ export default function AppearanceSettings() {
       </div>
 
       <div className="max-w-2xl">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5 mb-4">
           <ModePicker />
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5 mb-4">
           <PresetPicker />
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5 mb-4">
           {canUseThemeEditor ? (
             <>
               <ThemeEditor />

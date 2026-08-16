@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 
 interface PaymentSettings {
   mobile: {
@@ -148,7 +149,7 @@ export default function PaymentSettingsManager() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin text-4xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading payment settings...</p>
+        <p className="text-stone-600">Loading payment settings...</p>
       </div>
     );
   }
@@ -182,7 +183,7 @@ export default function PaymentSettingsManager() {
 
             {/* QR Code Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 QR Code Image
               </label>
               <div className="space-y-3">
@@ -193,8 +194,8 @@ export default function PaymentSettingsManager() {
                       alt={`${method} QR Code`}
                       className="w-full h-full object-contain"
                     />
-                    <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1 rounded">
-                      ✓
+                    <div className="absolute top-1 right-1 bg-emerald-500 text-white text-xs px-1 rounded">
+                      <Check className="w-3 h-3" />
                     </div>
                   </div>
                 )}
@@ -215,8 +216,8 @@ export default function PaymentSettingsManager() {
                     htmlFor={`qr-upload-${method}`}
                     className={`px-4 py-2 rounded-lg text-sm font-medium cursor-pointer ${
                       uploading
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
                     }`}
                   >
                     {uploading && uploadProgress?.method === method
@@ -249,7 +250,7 @@ export default function PaymentSettingsManager() {
 
             {/* Account Details */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Account Number
               </label>
               <input
@@ -274,7 +275,7 @@ export default function PaymentSettingsManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 Account Name
               </label>
               <input
@@ -329,7 +330,7 @@ export default function PaymentSettingsManager() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               Business Name
             </label>
             <input
@@ -350,7 +351,7 @@ export default function PaymentSettingsManager() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               Support Email
             </label>
             <input
@@ -379,8 +380,8 @@ export default function PaymentSettingsManager() {
           disabled={saving || uploading}
           className={`px-6 py-3 rounded-lg font-medium ${
             saving || uploading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
           }`}
         >
           {saving ? 'Saving...' : 'Save Payment Settings'}

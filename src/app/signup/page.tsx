@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Store } from 'lucide-react';
 
 type CodeStatus = 'idle' | 'checking' | 'available' | 'taken';
 
@@ -115,53 +116,56 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 py-12">
       <div className="max-w-2xl w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-blue-600">🏪 Sign Up</h1>
-            <p className="text-sm text-gray-500 mt-2">Create your company account</p>
+            <div className="flex items-center justify-center gap-2">
+            <Store className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-indigo-600">Sign Up</h1>
+          </div>
+            <p className="text-sm text-stone-500 mt-2">Create your company account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Company Information */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Company Information</h3>
+              <h3 className="text-sm font-semibold text-stone-700 mb-3">Company Information</h3>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Company Code *
                     </label>
                     <input
                       type="text"
                       value={companyCode}
                       onChange={(e) => setCompanyCode(e.target.value.toUpperCase())}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm uppercase"
                       placeholder="CWC"
                       maxLength={10}
                       required
                     />
-                    <p className="text-xs text-gray-400 mt-1">Short code for quotes (e.g., CWC)</p>
+                    <p className="text-xs text-stone-400 mt-1">Short code for quotes (e.g., CWC)</p>
                     {codeStatus === 'checking' && (
-                      <p className="text-xs text-gray-500 mt-1">Checking availability...</p>
+                      <p className="text-xs text-stone-500 mt-1">Checking availability...</p>
                     )}
                     {codeStatus === 'available' && (
-                      <p className="text-xs text-green-600 mt-1">✓ Code is available</p>
+                      <p className="text-xs text-emerald-700 mt-1">Code is available</p>
                     )}
                     {codeStatus === 'taken' && (
-                      <p className="text-xs text-red-500 mt-1">✗ This code is already taken</p>
+                      <p className="text-xs text-rose-600 mt-1">This code is already taken</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Company Name *
                     </label>
                     <input
                       type="text"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                       placeholder="Concetto Window Coverings"
                       required
                     />
@@ -169,60 +173,60 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-stone-700 mb-1">
                     Address
                   </label>
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                     placeholder="123 Main St, City"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Mobile
                     </label>
                     <input
                       type="text"
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                       placeholder="0917-123-4567"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Company Email
                     </label>
                     <input
                       type="email"
                       value={companyEmail}
                       onChange={(e) => setCompanyEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                       placeholder="info@company.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-stone-700 mb-1">
                     Prepared By
                   </label>
                   <input
                     type="text"
                     value={preparedBy}
                     onChange={(e) => setPreparedBy(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                     placeholder="Your Name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-stone-700 mb-1">
                     Minimum Area (sq.ft.) *
                   </label>
                   <input
@@ -231,28 +235,28 @@ export default function SignUpPage() {
                     step="1"
                     value={minimumArea}
                     onChange={(e) => setMinimumArea(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                     placeholder="15"
                     required
                   />
-                  <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
+                  <p className="text-xs text-stone-400 mt-1">Smallest billable area per window (0 disables)</p>
                 </div>
               </div>
             </div>
 
             {/* User Account */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Your Account</h3>
+              <h3 className="text-sm font-semibold text-stone-700 mb-3">Your Account</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-stone-700 mb-1">
                     Email *
                   </label>
                   <input
                     type="email"
                     value={userEmail}
                     onChange={(e) => setUserEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                     placeholder="you@company.com"
                     required
                   />
@@ -260,27 +264,27 @@ export default function SignUpPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Password *
                     </label>
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                       placeholder="Min 6 characters"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-stone-700 mb-1">
                       Confirm Password *
                     </label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
                       placeholder="Same as password"
                       required
                     />
@@ -298,14 +302,14 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-stone-500 text-center">
               Already have an account?{' '}
-              <a href="/login" className="text-blue-600 hover:underline">
+              <a href="/login" className="text-indigo-600 hover:underline">
                 Sign in
               </a>
             </p>

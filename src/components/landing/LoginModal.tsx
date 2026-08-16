@@ -11,16 +11,16 @@ const oauthProviders: OAuthProvider[] = [
     name: 'Continue with Google',
     icon: 'G',
     bgColor: 'bg-white',
-    hoverColor: 'hover:bg-gray-50',
-    textColor: 'text-gray-700'
+    hoverColor: 'hover:bg-stone-50',
+    textColor: 'text-stone-700'
   },
   {
     id: 'pi',
     name: 'Continue with Pi Network',
     icon: 'π',
     bgColor: 'bg-white',
-    hoverColor: 'hover:bg-gray-50',
-    textColor: 'text-gray-700'
+    hoverColor: 'hover:bg-stone-50',
+    textColor: 'text-stone-700'
   }
 ];
 
@@ -76,7 +76,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-stone-400 hover:text-stone-600 transition-colors"
           aria-label="Close modal"
         >
           <X className="w-6 h-6" />
@@ -86,11 +86,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="text-center mb-6">
           <h2
             id="login-modal-title"
-            className="text-2xl font-bold text-gray-900 mb-2"
+            className="text-2xl font-bold text-stone-900 mb-2"
           >
             Get Started with Concetto
           </h2>
-          <p className="text-gray-600 text-sm">
+          <p className="text-stone-600 text-sm">
             Join now and experience streamlined business management
           </p>
         </div>
@@ -102,7 +102,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               key={provider.id}
               onClick={() => handleOAuthSignIn(provider.id)}
               disabled={isLoading}
-              className={`w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 rounded-lg transition-all ${provider.bgColor} ${provider.hoverColor} ${provider.textColor} disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-stone-300 rounded-lg transition-all ${provider.bgColor} ${provider.hoverColor} ${provider.textColor} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-xl font-bold">{provider.icon}</span>
               <span className="font-medium">{provider.name}</span>
@@ -112,9 +112,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex-1 h-px bg-gray-300"></div>
-          <span className="text-sm text-gray-500">or continue with email</span>
-          <div className="flex-1 h-px bg-gray-300"></div>
+          <div className="flex-1 h-px bg-stone-300"></div>
+          <span className="text-sm text-stone-500">or continue with email</span>
+          <div className="flex-1 h-px bg-stone-300"></div>
         </div>
 
         {/* Email Form */}
@@ -134,7 +134,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-5 h-5" />
                 <input
                   id="email-input"
                   type="email"
@@ -143,7 +143,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   placeholder="Enter your email"
                   required
                   disabled={isLoading}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         )}
 
         {/* Terms */}
-        <p className="text-xs text-gray-500 text-center mt-6">
+        <p className="text-xs text-stone-500 text-center mt-6">
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>

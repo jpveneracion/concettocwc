@@ -161,12 +161,12 @@ export default function SubscriptionPlanForm({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">
+    <div className="bg-white border border-stone-200 rounded-lg shadow-sm">
+      <div className="p-6 border-b border-stone-200">
+        <h2 className="text-lg font-semibold text-stone-900">
           {initialData?.id ? 'Edit Subscription Plan' : 'Create New Subscription Plan'}
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-stone-600 mt-1">
           {initialData?.id
             ? 'Update the subscription plan details below'
             : 'Fill in the details to create a new subscription plan'}
@@ -178,15 +178,15 @@ export default function SubscriptionPlanForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Plan Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Plan Name *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.name ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.name ? 'border-red-300' : 'border-stone-300'
               }`}
               placeholder="e.g., Monthly Premium"
               disabled={isSubmitting || isLoading}
@@ -198,20 +198,20 @@ export default function SubscriptionPlanForm({
 
           {/* Base Monthly Price */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Base Monthly Price *
             </label>
             <div className="flex">
               <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-stone-500">
                   {formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}
                 </span>
                 <input
                   type="number"
                   value={formData.base_monthly_price}
                   onChange={(e) => setFormData({ ...formData, base_monthly_price: parseFloat(e.target.value) || 0 })}
-                  className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.price ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    errors.price ? 'border-red-300' : 'border-stone-300'
                   }`}
                   placeholder="500.00"
                   min="0"
@@ -222,7 +222,7 @@ export default function SubscriptionPlanForm({
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="ml-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="ml-2 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 disabled={isSubmitting || isLoading}
               >
                 <option value="PHP">PHP</option>
@@ -230,14 +230,14 @@ export default function SubscriptionPlanForm({
                 <option value="EUR">EUR</option>
               </select>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               Base monthly rate for discount calculations
             </p>
           </div>
 
           {/* Discount Percent */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Discount Percent *
             </label>
             <div className="flex items-center">
@@ -248,8 +248,8 @@ export default function SubscriptionPlanForm({
                   ...formData,
                   discount_percent: parseFloat(e.target.value) || 0
                 })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.discount_percent ? 'border-red-300' : 'border-gray-300'
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.discount_percent ? 'border-red-300' : 'border-stone-300'
                 }`}
                 placeholder="5"
                 min="0"
@@ -257,19 +257,19 @@ export default function SubscriptionPlanForm({
                 step="0.01"
                 disabled={isSubmitting || isLoading}
               />
-              <span className="ml-2 text-gray-600">%</span>
+              <span className="ml-2 text-stone-600">%</span>
             </div>
             {errors.discount_percent && (
               <p className="text-sm text-red-600 mt-1">{errors.discount_percent}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               Discount off monthly rate (e.g., 5% = 5% off ₱500/month)
             </p>
           </div>
 
           {/* Billing Interval */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Billing Interval *
             </label>
             <select
@@ -278,35 +278,35 @@ export default function SubscriptionPlanForm({
                 ...formData,
                 interval: e.target.value as 'month' | 'quarter' | 'year'
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               disabled={isSubmitting || isLoading}
             >
               <option value="month">Monthly</option>
               <option value="quarter">Quarterly</option>
               <option value="year">Annually</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               How often the customer is billed
             </p>
           </div>
 
           {/* Auto-calculated Price */}
-          <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="md:col-span-2 bg-stone-50 border border-stone-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Calculated Price *
                 </label>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-stone-500">
                   {formData.base_monthly_price !== undefined ? `Auto-calculated: ${formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}${formData.base_monthly_price.toFixed(2)} × ${(1 - formData.discount_percent / 100).toFixed(2)} × ${formData.interval === 'month' ? '1' : formData.interval === 'quarter' ? '3' : '12'} months = ${formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}${formData.price.toFixed(2)}` : 'Using current price (no base monthly price set)'}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-stone-900">
                   {formData.currency === 'PHP' ? '₱' : formData.currency === 'USD' ? '$' : '€'}
                   {formData.price.toFixed(2)}
                 </div>
-                <p className="text-xs text-gray-500">per {formData.interval}</p>
+                <p className="text-xs text-stone-500">per {formData.interval}</p>
               </div>
             </div>
           </div>
@@ -314,15 +314,15 @@ export default function SubscriptionPlanForm({
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 mb-1">
             Description *
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              errors.description ? 'border-red-300' : 'border-gray-300'
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+              errors.description ? 'border-red-300' : 'border-stone-300'
             }`}
             placeholder="Describe this subscription plan..."
             disabled={isSubmitting || isLoading}
@@ -335,13 +335,13 @@ export default function SubscriptionPlanForm({
         {/* Features */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-stone-700">
               Features *
             </label>
             <button
               type="button"
               onClick={addFeature}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
               disabled={isSubmitting || isLoading}
             >
               + Add Feature
@@ -356,7 +356,7 @@ export default function SubscriptionPlanForm({
                     type="text"
                     value={feature.text}
                     onChange={(e) => updateFeature(feature.id, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder={`Feature ${index + 1}`}
                     disabled={isSubmitting || isLoading}
                   />
@@ -389,10 +389,10 @@ export default function SubscriptionPlanForm({
             id="is_active"
             checked={formData.is_active}
             onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="w-4 h-4 text-indigo-600 border-stone-300 rounded focus:ring-indigo-500"
             disabled={isSubmitting || isLoading}
           />
-          <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
+          <label htmlFor="is_active" className="ml-2 text-sm text-stone-700">
             Plan is active and available for new subscriptions
           </label>
         </div>
@@ -405,11 +405,11 @@ export default function SubscriptionPlanForm({
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stone-200">
           <button
             type="submit"
             disabled={isSubmitting || isLoading}
-            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[44px]"
+            className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-stone-400 disabled:cursor-not-allowed min-h-[44px]"
           >
             {isSubmitting ? 'Saving...' : initialData?.id ? 'Update Plan' : 'Create Plan'}
           </button>
@@ -417,7 +417,7 @@ export default function SubscriptionPlanForm({
             type="button"
             onClick={onCancel}
             disabled={isSubmitting || isLoading}
-            className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed min-h-[44px]"
+            className="flex-1 bg-stone-200 text-stone-700 px-6 py-3 rounded-lg font-medium hover:bg-stone-300 disabled:bg-stone-100 disabled:cursor-not-allowed min-h-[44px]"
           >
             Cancel
           </button>

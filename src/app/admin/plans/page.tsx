@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
+import { AlertTriangle, CheckCircle2, Settings, X } from 'lucide-react';
 import SubscriptionPlanList from '@/components/admin/SubscriptionPlanList';
 import SubscriptionPlanForm from '@/components/admin/SubscriptionPlanForm';
 
@@ -197,33 +198,33 @@ export default function AdminPlansPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Subscription Plans Management</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-stone-900">Subscription Plans Management</h1>
+          <p className="text-stone-600 mt-1">
             Create and manage subscription plans for your service
           </p>
         </div>
 
         {/* Success Message */}
         {successMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
             <div className="flex items-center">
-              <span className="text-green-600 mr-2">✓</span>
-              <p className="text-sm text-green-800">{successMessage}</p>
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mr-2" />
+              <p className="text-sm text-emerald-800">{successMessage}</p>
             </div>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
             <div className="flex items-center">
-              <span className="text-red-600 mr-2">⚠</span>
-              <p className="text-sm text-red-800">{error}</p>
+              <AlertTriangle className="w-5 h-5 text-rose-600 mr-2" />
+              <p className="text-sm text-rose-800">{error}</p>
               <button
                 onClick={() => setError('')}
-                className="ml-auto text-red-600 hover:text-red-800"
+                className="ml-auto text-rose-600 hover:text-rose-800"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -232,19 +233,20 @@ export default function AdminPlansPage() {
         {/* Action Bar */}
         {!showForm && (
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-stone-600">
               {plans.length} {plans.length === 1 ? 'plan' : 'plans'} available
             </div>
             <div className="flex items-center gap-3">
               <Link
                 href="/admin/payment-settings"
-                className="bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 min-h-[44px]"
+                className="bg-stone-100 text-stone-700 px-6 py-3 rounded-lg font-medium hover:bg-stone-200 min-h-[44px] inline-flex items-center gap-2"
               >
-                ⚙ Payment Settings
+                <Settings className="w-4 h-4" />
+                Payment Settings
               </Link>
               <button
                 onClick={handleStartNewPlan}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 min-h-[44px]"
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 min-h-[44px]"
               >
                 Create New Plan
               </button>
@@ -257,7 +259,7 @@ export default function AdminPlansPage() {
           <div className="space-y-4">
             <button
               onClick={handleCancelForm}
-              className="text-blue-600 hover:text-blue-800 font-medium"
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
             >
               ← Back to Plans List
             </button>

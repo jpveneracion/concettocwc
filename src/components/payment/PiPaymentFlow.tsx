@@ -245,8 +245,8 @@ export default function PiPaymentFlow({
       </div>
 
       {amountPi !== null && (
-        <div className="text-sm text-gray-600 text-center">
-          Total: <span className="font-semibold text-gray-900">π {amountPi.toFixed(2)}</span>
+        <div className="text-sm text-stone-600 text-center">
+          Total: <span className="font-semibold text-stone-900">π {amountPi.toFixed(2)}</span>
         </div>
       )}
 
@@ -265,7 +265,7 @@ export default function PiPaymentFlow({
         </span>
       </button>
 
-      {notice && <p className="text-sm text-blue-600 text-center">{notice}</p>}
+      {notice && <p className="text-sm text-indigo-600 text-center">{notice}</p>}
       {errorMessage && <p className="text-sm text-red-600 text-center">{errorMessage}</p>}
     </div>
   );

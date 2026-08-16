@@ -47,7 +47,7 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-600 to-blue-700">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-600 to-indigo-700">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
           {headline}
@@ -61,7 +61,7 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
           <button
             onClick={handlePrimaryCtaClick}
-            className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl text-center"
+            className="w-full sm:w-auto px-8 py-4 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-stone-100 transition-colors shadow-lg hover:shadow-xl text-center"
           >
             {primaryCtaText}
           </button>

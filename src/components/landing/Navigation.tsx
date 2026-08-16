@@ -55,7 +55,7 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
                 key={index}
                 href={link.href}
                 onClick={(e) => handleSmoothScroll(e, link.href)}
-                className="text-gray-700 hover:text-indigo-600 transition-colors font-medium"
+                className="text-stone-700 hover:text-indigo-600 transition-colors font-medium"
               >
                 {link.text}
               </a>
@@ -72,7 +72,7 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-4 text-gray-700 hover:text-indigo-600 focus:outline-none"
+              className="p-4 text-stone-700 hover:text-indigo-600 focus:outline-none"
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6" />
@@ -85,14 +85,14 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div className="md:hidden py-4 border-t border-stone-200">
             <div className="flex flex-col space-y-4">
               {links.map((link, index) => (
                 <a
                   key={index}
                   href={link.href}
                   onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className="text-gray-700 hover:text-indigo-600 transition-colors font-medium"
+                  className="text-stone-700 hover:text-indigo-600 transition-colors font-medium"
                 >
                   {link.text}
                 </a>

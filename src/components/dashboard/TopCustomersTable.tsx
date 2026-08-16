@@ -1,5 +1,6 @@
 'use client';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 interface TopCustomersTableProps {
   customers: Array<{
@@ -8,6 +9,7 @@ interface TopCustomersTableProps {
     quoteCount: number;
   }>;
   currency?: string;
+  onViewCustomer?: (customer: { customerName: string; totalRevenue: number; quoteCount: number }) => void;
 }
 
 function formatCurrency(amount: number, currency: string = 'USD'): string {
@@ -24,15 +26,15 @@ function formatCurrency(amount: number, currency: string = 'USD'): string {
   }).format(amount);
 }
 
-export default function TopCustomersTable({ customers, currency = 'USD' }: TopCustomersTableProps) {
+export default function TopCustomersTable({ customers, currency = 'USD', onViewCustomer }: TopCustomersTableProps) {
   // Mobile card render function
   const renderMobileCard = (customer: { customerName: string; totalRevenue: number; quoteCount: number }, index: number) => {
     return (
-      <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
+      <div key={index} className="bg-white border border-stone-200 rounded-lg p-4 space-y-2 card-shadow">
         {/* Card header */}
         <div className="flex justify-between items-start">
-          <div className="font-semibold text-base text-gray-900">{customer.customerName}</div>
-          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          <div className="font-semibold text-base text-stone-900">{customer.customerName}</div>
+          <div className="text-xs font-medium text-slate-500 bg-slate-50 border border-slate-100 px-2 py-1 rounded-full">
             #{index + 1}
           </div>
         </div>
@@ -40,13 +42,13 @@ export default function TopCustomersTable({ customers, currency = 'USD' }: TopCu
         {/* Card body */}
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-600">Revenue:</span>
-            <span className="font-semibold text-blue-700">
+            <span className="text-stone-500">Revenue:</span>
+            <span className="font-semibold text-indigo-700">
               {formatCurrency(customer.totalRevenue, currency)}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Quotes:</span>
+            <span className="text-stone-500">Quotes:</span>
             <span className="font-medium">{customer.quoteCount}</span>
           </div>
         </div>
@@ -57,25 +59,41 @@ export default function TopCustomersTable({ customers, currency = 'USD' }: TopCu
   // Desktop table render function
   const renderDesktopTable = () => {
     return (
-      <table className="w-full text-sm">
+      <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Customer</th>
-            <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Revenue</th>
-            <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Quotes</th>
+          <tr>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-stone-200">
+              Customer
+            </th>
+            <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-stone-200">
+              Revenue
+            </th>
+            <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-stone-200">
+              Quotes
+            </th>
+            {onViewCustomer && (
+              <th className="px-4 py-3 border-b border-stone-200"></th>
+            )}
           </tr>
         </thead>
         <tbody>
           {customers.map((customer, index) => (
             <tr
               key={index}
-              className="border-b border-gray-100 hover:bg-gray-50 last:border-0"
+              className="hover:bg-slate-50 transition-colors duration-150 group"
             >
-              <td className="px-4 py-3 text-gray-900">{customer.customerName}</td>
-              <td className="px-4 py-3 text-right font-medium text-gray-900">
+              <td className="px-4 py-3 text-stone-900 font-medium">{customer.customerName}</td>
+              <td className="px-4 py-3 text-right text-stone-900 font-semibold">
                 {formatCurrency(customer.totalRevenue, currency)}
               </td>
-              <td className="px-4 py-3 text-right text-gray-600">{customer.quoteCount}</td>
+              <td className="px-4 py-3 text-right text-stone-600">{customer.quoteCount}</td>
+              {onViewCustomer && (
+                <td className="px-4 py-3 text-right">
+                  <ActionDropdown
+                    onView={() => onViewCustomer(customer)}
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -84,8 +102,8 @@ export default function TopCustomersTable({ customers, currency = 'USD' }: TopCu
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6">
-      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">Top Customers</h3>
+    <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-6 card-shadow">
+      <h3 className="text-base md:text-lg font-semibold text-stone-900 tracking-tight mb-4">Top Customers</h3>
       <ResponsiveTable
         data={customers}
         renderCard={renderMobileCard}

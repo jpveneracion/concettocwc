@@ -32,7 +32,7 @@ export default function PaymentSettingsPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-gray-400">Loading...</div>
+          <div className="animate-pulse text-stone-400">Loading...</div>
         </div>
       </AdminLayout>
     );

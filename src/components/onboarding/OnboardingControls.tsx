@@ -61,14 +61,14 @@ export function OnboardingControls() {
 
         <div className="space-y-3">
           {/* General Onboarding */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900">Platform Tour</h4>
-              <p className="text-sm text-gray-600">General introduction to Concetto</p>
+              <h4 className="font-medium text-stone-900">Platform Tour</h4>
+              <p className="text-sm text-stone-600">General introduction to Concetto</p>
             </div>
             <button
               onClick={handleResetGeneralOnboarding}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               View Again
@@ -77,43 +77,43 @@ export function OnboardingControls() {
 
           {/* Feature Onboarding */}
           <div className="space-y-2">
-            <h4 className="font-medium text-gray-900">Feature Guides</h4>
+            <h4 className="font-medium text-stone-900">Feature Guides</h4>
 
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+            <div className="flex items-center justify-between p-2 bg-stone-50 rounded">
               <span className="text-sm">Dashboard Guide</span>
               <button
                 onClick={() => handleResetFeatureOnboarding('dashboard', '/dashboard')}
-                className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                className="text-xs px-2 py-1 bg-stone-200 hover:bg-stone-300 rounded transition-colors"
               >
                 View Again
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+            <div className="flex items-center justify-between p-2 bg-stone-50 rounded">
               <span className="text-sm">Quotes Guide</span>
               <button
                 onClick={() => handleResetFeatureOnboarding('quotes', '/quotes/new')}
-                className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                className="text-xs px-2 py-1 bg-stone-200 hover:bg-stone-300 rounded transition-colors"
               >
                 View Again
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+            <div className="flex items-center justify-between p-2 bg-stone-50 rounded">
               <span className="text-sm">Products Guide</span>
               <button
                 onClick={() => handleResetFeatureOnboarding('products', '/products')}
-                className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                className="text-xs px-2 py-1 bg-stone-200 hover:bg-stone-300 rounded transition-colors"
               >
                 View Again
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+            <div className="flex items-center justify-between p-2 bg-stone-50 rounded">
               <span className="text-sm">Settings Guide</span>
               <button
                 onClick={() => handleResetFeatureOnboarding('settings', '/settings')}
-                className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
+                className="text-xs px-2 py-1 bg-stone-200 hover:bg-stone-300 rounded transition-colors"
               >
                 View Again
               </button>
@@ -129,7 +129,7 @@ export function OnboardingControls() {
           </button>
 
           {/* Stats */}
-          <div className="pt-3 border-t text-xs text-gray-500">
+          <div className="pt-3 border-t text-xs text-stone-500">
             <div className="flex justify-between">
               <span>Completed: {stats.completed}</span>
               <span>Pending: {stats.pending}</span>

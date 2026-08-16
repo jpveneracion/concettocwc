@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Key, Building, Tag, CheckCircle2 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 
 export default function AdminDashboardPage() {
@@ -15,8 +16,8 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Admin Dashboard</h1>
+        <p className="text-stone-600 mt-1">
           System administration and management
         </p>
       </div>
@@ -25,36 +26,51 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link
           href="/admin/activation-codes"
-          className="bg-blue-50 border border-blue-200 rounded-lg p-6 hover:bg-blue-100 transition-colors"
+          className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 hover:bg-indigo-100 transition-colors"
         >
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            🔑 Activation Codes
-          </h3>
-          <p className="text-blue-700 text-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="p-2 rounded-lg bg-white card-shadow">
+              <Key className="w-5 h-5 text-indigo-600" />
+            </span>
+            <h3 className="text-lg font-semibold text-indigo-900">
+              Activation Codes
+            </h3>
+          </div>
+          <p className="text-indigo-700 text-sm">
             Manage trial activation codes and subscription system
           </p>
         </Link>
 
         <Link
           href="/admin/company-products"
-          className="bg-green-50 border border-green-200 rounded-lg p-6 hover:bg-green-100 transition-colors"
+          className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 hover:bg-emerald-100 transition-colors"
         >
-          <h3 className="text-lg font-semibold text-green-900 mb-2">
-            🏢 Company Products
-          </h3>
-          <p className="text-green-700 text-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="p-2 rounded-lg bg-white card-shadow">
+              <Building className="w-5 h-5 text-emerald-600" />
+            </span>
+            <h3 className="text-lg font-semibold text-emerald-900">
+              Company Products
+            </h3>
+          </div>
+          <p className="text-emerald-700 text-sm">
             Review and promote company-specific products to global catalog
           </p>
         </Link>
 
         <Link
           href="/admin/promo-codes"
-          className="bg-purple-50 border border-purple-200 rounded-lg p-6 hover:bg-purple-100 transition-colors"
+          className="bg-amber-50 border border-amber-200 rounded-xl p-6 hover:bg-amber-100 transition-colors"
         >
-          <h3 className="text-lg font-semibold text-purple-900 mb-2">
-            🏷️ Promo Codes
-          </h3>
-          <p className="text-purple-700 text-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="p-2 rounded-lg bg-white card-shadow">
+              <Tag className="w-5 h-5 text-amber-600" />
+            </span>
+            <h3 className="text-lg font-semibold text-amber-900">
+              Promo Codes
+            </h3>
+          </div>
+          <p className="text-amber-700 text-sm">
             Manage promo codes and discount campaigns
           </p>
         </Link>
@@ -62,18 +78,18 @@ export default function AdminDashboardPage() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-pulse text-gray-400">Loading...</div>
+          <div className="animate-pulse text-stone-400">Loading...</div>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-6 card-shadow">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">
             Admin Functions
           </h2>
-          <div className="space-y-3 text-sm text-gray-600">
-            <p>✅ User and role management</p>
-            <p>✅ Product review and approval system</p>
-            <p>✅ Subscription and activation code management</p>
-            <p>✅ System monitoring and analytics</p>
+          <div className="space-y-3 text-sm text-stone-600">
+            <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />User and role management</p>
+            <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />Product review and approval system</p>
+            <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />Subscription and activation code management</p>
+            <p className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />System monitoring and analytics</p>
           </div>
         </div>
       )}

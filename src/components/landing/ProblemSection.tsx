@@ -32,7 +32,7 @@ export default function ProblemSection() {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-12">
+        <h2 className="text-3xl sm:text-4xl font-bold text-stone-900 text-center mb-12">
           The Challenges of Manual Business Processes
         </h2>
 
@@ -40,16 +40,16 @@ export default function ProblemSection() {
           {problemCards.map((card, index) => {
             const Icon = iconMap[card.icon];
             return (
-              <div key={index} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-red-200 transition-colors">
+              <div key={index} className="bg-stone-50 rounded-xl p-6 border border-stone-200 hover:border-red-200 transition-colors">
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                     <Icon className="w-8 h-8 text-red-600" />
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3 text-center">
+                <h3 className="text-xl font-semibold text-stone-900 mb-3 text-center">
                   {card.title}
                 </h3>
-                <p className="text-gray-600 text-center">
+                <p className="text-stone-600 text-center">
                   {card.description}
                 </p>
               </div>

@@ -163,20 +163,20 @@ export default function ProductCreationModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-5 py-4 rounded-t-xl">
+          <div className="sticky top-0 bg-white border-b border-stone-200 px-5 py-4 rounded-t-xl">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-800">
+              <h3 className="text-lg font-semibold text-stone-800">
                 Create New Product
               </h3>
               <button
                 onClick={handleClose}
                 aria-label="Close modal"
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="text-stone-400 hover:text-stone-600 text-2xl leading-none min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 ×
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-stone-500 mt-1">
               Add "{productCode.toUpperCase()}" to your product catalog
             </p>
           </div>
@@ -185,21 +185,21 @@ export default function ProductCreationModal({
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
             {/* Product Code (Read-only) */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-stone-500 mb-1">
                 Product Code
               </label>
               <input
                 type="text"
                 value={productCode.toUpperCase()}
                 readOnly
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-600 font-medium min-h-[44px]"
+                className="w-full border border-stone-200 rounded-lg px-4 py-3 text-sm bg-stone-50 text-stone-600 font-medium min-h-[44px]"
               />
             </div>
 
             {/* Collection (Optional) */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
-                Collection <span className="text-gray-400">(optional)</span>
+              <label className="block text-xs text-stone-500 mb-1">
+                Collection <span className="text-stone-400">(optional)</span>
               </label>
               <input
                 type="text"
@@ -210,7 +210,7 @@ export default function ProductCreationModal({
                 className={`w-full border rounded-lg px-4 py-3 text-sm min-h-[44px] ${
                   errors.collection
                     ? 'border-red-300 focus:outline-none focus:ring-2 focus:ring-red-200'
-                    : 'border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                    : 'border-stone-200 focus:outline-none focus:ring-2 focus:ring-indigo-200'
                 }`}
               />
               {errors.collection && (
@@ -220,7 +220,7 @@ export default function ProductCreationModal({
 
             {/* Description (Required) */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-stone-500 mb-1">
                 Description <span className="text-red-400">*</span>
               </label>
               <textarea
@@ -233,14 +233,14 @@ export default function ProductCreationModal({
                 className={`w-full border rounded-lg px-4 py-3 text-sm min-h-[88px] resize-none ${
                   errors.description
                     ? 'border-red-300 focus:outline-none focus:ring-2 focus:ring-red-200'
-                    : 'border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                    : 'border-stone-200 focus:outline-none focus:ring-2 focus:ring-indigo-200'
                 }`}
               />
               <div className="flex justify-between items-center mt-1">
                 {errors.description ? (
                   <p className="text-xs text-red-500">{errors.description}</p>
                 ) : (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-stone-400">
                     {formData.description.length}/500 characters
                   </p>
                 )}
@@ -249,13 +249,13 @@ export default function ProductCreationModal({
 
             {/* Unit Selection */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-stone-500 mb-1">
                 Unit <span className="text-red-400">*</span>
               </label>
               <select
                 value={formData.unit}
                 onChange={(e) => handleInputChange('unit', e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full border border-stone-200 rounded-lg px-4 py-3 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-200"
               >
                 <option value="sqft">Square Feet (sq.ft.)</option>
                 <option value="sqm">Square Meters (sq.m.)</option>
@@ -276,7 +276,7 @@ export default function ProductCreationModal({
                 onClick={handleClose}
                 disabled={submitting}
                 aria-label="Cancel product creation"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px] disabled:opacity-50"
+                className="flex-1 px-4 py-3 border border-stone-300 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-50 min-h-[44px] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -285,7 +285,7 @@ export default function ProductCreationModal({
                 disabled={submitting}
                 aria-label={submitting ? 'Creating product' : 'Create product'}
                 aria-live="polite"
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 min-h-[44px] disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 min-h-[44px] disabled:opacity-50"
               >
                 {submitting ? 'Creating...' : 'Create Product'}
               </button>

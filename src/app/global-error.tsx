@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 export default function GlobalError({
   error,
@@ -20,7 +21,7 @@ export default function GlobalError({
         <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
             <div className="text-center">
-              <div className="text-6xl mb-4">⚠️</div>
+              <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-rose-600" />
               <h1 className="text-3xl font-bold text-red-900 mb-4">
                 Critical Application Error
               </h1>
@@ -43,7 +44,7 @@ export default function GlobalError({
                 </button>
                 <button
                   onClick={() => window.location.href = '/'}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                  className="px-6 py-3 bg-stone-600 text-white rounded-lg font-medium hover:bg-stone-700 transition-colors"
                 >
                   Go to Homepage
                 </button>

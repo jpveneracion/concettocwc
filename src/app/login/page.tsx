@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Store, CheckCircle2 } from 'lucide-react';
 import { ProviderButtons } from '@/components/auth/ProviderButtons';
 
 function LoginForm() {
@@ -87,30 +88,34 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <div className="text-center mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-bold text-blue-600">🏪 Concetto</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-2">Window Blinds Management</p>
+            <h1 className="text-xl md:text-2xl font-bold text-indigo-600 flex items-center justify-center gap-2">
+              <Store className="w-6 h-6" />
+              Concetto
+            </h1>
+            <p className="text-xs md:text-sm text-stone-500 mt-2">Window Blinds Management</p>
           </div>
 
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm mb-4">
-              ✓ {success}
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm mb-4 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {success}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                 placeholder="your@email.com"
                 required
                 autoFocus
@@ -118,14 +123,14 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base"
+                className="w-full px-3 md:px-4 py-2 md:py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                 placeholder="••••••••"
                 required
               />
@@ -140,18 +145,18 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 md:py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+              className="w-full bg-indigo-600 text-white py-2 md:py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 
-          <div className="flex justify-center items-center text-xs text-gray-500 text-center mt-4 space-x-4">
-            <a href="/reset-password" className="text-blue-600 hover:underline">
+          <div className="flex justify-center items-center text-xs text-stone-500 text-center mt-4 space-x-4">
+            <a href="/reset-password" className="text-indigo-600 hover:underline">
               Forgot password?
             </a>
             <span>|</span>
-            <a href="/signup" className="text-blue-600 hover:underline font-medium">
+            <a href="/signup" className="text-indigo-600 hover:underline font-medium">
               Don't have an account? Sign up
             </a>
           </div>
@@ -169,7 +174,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="animate-pulse">Loading...</div>
       </div>
     }>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { AlertTriangle, Coins, Loader2 } from 'lucide-react';
 
 interface PiWalletPaymentProps {
   amount: number;
@@ -98,17 +99,17 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
       {/* QR Code */}
       <div className="flex flex-col items-center">
         {loadingQuote || !qrCodeUrl ? (
-          <div className="bg-white p-6 rounded-lg border-2 border-gray-200 w-64 h-64 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg border-2 border-stone-200 w-64 h-64 flex items-center justify-center">
             {loadingQuote ? (
-              <div className="animate-spin text-4xl mr-3">⏳</div>
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             ) : (
-              <p className="text-gray-500 text-sm text-center">
+              <p className="text-stone-500 text-sm text-center">
                 QR code unavailable.<br />Use the wallet address below instead.
               </p>
             )}
           </div>
         ) : (
-          <div className="bg-white p-6 rounded-lg border-2 border-gray-200">
+          <div className="bg-white p-6 rounded-lg border-2 border-stone-200">
             <img
               src={qrCodeUrl}
               alt="Pi Wallet QR Code"
@@ -118,11 +119,11 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
         )}
 
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-600 mb-1">Scan with your Pi Wallet, or send to:</p>
-          <p className="text-sm font-mono text-gray-800 break-all bg-gray-50 rounded-lg p-3 mb-3 max-w-sm">
+          <p className="text-sm text-stone-600 mb-1">Scan with your Pi Wallet, or send to:</p>
+          <p className="text-sm font-mono text-stone-800 break-all bg-stone-50 rounded-lg p-3 mb-3 max-w-sm">
             {walletAddress}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-stone-500">
             Wallet: {accountName}
           </p>
           <button
@@ -137,41 +138,41 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
                 : 'bg-[#7b2cbf] hover:bg-[#9d4edd] text-white'
             }`}
           >
-            {addressCopied ? '✓ Address Copied!' : 'Copy Wallet Address'}
+            {addressCopied ? 'Address Copied!' : 'Copy Wallet Address'}
           </button>
         </div>
       </div>
 
       {/* Amount */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
         <div className="text-center">
-          <p className="text-sm text-purple-700 mb-1">Amount to Send:</p>
+          <p className="text-sm text-indigo-700 mb-1">Amount to Send:</p>
           {loadingQuote ? (
-            <p className="text-3xl font-bold text-purple-900 animate-pulse">...</p>
+            <p className="text-3xl font-bold text-indigo-900 animate-pulse">...</p>
           ) : amountPi !== undefined ? (
             <>
-              <p className="text-3xl font-bold text-purple-900 mb-1">
+              <p className="text-3xl font-bold text-indigo-900 mb-1">
                 π {formatPiAmount(amountPi)}
               </p>
-              <p className="text-xs text-purple-600">
+              <p className="text-xs text-indigo-600">
                 ≈ {formatCurrency(amount)} PHP
               </p>
             </>
           ) : (
-            <p className="text-3xl font-bold text-purple-900 mb-1">
+            <p className="text-3xl font-bold text-indigo-900 mb-1">
               ≈ {formatCurrency(amount)}
             </p>
           )}
-          <p className="text-xs text-purple-600 mt-1">For: {planName}</p>
+          <p className="text-xs text-indigo-600 mt-1">For: {planName}</p>
           {promoCode && (
-            <p className="text-xs text-green-600 mt-1">💰 Promo code applied!</p>
+            <p className="text-xs text-emerald-700 mt-1 flex items-center gap-1"><Coins className="w-3.5 h-3.5" />Promo code applied!</p>
           )}
         </div>
       </div>
 
       {/* Step by Step Instructions */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h4 className="font-semibold text-gray-900 mb-3">
+      <div className="bg-stone-50 rounded-lg p-4">
+        <h4 className="font-semibold text-stone-900 mb-3">
           How to Pay with Pi Network
         </h4>
         <ol className="space-y-2">
@@ -185,8 +186,8 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
             'Take a screenshot of the completed transaction',
             'Submit the screenshot and txid in the payment proof below'
           ].map((instruction, index) => (
-            <li key={index} className="flex items-start gap-3 text-sm text-gray-700">
-              <span className="flex-shrink-0 w-6 h-6 bg-[#7b2cbf] text-white rounded-full flex items-center justify-center text-xs font-semibold">
+            <li key={index} className="flex items-start gap-3 text-sm text-stone-700">
+              <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-semibold">
                 {index + 1}
               </span>
               <span>{instruction}</span>
@@ -196,9 +197,9 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
       </div>
 
       {/* Important Notice */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <span className="text-yellow-600 text-xl">⚠️</span>
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <div className="flex-1">
             <p className="font-medium text-yellow-900 mb-1">
               Important Pi Payment Instructions
@@ -216,8 +217,8 @@ export default function PiWalletPayment({ amount, planName, promoCode }: PiWalle
       </div>
 
       {/* Rate Disclaimer */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-xs text-blue-800 text-center">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+        <p className="text-xs text-indigo-800 text-center">
           <strong>Rate Notice:</strong>{' '}
           {quote?.pi_price_usd
             ? `1 Pi = $${Number(quote.pi_price_usd).toFixed(4)} USD (live market price).`

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { DollarSign, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import MetricCard from '@/components/dashboard/MetricCard';
 import TrendChart from '@/components/dashboard/TrendChart';
@@ -23,7 +24,7 @@ export default function DashboardPage() {
 
   const tabClassName = (active: boolean) =>
     `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-      active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      active ? 'bg-indigo-600 text-white' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
     }`;
 
   // Side effects run once on mount.
@@ -179,7 +180,7 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <EncryptionModal show={encrypting} phase={encryptPhase} />
-        <div className="p-12 text-center text-gray-400">Loading dashboard...</div>
+        <div className="p-12 text-center text-stone-400">Loading dashboard...</div>
       </AppLayout>
     );
   }
@@ -196,7 +197,7 @@ export default function DashboardPage() {
     return (
       <AppLayout>
         <EncryptionModal show={encrypting} phase={encryptPhase} />
-        <div className="p-12 text-center text-gray-400">No data available</div>
+        <div className="p-12 text-center text-stone-400">No data available</div>
       </AppLayout>
     );
   }
@@ -205,7 +206,7 @@ export default function DashboardPage() {
     <AppLayout>
       <EncryptionModal show={encrypting} />
       <div className="mb-6">
-        <h1 className="text-xl font-semibold mb-4">Dashboard</h1>
+        <h1 className="text-xl font-semibold tracking-tight mb-4">Dashboard</h1>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setPeriod('month')}
@@ -235,7 +236,7 @@ export default function DashboardPage() {
             <select
               value={String(selectedYear)}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className={`${tabClassName(false)} border border-gray-300`}
+              className={`${tabClassName(false)} border border-stone-300`}
             >
               {Array.from({ length: YEAR_DROPDOWN_SPAN }, (_, i) => currentUtcYear - i).map((year) => (
                 <option key={year} value={String(year)}>
@@ -252,28 +253,28 @@ export default function DashboardPage() {
         <MetricCard
           title={salesTitle}
           value={formatCurrency(metrics.monthlySales)}
-          icon="💰"
-          color="blue"
+          icon={DollarSign}
+          color="indigo"
         />
         <MetricCard
           title="Profit"
           value={formatCurrency(metrics.profit)}
           subtitle={`Margin: ${formatPercent(metrics.profitMargin)}`}
-          icon="📈"
-          color="green"
+          icon={TrendingUp}
+          color="emerald"
         />
         <MetricCard
           title="Conversion Rate"
           value={formatPercent(metrics.conversionRate)}
           subtitle={`${metrics.approvedQuotes} of ${metrics.totalQuotes} approved`}
-          icon="🎯"
-          color="purple"
+          icon={Target}
+          color="amber"
         />
         <MetricCard
           title="Avg Order Value"
           value={formatCurrency(metrics.averageOrderValue)}
-          icon="📊"
-          color="orange"
+          icon={BarChart3}
+          color="rose"
         />
       </div>
 

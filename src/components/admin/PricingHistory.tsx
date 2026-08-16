@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { PricingHistoryEntry } from '@/lib/pricing-service';
 import { getChangeTypeBadgeClass, getChangeTypeCardStyles, getTimelineDotClass, formatRelativeTime } from '@/lib/utils/pricing-utils';
 import LoadingSpinner from './LoadingSpinner';
@@ -76,10 +77,10 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
       <div className="bg-white rounded-t-xl md:rounded-lg p-6 w-full md:max-w-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Pricing Change History</h2>
+          <h2 className="text-xl font-semibold text-stone-900">Pricing Change History</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
+            className="text-stone-400 hover:text-stone-600 text-3xl leading-none"
             aria-label="Close pricing history dialog"
           >
             ×
@@ -120,9 +121,9 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
         ) : history.length === 0 ? (
           /* Empty State */
           <div className="text-center py-12">
-            <div className="text-gray-300 text-6xl mb-4">📋</div>
-            <p className="text-gray-600">No pricing history found</p>
-            <p className="text-sm text-gray-500 mt-2">
+            <ClipboardList className="w-14 h-14 mx-auto mb-4 text-stone-300" />
+            <p className="text-stone-600">No pricing history found</p>
+            <p className="text-sm text-stone-500 mt-2">
               Pricing changes will appear here once they are made
             </p>
           </div>
@@ -141,13 +142,13 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getChangeTypeBadgeClass(entry.change_type)}`}>
                       {entry.change_type.toUpperCase()}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-stone-400">
                       #{history.length - index}
                     </span>
                   </div>
 
                   {/* Timestamp */}
-                  <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                  <div className="text-sm text-stone-600 mb-2 flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -156,15 +157,15 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
 
                   {/* Change Reason */}
                   {entry.change_reason && (
-                    <div className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium text-gray-800">Reason:</span>{' '}
-                      <span className="italic text-gray-600">"{entry.change_reason}"</span>
+                    <div className="text-sm text-stone-700 mb-2">
+                      <span className="font-medium text-stone-800">Reason:</span>{' '}
+                      <span className="italic text-stone-600">"{entry.change_reason}"</span>
                     </div>
                   )}
 
                   {/* Changed Field Details */}
                   {entry.changed_field && (
-                    <div className="text-xs text-gray-600 mb-3">
+                    <div className="text-xs text-stone-600 mb-3">
                       <span className="font-medium">Field:</span> {entry.changed_field}
                     </div>
                   )}
@@ -176,7 +177,7 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
                         id: entry.id,
                         reason: `Rollback to version from ${new Date(entry.changed_at).toLocaleDateString()}`
                       })}
-                      className="w-full text-sm text-blue-600 hover:text-blue-800 underline font-medium py-2 border-t border-gray-200 pt-3"
+                      className="w-full text-sm text-indigo-600 hover:text-indigo-800 underline font-medium py-2 border-t border-stone-200 pt-3"
                       disabled={processingRollback}
                       aria-label={`Rollback to version from ${new Date(entry.changed_at).toLocaleDateString()}`}
                       aria-haspopup="dialog"
@@ -193,7 +194,7 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
               {history.map((entry, index) => (
                 <div
                   key={entry.id}
-                  className="relative border-l-2 border-gray-200 pl-4 pb-4 last:pb-0 last:border-l-0"
+                  className="relative border-l-2 border-stone-200 pl-4 pb-4 last:pb-0 last:border-l-0"
                 >
                   {/* Timeline Dot */}
                   <div className={`absolute -left-2 top-0 w-4 h-4 rounded-full border-2 ${getTimelineDotClass(entry.change_type)}`} />
@@ -205,25 +206,25 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getChangeTypeBadgeClass(entry.change_type)}`}>
                           {entry.change_type.toUpperCase()}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-stone-500">
                           {formatRelativeTime(entry.changed_at)}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-stone-400">
                           #{history.length - index}
                         </span>
                       </div>
 
                       {/* Change Reason */}
                       {entry.change_reason && (
-                        <p className="text-sm text-gray-700 mb-2">
-                          <span className="font-medium text-gray-800">Reason:</span>{' '}
-                          <span className="italic text-gray-600">"{entry.change_reason}"</span>
+                        <p className="text-sm text-stone-700 mb-2">
+                          <span className="font-medium text-stone-800">Reason:</span>{' '}
+                          <span className="italic text-stone-600">"{entry.change_reason}"</span>
                         </p>
                       )}
 
                       {/* Changed Field Details */}
                       {entry.changed_field && (
-                        <div className="text-xs text-gray-600 mb-2">
+                        <div className="text-xs text-stone-600 mb-2">
                           <span className="font-medium">Field:</span> {entry.changed_field}
                         </div>
                       )}
@@ -236,7 +237,7 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
                               id: entry.id,
                               reason: `Rollback to version from ${new Date(entry.changed_at).toLocaleDateString()}`
                             })}
-                            className="text-sm text-blue-600 hover:text-blue-800 underline font-medium"
+                            className="text-sm text-indigo-600 hover:text-indigo-800 underline font-medium"
                             disabled={processingRollback}
                             aria-label={`Rollback to version from ${new Date(entry.changed_at).toLocaleDateString()}`}
                             aria-haspopup="dialog"
@@ -258,22 +259,22 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
       {rollbackMode && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-end md:items-center justify-center p-0 md:p-4 z-[60]">
           <div className="bg-white rounded-t-xl md:rounded-lg p-6 w-full md:max-w-md shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">Confirm Rollback</h3>
+            <h3 className="text-lg font-semibold mb-4 text-stone-900">Confirm Rollback</h3>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-stone-600 mb-4">
               This will restore the pricing configuration from the selected history entry.
               All changes made since that point will be lost.
             </p>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-stone-700 mb-1">
                 Rollback Reason (Required)
               </label>
               <textarea
                 value={rollbackMode.reason}
                 onChange={(e) => setRollbackMode({ ...rollbackMode, reason: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[80px]"
                 placeholder="Explain why you are rolling back this change..."
                 required
               />
@@ -282,7 +283,7 @@ export default function PricingHistory({ onClose, onRollback }: PricingHistoryPr
             <div className="flex gap-3">
               <button
                 onClick={() => setRollbackMode(null)}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-3 rounded-lg font-medium min-h-[44px] hover:bg-gray-300 transition-colors"
+                className="flex-1 bg-stone-200 text-stone-800 px-4 py-3 rounded-lg font-medium min-h-[44px] hover:bg-stone-300 transition-colors"
                 disabled={processingRollback}
                 aria-label="Cancel rollback operation"
               >

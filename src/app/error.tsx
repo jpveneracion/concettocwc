@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Siren } from 'lucide-react';
 
 export default function Error({
   error,
@@ -20,13 +21,13 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center">
           {/* Error Icon */}
-          <div className="text-6xl mb-4">🚨</div>
+          <Siren className="w-16 h-16 mx-auto mb-4 text-rose-600" />
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-stone-900 mb-4">
             Something went wrong!
           </h1>
 
@@ -56,9 +57,9 @@ export default function Error({
           </div>
 
           {/* Additional Debugging Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
-            <h3 className="font-semibold text-blue-900 mb-2">Debug Information:</h3>
-            <ul className="text-blue-800 text-sm space-y-1">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 text-left">
+            <h3 className="font-semibold text-indigo-900 mb-2">Debug Information:</h3>
+            <ul className="text-indigo-800 text-sm space-y-1">
               <li>• URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</li>
               <li>• User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}</li>
               <li>• Timestamp: {new Date().toISOString()}</li>
@@ -69,13 +70,13 @@ export default function Error({
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={reset}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
             >
               Try Again
             </button>
             <button
               onClick={() => window.location.href = '/'}
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+              className="px-6 py-3 bg-stone-600 text-white rounded-lg font-medium hover:bg-stone-700 transition-colors"
             >
               Go to Homepage
             </button>
@@ -88,7 +89,7 @@ export default function Error({
           </div>
 
           {/* Help Text */}
-          <p className="text-gray-600 text-sm mt-6">
+          <p className="text-stone-600 text-sm mt-6">
             If this error persists, please contact support with the Error ID shown above.
           </p>
         </div>

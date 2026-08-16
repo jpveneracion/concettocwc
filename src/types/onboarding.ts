@@ -96,26 +96,26 @@ export const getColorClasses = (primaryColor: PrimaryColor): ColorClasses => {
       tipsContent: 'text-green-800'
     },
     blue: {
-      bg: 'bg-blue-600',
-      bgHover: 'hover:bg-blue-700',
-      indicator: 'bg-blue-600',
-      border: 'border-blue-200',
-      tipsBg: 'bg-blue-50',
-      tipsBorder: 'border-blue-100',
-      tipsIcon: 'text-blue-600',
-      tipsText: 'text-blue-900',
-      tipsContent: 'text-blue-800'
+      bg: 'bg-indigo-600',
+      bgHover: 'hover:bg-indigo-700',
+      indicator: 'bg-indigo-600',
+      border: 'border-indigo-200',
+      tipsBg: 'bg-indigo-50',
+      tipsBorder: 'border-indigo-100',
+      tipsIcon: 'text-indigo-600',
+      tipsText: 'text-indigo-900',
+      tipsContent: 'text-indigo-800'
     },
     purple: {
-      bg: 'bg-purple-600',
-      bgHover: 'hover:bg-purple-700',
-      indicator: 'bg-purple-600',
-      border: 'border-purple-200',
-      tipsBg: 'bg-purple-50',
-      tipsBorder: 'border-purple-100',
-      tipsIcon: 'text-purple-600',
-      tipsText: 'text-purple-900',
-      tipsContent: 'text-purple-800'
+      bg: 'bg-indigo-600',
+      bgHover: 'hover:bg-indigo-700',
+      indicator: 'bg-indigo-600',
+      border: 'border-indigo-200',
+      tipsBg: 'bg-indigo-50',
+      tipsBorder: 'border-indigo-100',
+      tipsIcon: 'text-indigo-600',
+      tipsText: 'text-indigo-900',
+      tipsContent: 'text-indigo-800'
     },
     red: {
       bg: 'bg-red-600',
@@ -162,15 +162,15 @@ export const getColorClasses = (primaryColor: PrimaryColor): ColorClasses => {
       tipsContent: 'text-pink-800'
     },
     gray: {
-      bg: 'bg-gray-600',
-      bgHover: 'hover:bg-gray-700',
-      indicator: 'bg-gray-600',
-      border: 'border-gray-200',
-      tipsBg: 'bg-gray-50',
-      tipsBorder: 'border-gray-100',
-      tipsIcon: 'text-gray-600',
-      tipsText: 'text-gray-900',
-      tipsContent: 'text-gray-800'
+      bg: 'bg-stone-600',
+      bgHover: 'hover:bg-stone-700',
+      indicator: 'bg-stone-600',
+      border: 'border-stone-200',
+      tipsBg: 'bg-stone-50',
+      tipsBorder: 'border-stone-100',
+      tipsIcon: 'text-stone-600',
+      tipsText: 'text-stone-900',
+      tipsContent: 'text-stone-800'
     }
   };
 

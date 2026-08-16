@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  /* Light theme (default) */
-  --bg: #ffffff;
-  --surface: #f8fafc;
-  --surface2: #f1f5f9;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --primary: #3b82f6;
+  /* Light theme (default) - warm stone neutrals, indigo primary */
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface2: #f5f5f4;
+  --border: #e7e5e4;
+  --text: #1c1917;
+  --text-muted: #78716c;
+  --primary: #4f46e5;
   --primary-foreground: #ffffff;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --ring: #3b82f6;
+  --success: #047857;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --ring: #4f46e5;
 }
 
 [data-theme='dark'] {
@@ -59,7 +59,8 @@
   }
 
   body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
     line-height: 1.5;
     /* Ensure adequate touch targets and readable text on mobile */
     min-width: 320px;
@@ -148,4 +149,54 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+}
+
+/* ── Design System: Layered Shadow System ───────────────────── */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.card-shadow-hover:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.elevated {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Design System: Premium Form Inputs ─────────────────────── */
+.premium-input {
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  background: #ffffff;
+}
+
+.premium-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  background: #fafaf9;
+}
+
+.premium-input:hover:not(:focus) {
+  border-color: #d6d3d1;
+}
+
+.premium-input.error {
+  border-color: #ef4444;
+}
+
+.premium-input.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1c1917;
+  margin-bottom: 0.375rem;
+  letter-spacing: -0.01em;
 }

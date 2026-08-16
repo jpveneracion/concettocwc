@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import { Printer, ClipboardList, FileDown, Truck } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import QuoteForm from '@/components/QuoteForm';
 import PrintDoc from '@/components/PrintDoc';
@@ -50,24 +51,30 @@ function QuoteDetailPage() {
     }
   };
 
-  if (loading) return <AppLayout><div className="p-8 text-gray-400">Loading...</div></AppLayout>;
-  if (!quote || !settings) return <AppLayout><div className="p-8 text-gray-400">Quote not found.</div></AppLayout>;
+  if (loading) return <AppLayout><div className="p-8 text-stone-400">Loading...</div></AppLayout>;
+  if (!quote || !settings) return <AppLayout><div className="p-8 text-stone-400">Quote not found.</div></AppLayout>;
 
   if (printType) {
     return (
       <>
         <div className="no-print p-4 bg-yellow-50 border-b border-yellow-200 text-sm text-yellow-800">
           <div className="flex justify-between items-center mb-3">
-            <div className="font-semibold">🖨️ Print preview — {printType === 'po' ? 'Purchase Order' : 'Customer Quotation'}</div>
+            <div className="font-semibold flex items-center gap-2">
+              <Printer className="w-4 h-4" />
+              Print preview — {printType === 'po' ? 'Purchase Order' : 'Customer Quotation'}
+            </div>
             <div className="flex gap-2">
-              <button onClick={() => window.print()} className="px-4 py-2 bg-blue-600 text-white rounded text-xs min-h-[44px] min-w-[44px]">Print now</button>
-              <a href={`/quotes/${id}`} className="px-4 py-2 border border-gray-300 rounded text-xs min-h-[44px] min-w-[44px]">Back to edit</a>
+              <button onClick={() => window.print()} className="px-4 py-2 bg-indigo-600 text-white rounded text-xs min-h-[44px] min-w-[44px]">Print now</button>
+              <a href={`/quotes/${id}`} className="px-4 py-2 border border-stone-300 rounded text-xs min-h-[44px] min-w-[44px]">Back to edit</a>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-300 rounded-lg p-3 text-xs">
-            <div className="font-semibold text-gray-800 mb-2">📋 To remove headers/footers from print:</div>
-            <div className="space-y-1 text-gray-700">
+          <div className="bg-white border border-stone-300 rounded-lg p-3 text-xs">
+            <div className="font-semibold text-stone-800 mb-2 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4" />
+              To remove headers/footers from print:
+            </div>
+            <div className="space-y-1 text-stone-700">
               <div><strong>Chrome/Edge:</strong> Print → More settings → Uncheck "Headers and footers"</div>
               <div><strong>Firefox:</strong> Print → Appearance → Uncheck headers/footers</div>
               <div><strong>Safari:</strong> Print → Show details → Uncheck "Print headers and footers"</div>
@@ -91,16 +98,16 @@ function QuoteDetailPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-xl font-semibold">Edit quote</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{quote.quote_number}</p>
+          <p className="text-sm text-stone-400 mt-0.5">{quote.quote_number}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex gap-2 flex-wrap">
-            <button onClick={() => handleDownloadPDF('quotation')} className="px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 min-h-[44px] min-w-[44px]">📄 Download Quotation PDF</button>
-            <button onClick={() => handleDownloadPDF('po')} className="px-4 py-2.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 min-h-[44px] min-w-[44px]">📄 Download PO PDF</button>
+            <button onClick={() => handleDownloadPDF('quotation')} className="px-4 py-2.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 min-h-[44px] min-w-[44px] inline-flex items-center gap-2"><FileDown className="w-4 h-4" />Download Quotation PDF</button>
+            <button onClick={() => handleDownloadPDF('po')} className="px-4 py-2.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 min-h-[44px] min-w-[44px] inline-flex items-center gap-2"><FileDown className="w-4 h-4" />Download PO PDF</button>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <a href={`/quotes/${id}?print=quotation`} className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]">🖨️ Print quotation</a>
-            <a href={`/quotes/${id}?print=po`} className="px-4 py-2.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 min-h-[44px] min-w-[44px]">🚚 Print PO</a>
+            <a href={`/quotes/${id}?print=quotation`} className="px-4 py-2.5 text-sm border border-stone-300 rounded-lg hover:bg-stone-50 min-h-[44px] min-w-[44px] inline-flex items-center gap-2"><Printer className="w-4 h-4" />Print quotation</a>
+            <a href={`/quotes/${id}?print=po`} className="px-4 py-2.5 text-sm border border-stone-300 rounded-lg hover:bg-stone-50 min-h-[44px] min-w-[44px] inline-flex items-center gap-2"><Truck className="w-4 h-4" />Print PO</a>
           </div>
         </div>
       </div>

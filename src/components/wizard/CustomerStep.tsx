@@ -114,14 +114,14 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-700 mb-4">Customer Information</h3>
+      <h3 className="text-lg font-semibold text-stone-700 mb-4">Customer Information</h3>
 
       <div className="space-y-4">
         {/* Customer Name */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Customer Name *</label>
+          <label className="block text-sm text-stone-600 mb-1">Customer Name *</label>
           <input
-            className={`w-full border ${errors.customer ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm`}
+            className={`w-full border ${errors.customer ? 'border-red-300' : 'border-stone-300'} rounded-lg px-4 py-2 text-sm`}
             value={customer}
             onChange={(e) => setCustomer(e.target.value)}
             placeholder="e.g. Ms. Ana Santos"
@@ -131,9 +131,9 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
 
         {/* Address */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Address</label>
+          <label className="block text-sm text-stone-600 mb-1">Address</label>
           <input
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+            className="w-full border border-stone-300 rounded-lg px-4 py-2 text-sm"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="e.g. Baliwag, Bulacan"
@@ -142,10 +142,10 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
 
         {/* Date */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Quote Date</label>
+          <label className="block text-sm text-stone-600 mb-1">Quote Date</label>
           <input
             type="date"
-            className={`w-full border ${errors.date ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm`}
+            className={`w-full border ${errors.date ? 'border-red-300' : 'border-stone-300'} rounded-lg px-4 py-2 text-sm`}
             value={date}
             onChange={(e) => setDate(e.target.value)}
             max={maxOrderDate ?? undefined}
@@ -155,24 +155,24 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
             <p className="text-xs text-amber-600 mt-1">{dateWarning}</p>
           )}
           {maxOrderDate && !errors.date && !dateWarning && (
-            <p className="text-xs text-gray-500 mt-1">Orders are limited to dates on or before {maxOrderDate}</p>
+            <p className="text-xs text-stone-500 mt-1">Orders are limited to dates on or before {maxOrderDate}</p>
           )}
         </div>
 
         {/* Quote Number */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">
+          <label className="block text-sm text-stone-600 mb-1">
             {canEditQuoteNumber ? 'Quote Number (editable for past date)' : 'Quote Number'}
           </label>
           {canEditQuoteNumber ? (
             <input
-              className={`w-full border ${errors.quote_number ? 'border-red-300' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm min-h-[44px]`}
+              className={`w-full border ${errors.quote_number ? 'border-red-300' : 'border-stone-300'} rounded-lg px-4 py-2 text-sm min-h-[44px]`}
               value={quoteNumberValue}
               onChange={(e) => setQuoteNumberValue(e.target.value)}
             />
           ) : (
             <input
-              className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-400 bg-gray-50"
+              className="w-full border border-stone-200 rounded-lg px-4 py-2 text-sm text-stone-400 bg-stone-50"
               value={quoteNumberValue}
               readOnly
             />
@@ -182,9 +182,9 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
 
         {/* Reference */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Our Reference</label>
+          <label className="block text-sm text-stone-600 mb-1">Our Reference</label>
           <input
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+            className="w-full border border-stone-300 rounded-lg px-4 py-2 text-sm"
             value={ref}
             onChange={(e) => setRef(e.target.value)}
             placeholder="Optional"
@@ -193,9 +193,9 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
 
         {/* Status */}
         <div>
-          <label className="block text-sm text-gray-600 mb-1">Status</label>
+          <label className="block text-sm text-stone-600 mb-1">Status</label>
           <select
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+            className="w-full border border-stone-300 rounded-lg px-4 py-2 text-sm"
             value={status}
             onChange={(e) => setStatus(e.target.value as 'draft' | 'sent' | 'delivered' | 'cancelled')}
           >
@@ -207,7 +207,7 @@ export default function CustomerStep({ quoteNumber, existingQuoteNumbers, existi
         </div>
       </div>
 
-      <p className="text-xs text-gray-500 mt-4">* Required fields</p>
+      <p className="text-xs text-stone-500 mt-4">* Required fields</p>
     </div>
   );
 }

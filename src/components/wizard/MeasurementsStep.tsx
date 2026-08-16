@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useWizard } from '@/components/QuoteWizard';
 import type { QuoteItem, MeasureUnit } from '@/types';
 import { calcFinalSize, calcAreaSqft, calcAmounts } from '@/lib/calc';
@@ -426,20 +427,20 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
     return (
       <div
         ref={(el) => { autocompleteRefs.current[rowKey] = el; }}
-        className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"
+        className="absolute z-50 w-full bg-white border border-stone-300 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"
       >
         {suggestions.map((suggestion, index) => (
           <div
             key={`${suggestion.code}-${index}`}
-            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+            className="px-3 py-2 hover:bg-stone-100 cursor-pointer border-b border-stone-100 last:border-b-0"
             onMouseDown={(e) => handleMouseDown(e, suggestion)}
           >
             <div className="flex justify-between items-center">
-              <span className="font-medium text-sm text-gray-800">{suggestion.code}</span>
-              <span className="text-xs text-gray-500">{suggestion.unit}</span>
+              <span className="font-medium text-sm text-stone-800">{suggestion.code}</span>
+              <span className="text-xs text-stone-500">{suggestion.unit}</span>
             </div>
-            <div className="text-xs text-gray-600 truncate">{suggestion.collection}</div>
-            <div className="text-xs text-gray-500 truncate">{suggestion.description}</div>
+            <div className="text-xs text-stone-600 truncate">{suggestion.collection}</div>
+            <div className="text-xs text-stone-500 truncate">{suggestion.description}</div>
           </div>
         ))}
       </div>
@@ -449,19 +450,20 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-700 mb-4">Window Measurements</h3>
+      <h3 className="text-lg font-semibold text-stone-700 mb-4">Window Measurements</h3>
 
       <div className="space-y-4">
         {rows.map((row, idx) => (
-          <div key={row._key} className="border border-gray-200 rounded-xl p-4 bg-white">
+          <div key={row._key} className="border border-stone-200 rounded-xl p-4 bg-white">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-medium text-gray-700">Window #{idx + 1}</span>
+              <span className="text-sm font-medium text-stone-700">Window #{idx + 1}</span>
               {rows.length > 1 && (
                 <button
                   onClick={() => removeRow(row._key)}
-                  className="text-xs px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50"
+                  className="text-xs px-2 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors inline-flex items-center gap-1"
                 >
-                  🗑️ Remove
+                  <Trash2 className="w-3 h-3" />
+                  Remove
                 </button>
               )}
             </div>
@@ -471,9 +473,9 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
               {/* Left Column: Measurements */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Location</label>
+                  <label className="block text-sm text-stone-600 mb-1">Location</label>
                   <input
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm"
                     value={row.location}
                     onChange={(e) => updateRow(row._key, { location: e.target.value })}
                     placeholder="e.g. Living Room"
@@ -482,9 +484,9 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Unit</label>
+                    <label className="block text-sm text-stone-600 mb-1">Unit</label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm"
                       value={row.unit}
                       onChange={(e) => updateRow(row._key, { unit: e.target.value as MeasureUnit })}
                     >
@@ -494,9 +496,9 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Type</label>
+                    <label className="block text-sm text-stone-600 mb-1">Type</label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm"
                       value={row.is_fixed ? 'yes' : 'no'}
                       onChange={(e) => updateRow(row._key, { is_fixed: e.target.value === 'yes' })}
                     >
@@ -508,12 +510,12 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Width ({row.unit})</label>
+                    <label className="block text-sm text-stone-600 mb-1">Width ({row.unit})</label>
                     <input
                       type="number"
                       min="0"
                       step="0.1"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm"
                       value={row.measured_width || ''}
                       onChange={(e) => updateRow(row._key, { measured_width: parseFloat(e.target.value) || 0 })}
                       placeholder="0.0"
@@ -521,12 +523,12 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   </div>
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Drop ({row.unit})</label>
+                    <label className="block text-sm text-stone-600 mb-1">Drop ({row.unit})</label>
                     <input
                       type="number"
                       min="0"
                       step="0.1"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm"
                       value={row.measured_drop || ''}
                       onChange={(e) => updateRow(row._key, { measured_drop: parseFloat(e.target.value) || 0 })}
                       placeholder="0.0"
@@ -538,12 +540,12 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
               {/* Right Column: Product Selection */}
               <div className="space-y-3">
                 <div className="relative">
-                  <label className="block text-sm text-gray-600 mb-1">Product Code</label>
+                  <label className="block text-sm text-stone-600 mb-1">Product Code</label>
                   <input
                     className={`w-full border rounded-lg px-3 py-2 text-sm uppercase ${
                       lookupStatus[row._key] === 'loading'
-                        ? 'border-blue-300 bg-blue-50'
-                        : 'border-gray-300'
+                        ? 'border-indigo-300 bg-indigo-50'
+                        : 'border-stone-300'
                     }`}
                     value={row.product_code}
                     onChange={(e) => handleProductCodeChange(row._key, e.target.value)}
@@ -561,22 +563,22 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                   />
                   {lookupStatus[row._key] === 'loading' && (
                     <div className="absolute right-3 top-8">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
                     </div>
                   )}
                   {lookupStatus[row._key] === 'found' && (
-                    <p className="text-xs text-green-600 mt-1">✓ {row.product_collection} - {row.product_description}</p>
+                    <p className="text-xs text-emerald-700 mt-1">{row.product_collection} - {row.product_description}</p>
                   )}
 {lookupStatus[row._key] === 'notfound' && (
                       <div className="mt-1">
                         <button
                           onClick={() => openProductModal(row._key, row.product_code)}
                           aria-label={`Create product ${row.product_code.toUpperCase()}`}
-                          className="text-xs text-blue-600 hover:text-blue-700 underline min-h-[44px] min-w-[44px] flex items-center"
+                          className="text-xs text-indigo-600 hover:text-indigo-700 underline min-h-[44px] min-w-[44px] flex items-center"
                         >
                           Create "{row.product_code.toUpperCase()}"
                         </button>
-                        <p className="text-xs text-gray-500 mt-1">Or try typing partial code for suggestions.</p>
+                        <p className="text-xs text-stone-500 mt-1">Or try typing partial code for suggestions.</p>
                       </div>
                     )}
 
@@ -589,10 +591,10 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                     />
                   )}
                   {autocompleteState[row._key]?.loading && (
-                    <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 p-3 shadow-lg">
+                    <div className="absolute z-50 w-full bg-white border border-stone-300 rounded-lg mt-1 p-3 shadow-lg">
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
-                        <span className="text-xs text-gray-600">Searching products...</span>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600 mr-2"></div>
+                        <span className="text-xs text-stone-600">Searching products...</span>
                       </div>
                     </div>
                   )}
@@ -600,47 +602,47 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
                 {/* Enhanced Product Details Display */}
                 {row.product_id && (
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                  <div className="bg-gradient-to-br from-stone-50 to-indigo-50 rounded-lg p-4 border border-stone-200">
                     <div className="space-y-3">
                       {/* Collection and Unit - Prominent Display */}
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Collection</p>
-                          <p className="text-lg font-semibold text-gray-800">{row.product_collection || 'Unknown Collection'}</p>
+                          <p className="text-xs text-stone-500 uppercase tracking-wide">Collection</p>
+                          <p className="text-lg font-semibold text-stone-800">{row.product_collection || 'Unknown Collection'}</p>
                         </div>
-                        <div className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                        <div className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-1 rounded">
                           {row.product_code}
                         </div>
                       </div>
 
                       {/* Description */}
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Description</p>
-                        <p className="text-sm text-gray-700">{row.product_description || 'No description available'}</p>
+                        <p className="text-xs text-stone-500 uppercase tracking-wide">Description</p>
+                        <p className="text-sm text-stone-700">{row.product_description || 'No description available'}</p>
                       </div>
 
                       {/* Pricing Information */}
-                      <div className="pt-2 border-t border-gray-200">
+                      <div className="pt-2 border-t border-stone-200">
                         {isPastDatedQuote ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-xs text-gray-500 mb-1">Retail Price per sq.ft.</label>
+                              <label className="block text-xs text-stone-500 mb-1">Retail Price per sq.ft.</label>
                               <input
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
+                                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
                                 value={row.retail_price_sqft || ''}
                                 onChange={(e) => updateRow(row._key, { retail_price_sqft: parseFloat(e.target.value) || 0 })}
                               />
                             </div>
                             <div>
-                              <label className="block text-xs text-gray-500 mb-1">Supplier Cost per sq.ft.</label>
+                              <label className="block text-xs text-stone-500 mb-1">Supplier Cost per sq.ft.</label>
                               <input
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
+                                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm min-h-[44px]"
                                 value={row.supplier_cost_sqft || ''}
                                 onChange={(e) => updateRow(row._key, { supplier_cost_sqft: parseFloat(e.target.value) || 0 })}
                               />
@@ -648,7 +650,7 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
                           </div>
                         ) : (
                           <div className="bg-white rounded p-2">
-                            <p className="text-xs text-gray-500">Retail Price</p>
+                            <p className="text-xs text-stone-500">Retail Price</p>
                             <p className="text-sm font-semibold text-green-700">
                               {currencySymbols[companySettings.currency || 'USD'] || '$'}{row.retail_price_sqft.toFixed(2)}/sq.ft
                             </p>
@@ -662,18 +664,18 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
             </div>
 
             {/* Results display */}
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="bg-stone-50 rounded-lg p-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-xs text-gray-500">Final Width ({row.unit})</p>
-                  <p className="text-sm font-medium text-blue-700">{row.final_width.toFixed(1)}</p>
+                  <p className="text-xs text-stone-500">Final Width ({row.unit})</p>
+                  <p className="text-sm font-medium text-indigo-700">{row.final_width.toFixed(1)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Final Drop ({row.unit})</p>
-                  <p className="text-sm font-medium text-blue-700">{row.final_drop.toFixed(1)}</p>
+                  <p className="text-xs text-stone-500">Final Drop ({row.unit})</p>
+                  <p className="text-sm font-medium text-indigo-700">{row.final_drop.toFixed(1)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Area (sq.ft.)</p>
+                  <p className="text-xs text-stone-500">Area (sq.ft.)</p>
                   <p className="text-sm font-medium">{row.area_sqft.toFixed(2)}</p>
                 </div>
               </div>
@@ -694,29 +696,30 @@ export default function MeasurementsStep({ existingData }: MeasurementsStepProps
 
         <button
           onClick={addRow}
-          className="w-full text-sm px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center"
+          className="w-full text-sm px-4 py-2 border border-stone-300 rounded-lg hover:bg-stone-50 text-center inline-flex items-center justify-center gap-1.5 transition-colors"
         >
-          ➕ Add Another Window
+          <Plus className="w-4 h-4" />
+          Add Another Window
         </button>
       </div>
 
       {/* Summary */}
       {panelCount > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-gray-600">Total Windows</p>
-              <p className="text-lg font-semibold text-blue-700">{panelCount}</p>
+              <p className="text-xs text-stone-600">Total Windows</p>
+              <p className="text-lg font-semibold text-indigo-700">{panelCount}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600">Total Area</p>
-              <p className="text-lg font-semibold text-blue-700">{totalArea.toFixed(2)} sq.ft.</p>
+              <p className="text-xs text-stone-600">Total Area</p>
+              <p className="text-lg font-semibold text-indigo-700">{totalArea.toFixed(2)} sq.ft.</p>
             </div>
           </div>
         </div>
       )}
 
-      <p className="text-xs text-gray-500">Add at least one window with measurements to continue</p>
+      <p className="text-xs text-stone-500">Add at least one window with measurements to continue</p>
 
       {/* Product Creation Modals */}
       {rows.map((row) => (

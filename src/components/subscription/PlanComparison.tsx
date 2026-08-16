@@ -171,8 +171,8 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading subscription plans...</p>
+          <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-stone-600">Loading subscription plans...</p>
         </div>
       </div>
     );
@@ -224,14 +224,14 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           aria-label={`Select ${plan.name} plan`}
           className={`
             relative bg-white border rounded-xl overflow-hidden cursor-pointer
-            ${isSelected(plan.id) ? 'border-blue-500 shadow-md' : 'border-gray-200'}
+            ${isSelected(plan.id) ? 'border-indigo-500 shadow-md' : 'border-stone-200'}
           `}
           onClick={() => handlePlanClick(plan.id)}
           onKeyDown={(e) => handleKeyDown(e, plan.id)}
         >
           {/* Popular Badge - Highlight middle plan if 3 plans, or second if 2 plans */}
           {(plans.length === 3 && plan === plans[1]) || (plans.length === 2 && plan === plans[1]) ? (
-            <div className="absolute top-0 right-0 bg-blue-600 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
+            <div className="absolute top-0 right-0 bg-indigo-600 text-white px-4 py-1 text-sm font-medium rounded-bl-lg">
               Most Popular
             </div>
           ) : null}
@@ -239,25 +239,25 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
           {/* Plan Header */}
           <div className="p-4 sm:p-6 pb-3 sm:pb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">{plan.name}</h3>
+              <h3 className="text-xl font-semibold text-stone-900">{plan.name}</h3>
               {isSelected(plan.id) && (
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <span className="text-sm font-medium text-blue-600">Selected</span>
+                  <span className="text-sm font-medium text-indigo-600">Selected</span>
                 </div>
               )}
             </div>
 
             <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-3xl font-bold text-gray-900">
+              <span className="text-3xl font-bold text-stone-900">
                 {plan.currency === 'PHP' ? '₱' : plan.currency === 'USD' ? '$' : '€'}
                 {plan.finalPrice.toLocaleString()}
               </span>
-              <span className="text-gray-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
+              <span className="text-stone-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
               {plan.periodDiscount > 0 && (
                 <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
                   Save {plan.periodDiscount}%
@@ -265,7 +265,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
               )}
             </div>
 
-            <p className="text-gray-600 text-sm mb-6">
+            <p className="text-stone-600 text-sm mb-6">
               {plan.months === 1 ? 'Flexible monthly billing' : `Billed every ${plan.months} months`}
             </p>
 
@@ -274,8 +274,8 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
               className={`
                 w-full py-2 px-4 rounded-lg font-medium
                 ${isSelected(plan.id)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-stone-200 text-stone-700'
                 }
               `}
             >
@@ -285,8 +285,8 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
 
           {/* Features List */}
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="border-t border-gray-200 pt-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">
+            <div className="border-t border-stone-200 pt-4">
+              <h4 className="text-sm font-semibold text-stone-900 mb-3">
                 What's included:
               </h4>
               <ul className="space-y-2">
@@ -296,11 +296,11 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                       <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-gray-700 text-sm">{feature}</span>
+                      <span className="text-stone-700 text-sm">{feature}</span>
                     </li>
                   ))
                 ) : (
-                  <li className="text-gray-500 text-sm">No features listed</li>
+                  <li className="text-stone-500 text-sm">No features listed</li>
                 )}
               </ul>
             </div>

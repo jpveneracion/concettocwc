@@ -111,8 +111,8 @@ export function PiSignInButton({ onSuccess, onError }: PiSignInButtonProps) {
 
       {/* Environment check */}
       {process.env.NEXT_PUBLIC_PI_CLIENT_ID === 'your_pi_client_id_here' && (
-        <div className="text-xs text-red-600 text-center">
-          ⚠️ Pi Client ID not configured in environment variables
+        <div className="text-xs text-rose-600 text-center">
+          Pi Client ID not configured in environment variables
         </div>
       )}
     </div>

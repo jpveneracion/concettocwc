@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
+import { Save } from 'lucide-react';
 
 type CompanyForm = {
   code: string;
@@ -83,9 +84,9 @@ export default function SettingsPage() {
 
   const field = (label: string, key: keyof CompanyForm, placeholder = '') => (
     <div>
-      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+      <label className="block text-xs text-stone-500 mb-1">{label}</label>
       <input
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+        className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm"
         value={(form[key] as string) ?? ''}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         placeholder={placeholder}
@@ -95,81 +96,81 @@ export default function SettingsPage() {
 
   const textarea = (label: string, key: keyof CompanyForm) => (
     <div>
-      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+      <label className="block text-xs text-stone-500 mb-1">{label}</label>
       <textarea
         rows={3}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+        className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm resize-none"
         value={(form[key] as string) ?? ''}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
       />
     </div>
   );
 
-  if (loading) return <AppLayout><div className="p-8 text-gray-400">Loading...</div></AppLayout>;
+  if (loading) return <AppLayout><div className="p-8 text-stone-400">Loading...</div></AppLayout>;
 
   return (
     <AppLayout>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
         <h1 className="text-lg md:text-xl font-semibold">Settings</h1>
         <div className="flex items-center gap-3">
-          {saved && <span className="text-sm text-green-600">✓ Saved!</span>}
-          {saveError && <span className="text-sm text-red-500">{saveError}</span>}
+          {saved && <span className="text-sm text-emerald-700">Saved!</span>}
+          {saveError && <span className="text-sm text-rose-600">{saveError}</span>}
           <button
             onClick={handleSave}
             disabled={saving || codeStatus === 'taken'}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 inline-flex items-center gap-2"
           >
-            {saving ? 'Saving...' : '💾 Save'}
+            {saving ? 'Saving...' : (<><Save className="w-4 h-4" />Save</>)}
           </button>
         </div>
       </div>
 
       <div className="max-w-2xl space-y-4 md:space-y-5">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5 mb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
-              <h3 className="font-medium text-sm text-gray-700">Appearance</h3>
-              <p className="text-xs text-gray-500 mt-1">Customize your theme, mode, and colors</p>
+              <h3 className="font-medium text-sm text-stone-700">Appearance</h3>
+              <p className="text-xs text-stone-500 mt-1">Customize your theme, mode, and colors</p>
             </div>
             <a
               href="/settings/appearance"
-              className="px-3 py-1.5 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-center md:text-left"
+              className="px-3 py-1.5 text-sm border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 text-center md:text-left"
             >
               Manage Appearance →
             </a>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 mb-4">
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5 mb-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div>
-              <h3 className="font-medium text-sm text-gray-700">Product Pricing</h3>
-              <p className="text-xs text-gray-500 mt-1">Set pricing for each blinds family (collection)</p>
+              <h3 className="font-medium text-sm text-stone-700">Product Pricing</h3>
+              <p className="text-xs text-stone-500 mt-1">Set pricing for each blinds family (collection)</p>
             </div>
             <a
               href="/settings/pricing"
-              className="px-3 py-1.5 text-sm border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-center md:text-left"
+              className="px-3 py-1.5 text-sm border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 text-center md:text-left"
             >
               Manage Pricing →
             </a>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5">
-          <h3 className="font-medium text-sm text-gray-700 mb-4">Company info</h3>
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+          <h3 className="font-medium text-sm text-stone-700 mb-4">Company info</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {field('Company name', 'name', 'CONCETTO WINDOW COVERINGS')}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Company code</label>
+              <label className="block text-xs text-stone-500 mb-1">Company code</label>
               <input
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm uppercase"
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm uppercase"
                 value={(form.code as string) ?? ''}
                 onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
                 placeholder="YOURCODE"
               />
-              {codeStatus === 'checking' && <p className="text-xs text-gray-400 mt-1">Checking availability...</p>}
-              {codeStatus === 'available' && <p className="text-xs text-green-600 mt-1">✓ Code is available</p>}
-              {codeStatus === 'taken' && <p className="text-xs text-red-500 mt-1">✗ This code is already taken</p>}
+              {codeStatus === 'checking' && <p className="text-xs text-stone-400 mt-1">Checking availability...</p>}
+              {codeStatus === 'available' && <p className="text-xs text-emerald-700 mt-1">Code is available</p>}
+              {codeStatus === 'taken' && <p className="text-xs text-rose-600 mt-1">This code is already taken</p>}
             </div>
             {field('Mobile', 'mobile', '0935-880 1914 / 0928-638 5433')}
             {field('Email', 'email', 'concettowindowcoverings@gmail.com')}
@@ -177,9 +178,9 @@ export default function SettingsPage() {
               {field('Address', 'address', '107 Cruz na Daan, San Rafael, Bulacan 3008')}
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Currency</label>
+              <label className="block text-xs text-stone-500 mb-1">Currency</label>
               <select
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm"
                 value={(form.currency as string) ?? 'PHP'}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
@@ -196,24 +197,24 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Minimum area (sq.ft.)</label>
+              <label className="block text-xs text-stone-500 mb-1">Minimum area (sq.ft.)</label>
               <input
                 type="number"
                 min="0"
                 step="1"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm"
                 value={(form.minimum_area_sqft as number) ?? 15}
                 onChange={(e) => setForm({ ...form, minimum_area_sqft: parseFloat(e.target.value) || 0 })}
               />
-              <p className="text-xs text-gray-400 mt-1">Smallest billable area per window (0 disables)</p>
+              <p className="text-xs text-stone-400 mt-1">Smallest billable area per window (0 disables)</p>
             </div>
             {field('Prepared by', 'prepared_by', 'John Paul Veneracion')}
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5">
-          <h3 className="font-medium text-sm text-gray-700 mb-4">Supplier info</h3>
-          <p className="text-xs text-gray-500 mb-3">Shown in the "To:" block of Purchase Order printouts</p>
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+          <h3 className="font-medium text-sm text-stone-700 mb-4">Supplier info</h3>
+          <p className="text-xs text-stone-500 mb-3">Shown in the "To:" block of Purchase Order printouts</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               {field('Supplier name', 'supplier_name', 'e.g. Window Blinds Trading')}
@@ -230,8 +231,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5">
-          <h3 className="font-medium text-sm text-gray-700 mb-4">Document text</h3>
+        <div className="bg-white border border-stone-200 rounded-xl p-4 md:p-5">
+          <h3 className="font-medium text-sm text-stone-700 mb-4">Document text</h3>
           <div className="space-y-3">
             {textarea('Terms', 'terms')}
             {textarea('DEL note', 'del_note')}

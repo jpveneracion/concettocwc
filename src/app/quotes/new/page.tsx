@@ -109,7 +109,7 @@ export default function NewQuotePage() {
     }
   };
 
-  if (!quoteNumber) return <AppLayout><div className="text-gray-400 p-8">Loading...</div></AppLayout>;
+  if (!quoteNumber) return <AppLayout><div className="text-stone-400 p-8">Loading...</div></AppLayout>;
 
   return (
     <AppLayout>
@@ -117,16 +117,16 @@ export default function NewQuotePage() {
         <h1 className="text-lg font-semibold md:text-xl">New quote</h1>
         <button
           onClick={() => setUseWizard(!useWizard)}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+          className="px-4 py-2 border border-stone-300 rounded-lg text-sm hover:bg-stone-50"
         >
-          {useWizard ? '📝 Traditional Form' : '🧙 Wizard Mode'}
+          {useWizard ? 'Traditional Form' : 'Wizard Mode'}
         </button>
       </div>
 
       {useWizard ? (
         <div className="max-w-3xl">
           {saving ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center text-gray-400">
+            <div className="bg-white border border-stone-200 rounded-xl p-12 text-center text-stone-400">
               Saving quote...
             </div>
           ) : (

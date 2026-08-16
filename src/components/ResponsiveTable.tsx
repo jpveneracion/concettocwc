@@ -15,14 +15,14 @@ export default function ResponsiveTable<T>({
 }: ResponsiveTableProps<T>) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400">
+      <div className="bg-white border border-stone-200 rounded-xl p-8 text-center text-stone-400">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
       {/* Mobile card layout */}
       <div className="lg:hidden space-y-3 p-3">
         {data.map((item, index) => (

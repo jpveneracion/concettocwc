@@ -140,7 +140,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
         {/* Close Button - temporary close, no persistence */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 text-stone-400 hover:text-stone-600 transition-colors"
           aria-label="Close onboarding"
         >
           <X className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -156,7 +156,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
                   ? 'w-6 sm:w-8 bg-indigo-600'
                   : index < currentStep
                   ? 'w-1.5 sm:w-2 bg-green-500'
-                  : 'w-1.5 sm:w-2 bg-gray-300'
+                  : 'w-1.5 sm:w-2 bg-stone-300'
               }`}
               aria-label={`Step ${index + 1} of ${onboardingSteps.length}`}
             />
@@ -169,14 +169,14 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
           <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{step.icon}</div>
 
           {/* Title */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mb-3 sm:mb-4 px-2">
             {step.title}
           </h2>
 
           {/* Content Points */}
           <div className="text-left space-y-2 sm:space-y-3 px-2 mb-4">
             {step.content.map((point, index) => (
-              <p key={index} className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              <p key={index} className="text-sm sm:text-base text-stone-700 leading-relaxed">
                 {point}
               </p>
             ))}
@@ -201,7 +201,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
         </div>
 
         {/* Progress Indicator */}
-        <div className="text-center text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
+        <div className="text-center text-xs sm:text-sm text-stone-500 mb-4 sm:mb-6">
           Step {currentStep + 1} of {onboardingSteps.length}
         </div>
 
@@ -210,7 +210,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
           {/* Skip Button */}
           <button
             onClick={handleSkip}
-            className="px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base order-3 sm:order-1"
+            className="px-4 sm:px-6 py-2.5 sm:py-3 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors text-sm sm:text-base order-3 sm:order-1"
           >
             Skip Tour
           </button>
@@ -219,7 +219,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
           {currentStep > 0 && (
             <button
               onClick={() => setCurrentStep(currentStep - 1)}
-              className="px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base flex items-center justify-center gap-2 order-2"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors text-sm sm:text-base flex items-center justify-center gap-2 order-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Previous

@@ -12,13 +12,13 @@ export function getChangeTypeBadgeClass(changeType: string): string {
     case 'create':
       return 'bg-green-100 text-green-800 border-green-300';
     case 'update':
-      return 'bg-blue-100 text-blue-800 border-blue-300';
+      return 'bg-indigo-100 text-indigo-800 border-indigo-300';
     case 'expire':
       return 'bg-red-100 text-red-800 border-red-300';
     case 'reactivate':
       return 'bg-yellow-100 text-yellow-800 border-yellow-300';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-300';
+      return 'bg-stone-100 text-stone-800 border-stone-300';
   }
 }
 
@@ -32,13 +32,13 @@ export function getChangeTypeCardStyles(changeType: string): { bg: string; borde
     case 'create':
       return { bg: 'bg-green-50', border: 'border-green-200' };
     case 'update':
-      return { bg: 'bg-blue-50', border: 'border-blue-200' };
+      return { bg: 'bg-indigo-50', border: 'border-indigo-200' };
     case 'expire':
       return { bg: 'bg-red-50', border: 'border-red-200' };
     case 'reactivate':
       return { bg: 'bg-yellow-50', border: 'border-yellow-200' };
     default:
-      return { bg: 'bg-gray-50', border: 'border-gray-200' };
+      return { bg: 'bg-stone-50', border: 'border-stone-200' };
   }
 }
 
@@ -52,13 +52,13 @@ export function getTimelineDotClass(changeType: string): string {
     case 'create':
       return 'bg-green-500 border-green-200';
     case 'update':
-      return 'bg-blue-500 border-blue-200';
+      return 'bg-indigo-500 border-indigo-200';
     case 'expire':
       return 'bg-red-500 border-red-200';
     case 'reactivate':
       return 'bg-yellow-500 border-yellow-200';
     default:
-      return 'bg-gray-500 border-gray-200';
+      return 'bg-stone-500 border-stone-200';
   }
 }
 

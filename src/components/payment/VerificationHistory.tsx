@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getPinataUrl } from '@/lib/pinata';
 import type { PaymentVerification } from '@/types/payment';
 import { VerificationStatus } from '@/types/payment';
+import { ClipboardList, Loader2 } from 'lucide-react';
 
 export default function VerificationHistory() {
   const [verifications, setVerifications] = useState<PaymentVerification[]>([]);
@@ -46,9 +47,9 @@ export default function VerificationHistory() {
       case 'rejected':
         return 'bg-red-100 text-red-800';
       case 'expired':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-stone-100 text-stone-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-stone-100 text-stone-800';
     }
   };
 
@@ -73,8 +74,8 @@ export default function VerificationHistory() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin text-2xl mr-3">⏳</div>
-        <p className="text-gray-600">Loading verification history...</p>
+        <Loader2 className="w-6 h-6 animate-spin mr-3 text-indigo-600" />
+        <p className="text-stone-600">Loading verification history...</p>
       </div>
     );
   }
@@ -110,8 +111,8 @@ export default function VerificationHistory() {
             onClick={() => setFilter(filterOption.value)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === filterOption.value
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
             }`}
           >
             {filterOption.label}
@@ -121,17 +122,17 @@ export default function VerificationHistory() {
 
       {/* Verification List */}
       {verifications.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <div className="text-4xl mb-3">📋</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Verifications Found</h3>
-          <p className="text-gray-600 mb-4">
+        <div className="bg-stone-50 border border-stone-200 rounded-lg p-8 text-center">
+          <ClipboardList className="w-12 h-12 mx-auto mb-3 text-stone-400" />
+          <h3 className="text-lg font-semibold text-stone-900 mb-2">No Verifications Found</h3>
+          <p className="text-stone-600 mb-4">
             {filter === 'all'
               ? "You haven't submitted any payment verifications yet."
               : `No ${filter} verifications found.`}
           </p>
           <a
             href="/payment/verification"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
           >
             Submit Verification
           </a>
@@ -141,12 +142,12 @@ export default function VerificationHistory() {
           {verifications.map((verification) => (
             <div
               key={verification.id}
-              className="bg-white border border-gray-200 rounded-lg p-4"
+              className="bg-white border border-stone-200 rounded-lg p-4"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-stone-900">
                       {verification.plan_name || 'Unknown Plan'}
                     </h4>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(verification.status)}`}>
@@ -156,28 +157,28 @@ export default function VerificationHistory() {
 
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Amount:</span>
-                      <span className="font-medium text-gray-900">
+                      <span className="text-stone-600">Amount:</span>
+                      <span className="font-medium text-stone-900">
                         {verification.plan_amount ? formatCurrency(verification.plan_amount) : 'N/A'}
                       </span>
                     </div>
 
                     {verification.reference_number && (
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-600">Reference:</span>
-                        <span className="font-medium text-gray-900">{verification.reference_number}</span>
+                        <span className="text-stone-600">Reference:</span>
+                        <span className="font-medium text-stone-900">{verification.reference_number}</span>
                       </div>
                     )}
 
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-600">Submitted:</span>
-                      <span className="text-gray-900">{formatDate(verification.submitted_at)}</span>
+                      <span className="text-stone-600">Submitted:</span>
+                      <span className="text-stone-900">{formatDate(verification.submitted_at)}</span>
                     </div>
 
                     {verification.reviewed_at && (
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-600">Reviewed:</span>
-                        <span className="text-gray-900">{formatDate(verification.reviewed_at)}</span>
+                        <span className="text-stone-600">Reviewed:</span>
+                        <span className="text-stone-900">{formatDate(verification.reviewed_at)}</span>
                       </div>
                     )}
                   </div>
@@ -189,7 +190,7 @@ export default function VerificationHistory() {
                     href={getPinataUrl(verification.screenshot_url)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-20 h-20 bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-blue-500 transition-all"
+                    className="block w-20 h-20 bg-stone-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-indigo-500 transition-all"
                   >
                     <img
                       src={getPinataUrl(verification.screenshot_url)}
@@ -197,14 +198,14 @@ export default function VerificationHistory() {
                       className="w-full h-full object-cover"
                     />
                   </a>
-                  <p className="text-xs text-gray-500 mt-1 text-center">Click to view</p>
+                  <p className="text-xs text-stone-500 mt-1 text-center">Click to view</p>
                 </div>
               </div>
 
               {/* Admin Notes */}
               {verification.admin_notes && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
+                <div className="mt-3 p-3 bg-stone-50 rounded-lg">
+                  <p className="text-sm text-stone-700">
                     <strong>Admin Notes:</strong> {verification.admin_notes}
                   </p>
                 </div>
@@ -212,7 +213,7 @@ export default function VerificationHistory() {
 
               {/* User Notes */}
               {verification.notes && (
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-stone-600">
                   <strong>Your Notes:</strong> {verification.notes}
                 </div>
               )}

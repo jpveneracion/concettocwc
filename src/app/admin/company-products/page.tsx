@@ -83,25 +83,25 @@ export default function AdminCompanyProductsPage() {
   // Mobile card render
   const renderMobileCard = useCallback((product: CompanyProductWithCompanyName) => {
     return (
-      <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+      <div key={product.id} className="bg-white border border-stone-200 rounded-lg p-4 space-y-3">
         <div className="flex justify-between items-start">
           <div>
             <div className="font-semibold text-lg font-mono">{product.code}</div>
-            <div className="text-gray-600 text-sm">{product.collection || 'No collection'}</div>
+            <div className="text-stone-600 text-sm">{product.collection || 'No collection'}</div>
           </div>
-          <div className="text-xs text-gray-500">{product.unit}</div>
+          <div className="text-xs text-stone-500">{product.unit}</div>
         </div>
 
-        <div className="text-sm text-gray-700">{product.description}</div>
+        <div className="text-sm text-stone-700">{product.description}</div>
 
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="text-xs text-stone-500 space-y-1">
           <div>Company: {product.company_name || 'Unknown'}</div>
           <div>Submitted: {new Date(product.created_at).toLocaleDateString()}</div>
         </div>
 
         <button
           onClick={() => setSelectedProduct(product)}
-          className="w-full px-3 py-2 text-sm border border-blue-200 text-blue-600 rounded hover:bg-blue-50"
+          className="w-full px-3 py-2 text-sm border border-indigo-200 text-indigo-600 rounded hover:bg-indigo-50"
         >
           Review for Promotion
         </button>
@@ -114,31 +114,31 @@ export default function AdminCompanyProductsPage() {
     return (
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Code</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Collection</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Description</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Company</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Unit</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Submitted</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Actions</th>
+          <tr className="border-b border-stone-200">
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Code</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Collection</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Description</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Company</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Unit</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Submitted</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-stone-500">Actions</th>
           </tr>
         </thead>
         <tbody>
           {filteredProducts.map(product => (
-            <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
+            <tr key={product.id} className="border-b border-stone-100 hover:bg-stone-50">
               <td className="px-4 py-3 font-mono font-medium">{product.code}</td>
-              <td className="px-4 py-3 text-gray-500">{product.collection || '-'}</td>
+              <td className="px-4 py-3 text-stone-500">{product.collection || '-'}</td>
               <td className="px-4 py-3">{product.description}</td>
-              <td className="px-4 py-3 text-gray-600">{product.company_name || 'Unknown'}</td>
+              <td className="px-4 py-3 text-stone-600">{product.company_name || 'Unknown'}</td>
               <td className="px-4 py-3">{product.unit}</td>
-              <td className="px-4 py-3 text-gray-500">
+              <td className="px-4 py-3 text-stone-500">
                 {new Date(product.created_at).toLocaleDateString()}
               </td>
               <td className="px-4 py-3">
                 <button
                   onClick={() => setSelectedProduct(product)}
-                  className="px-3 py-1 text-xs border border-blue-200 text-blue-600 rounded hover:bg-blue-50"
+                  className="px-3 py-1 text-xs border border-indigo-200 text-indigo-600 rounded hover:bg-indigo-50"
                 >
                   Review
                 </button>
@@ -154,8 +154,8 @@ export default function AdminCompanyProductsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Company Products</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-stone-900">Company Products</h1>
+          <p className="text-stone-600 mt-1">
             Review and promote company-specific products to global catalog
           </p>
         </div>
@@ -177,31 +177,31 @@ export default function AdminCompanyProductsPage() {
         </div>
 
         {/* Search */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="bg-white border border-stone-200 rounded-lg p-4">
           <input
             type="text"
             placeholder="Search by code, description, or company..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg"
+            className="w-full max-w-md px-4 py-2 border border-stone-300 rounded-lg"
           />
         </div>
 
         {/* Products List */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-pulse text-gray-400">Loading company products...</div>
+            <div className="animate-pulse text-stone-400">Loading company products...</div>
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-stone-400">
             No company products found
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
             <ResponsiveTable
               data={filteredProducts}
               renderCard={renderMobileCard}
@@ -215,41 +215,41 @@ export default function AdminCompanyProductsPage() {
         {selectedProduct && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-lg w-full p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
+              <h3 className="text-lg font-bold text-stone-900 mb-4">
                 Review Product: {selectedProduct.code}
               </h3>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Description
                   </label>
-                  <div className="text-gray-900">{selectedProduct.description}</div>
+                  <div className="text-stone-900">{selectedProduct.description}</div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Collection
                   </label>
-                  <div className="text-gray-900">{selectedProduct.collection || 'N/A'}</div>
+                  <div className="text-stone-900">{selectedProduct.collection || 'N/A'}</div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Unit
                   </label>
-                  <div className="text-gray-900">{selectedProduct.unit}</div>
+                  <div className="text-stone-900">{selectedProduct.unit}</div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Company
                   </label>
-                  <div className="text-gray-900">{selectedProduct.company_name || 'Unknown'}</div>
+                  <div className="text-stone-900">{selectedProduct.company_name || 'Unknown'}</div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Review Notes *
                   </label>
                   <textarea
@@ -257,7 +257,7 @@ export default function AdminCompanyProductsPage() {
                     onChange={e => setReviewNotes(e.target.value)}
                     placeholder="Add notes about this promotion decision..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
                     required
                   />
                 </div>
@@ -269,7 +269,7 @@ export default function AdminCompanyProductsPage() {
                   disabled={processing}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
-                  {processing ? 'Processing...' : '✅ Promote to Global'}
+                  {processing ? 'Processing...' : 'Promote to Global'}
                 </button>
                 <button
                   onClick={() => {
@@ -277,7 +277,7 @@ export default function AdminCompanyProductsPage() {
                     setReviewNotes('');
                   }}
                   disabled={processing}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                  className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 disabled:opacity-50"
                 >
                   Cancel
                 </button>

@@ -81,7 +81,7 @@ export default function ThemeEditor() {
           <div className="flex gap-2">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-sm"
+              className="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-sm"
               disabled={saving}
             >
               Cancel
@@ -89,7 +89,7 @@ export default function ThemeEditor() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -101,9 +101,9 @@ export default function ThemeEditor() {
         {TOKEN_NAMES.map((tokenName) => (
           <div
             key={tokenName}
-            className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50"
+            className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-stone-200 bg-stone-50"
           >
-            <div className="w-32 font-medium text-sm text-gray-900">{tokenName}</div>
+            <div className="w-32 font-medium text-sm text-stone-900">{tokenName}</div>
 
             <input
               type="color"
@@ -117,7 +117,7 @@ export default function ThemeEditor() {
               type="text"
               value={drafts[tokenName] || tokens[tokenName]}
               onChange={(e) => handleTokenChange(tokenName, e.target.value)}
-              className="flex-1 min-w-28 px-3 py-2 rounded border border-gray-300 bg-white text-sm text-gray-900"
+              className="flex-1 min-w-28 px-3 py-2 rounded border border-stone-300 bg-white text-sm text-stone-900"
               placeholder="#000000"
               maxLength={7}
             />
@@ -125,7 +125,7 @@ export default function ThemeEditor() {
             {(tokenName in drafts || tokenName in customTokens) && (
               <button
                 onClick={() => handleResetToken(tokenName)}
-                className="px-3 py-2 text-sm rounded border border-gray-300 hover:bg-gray-100 text-gray-700"
+                className="px-3 py-2 text-sm rounded border border-stone-300 hover:bg-stone-100 text-stone-700"
                 aria-label={`Reset ${tokenName} to preset`}
               >
                 Reset
@@ -133,7 +133,7 @@ export default function ThemeEditor() {
             )}
 
             <div
-              className="w-10 h-10 rounded border border-gray-300"
+              className="w-10 h-10 rounded border border-stone-300"
               style={{ backgroundColor: tokens[tokenName] }}
               aria-label={`${tokenName} preview`}
             />

@@ -72,10 +72,10 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-stone-900">
             Admin Dashboard
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-stone-600 mt-1">
             Trial system and activation code management
           </p>
         </div>
@@ -108,25 +108,25 @@ export default function AdminDashboardPage() {
 
         {/* Payment Method Distribution */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-stone-900 mb-4">
             Payment Methods
           </h2>
           <div className="space-y-3">
             {analytics?.payment_method_distribution?.map((method) => (
               <div key={method.method} className="flex items-center">
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-stone-900">
                     {method.method.toUpperCase()}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-stone-500">
                     {method.count} transactions
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-sm font-semibold text-stone-900">
                     ${method.amount.toFixed(2)}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-stone-500">
                     {method.percentage}%
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
         <div className="mb-6">
           <button
             onClick={() => setShowCodeForm(!showCodeForm)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+            className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700"
           >
             {showCodeForm ? 'Cancel' : 'Generate Activation Code'}
           </button>
@@ -148,16 +148,16 @@ export default function AdminDashboardPage() {
         {/* Generate Code Form */}
         {showCodeForm && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-lg font-semibold text-stone-900 mb-4">
               Generate New Activation Code
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-stone-500 mb-4">
               Access-grant codes unlock premium features (e.g. theme editor) when redeemed. No plan or payment details needed.
             </p>
             <form onSubmit={generateCode} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Campaign Name
                   </label>
                   <input
@@ -165,19 +165,19 @@ export default function AdminDashboardPage() {
                     value={codeForm.campaign_name}
                     onChange={(e) => setCodeForm({...codeForm, campaign_name: e.target.value})}
                     placeholder="e.g. Theme beta launch"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
                     Notes
                   </label>
                   <input
                     type="text"
                     value={codeForm.notes}
                     onChange={(e) => setCodeForm({...codeForm, notes: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
                   />
                 </div>
               </div>
@@ -185,14 +185,14 @@ export default function AdminDashboardPage() {
               <div className="flex space-x-3">
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
+                  className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700"
                 >
                   Generate Code
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCodeForm(false)}
-                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300"
+                  className="bg-stone-200 text-stone-700 px-6 py-2 rounded-lg font-medium hover:bg-stone-300"
                 >
                   Cancel
                 </button>
@@ -208,16 +208,16 @@ export default function AdminDashboardPage() {
 // Helper component for metric cards
 function MetricCard({ title, value, color }: { title: string; value: string | number; color: string }) {
   const colorClasses = {
-    blue: 'bg-blue-50 border-blue-200',
+    blue: 'bg-indigo-50 border-indigo-200',
     green: 'bg-green-50 border-green-200',
     yellow: 'bg-yellow-50 border-yellow-200',
-    purple: 'bg-purple-50 border-purple-200'
+    purple: 'bg-indigo-50 border-indigo-200'
   };
 
   return (
     <div className={`${colorClasses[color as keyof typeof colorClasses]} border rounded-lg p-4`}>
-      <div className="text-sm text-gray-600">{title}</div>
-      <div className="text-2xl font-bold text-gray-900 mt-1">{value}</div>
+      <div className="text-sm text-stone-600">{title}</div>
+      <div className="text-2xl font-bold text-stone-900 mt-1">{value}</div>
     </div>
   );
 }

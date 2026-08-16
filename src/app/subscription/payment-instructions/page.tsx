@@ -8,6 +8,7 @@ import CryptoPaymentInfo from '@/components/payment/CryptoPaymentInfo';
 import PiPaymentFlow from '@/components/payment/PiPaymentFlow';
 import PiWalletPayment from '@/components/payment/PiWalletPayment';
 import PromoCodeInput from '@/components/payment/PromoCodeInput';
+import { CheckCircle2, Smartphone, XCircle } from 'lucide-react';
 import PaymentProofSection from '@/components/payment/PaymentProofSection';
 import { PaymentMethod } from '@/types/payment';
 
@@ -230,11 +231,11 @@ function PaymentInstructionsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center">
             <div className="animate-spin text-4xl mr-3">⏳</div>
-            <p className="text-gray-600">Loading payment instructions...</p>
+            <p className="text-stone-600">Loading payment instructions...</p>
           </div>
         </div>
       </div>
@@ -243,7 +244,7 @@ function PaymentInstructionsContent() {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-red-900 mb-2">Plan Not Found</h3>
@@ -269,27 +270,27 @@ function PaymentInstructionsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-stone-900 mb-2">
             Complete Your Subscription
           </h1>
-          <p className="text-gray-600">
+          <p className="text-stone-600">
             Follow the payment instructions below to activate your {plan.name}
           </p>
         </div>
 
         {/* Plan Summary */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
+        <div className="bg-white rounded-xl p-6 border border-stone-200 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-              <p className="text-sm text-gray-600">{plan.description}</p>
+              <h3 className="text-lg font-semibold text-stone-900">{plan.name}</h3>
+              <p className="text-sm text-stone-600">{plan.description}</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-stone-900">
                 {formatCurrency(finalAmount)}
               </p>
               {discount > 0 && (
@@ -318,8 +319,8 @@ function PaymentInstructionsContent() {
         />
 
         {/* Payment Instructions */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-xl p-6 border border-stone-200 mb-6">
+          <h3 className="text-lg font-semibold text-stone-900 mb-4">
             Payment Instructions
           </h3>
 
@@ -339,8 +340,8 @@ function PaymentInstructionsContent() {
           ) : selectedMethod === 'pi' ? (
             <div className="space-y-6">
               <div>
-                <p className="text-sm font-semibold text-gray-900 mb-2">
-                  Option A — Pay in Pi Browser <span className="font-normal text-gray-500">(automatic verification)</span>
+                <p className="text-sm font-semibold text-stone-900 mb-2">
+                  Option A — Pay in Pi Browser <span className="font-normal text-stone-500">(automatic verification)</span>
                 </p>
                 <PiPaymentFlow
                   amountPhp={finalAmount}
@@ -351,9 +352,9 @@ function PaymentInstructionsContent() {
                   onError={() => setVerificationStatus('error')}
                 />
               </div>
-              <div className="border-t border-gray-200 pt-6">
-                <p className="text-sm font-semibold text-gray-900 mb-2">
-                  Option B — Pay from your Pi Wallet <span className="font-normal text-gray-500">(scan QR, manual verification)</span>
+              <div className="border-t border-stone-200 pt-6">
+                <p className="text-sm font-semibold text-stone-900 mb-2">
+                  Option B — Pay from your Pi Wallet <span className="font-normal text-stone-500">(scan QR, manual verification)</span>
                 </p>
                 <PiWalletPayment
                   amount={finalAmount}
@@ -376,9 +377,9 @@ function PaymentInstructionsContent() {
           />
         
         {/* Help Section */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mt-6">
-          <h3 className="font-semibold text-gray-900 mb-3">Need Help?</h3>
-          <div className="space-y-2 text-sm text-gray-600">
+        <div className="bg-white rounded-xl p-6 border border-stone-200 mt-6">
+          <h3 className="font-semibold text-stone-900 mb-3">Need Help?</h3>
+          <div className="space-y-2 text-sm text-stone-600">
             <p>• Make sure your payment screenshot shows the amount and date clearly</p>
             <p>• Include transaction reference number if available</p>
             <p>• Verification typically takes 24 hours or less</p>
@@ -386,7 +387,7 @@ function PaymentInstructionsContent() {
           </div>
           <a
             href="mailto:support@concetto.com"
-            className="inline-block mt-4 text-sm text-blue-600 hover:text-blue-700"
+            className="inline-block mt-4 text-sm text-indigo-600 hover:text-indigo-700"
           >
             Contact Support →
           </a>
@@ -399,10 +400,10 @@ function PaymentInstructionsContent() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
               <div className="animate-spin text-4xl mb-4">⏳</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-stone-900 mb-2">
                 Verifying your payment via network...
               </h3>
-              <p className="text-gray-600">This typically takes less than 5 seconds</p>
+              <p className="text-stone-600">This typically takes less than 5 seconds</p>
             </div>
           </div>
         )}
@@ -411,16 +412,16 @@ function PaymentInstructionsContent() {
         {verificationStatus === 'pending' && gracePeriodCountdown > 0 && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
-              <div className="animate-pulse text-4xl mb-4">📱</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <div className="animate-pulse mb-4"><Smartphone className="w-12 h-12 mx-auto text-indigo-600" /></div>
+              <h3 className="text-xl font-semibold text-stone-900 mb-2">
                 Waiting for network confirmation...
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-stone-600 mb-4">
                 Checking for {selectedMethod === 'gotyme' ? 'GoTyme' : selectedMethod === 'pi' ? 'Pi Network' : 'GCash'} notification ({gracePeriodCountdown}s remaining)
               </p>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-stone-200 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
                   style={{ width: `${(10 - gracePeriodCountdown) * 10}%` }}
                 ></div>
               </div>
@@ -432,11 +433,11 @@ function PaymentInstructionsContent() {
         {verificationStatus === 'success' && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
-              <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-emerald-600" />
+              <h3 className="text-xl font-semibold text-stone-900 mb-2">
                 Payment Verified Automatically!
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-stone-600 mb-4">
                 Your subscription is being activated now
               </p>
               <p className="text-sm text-green-600">Redirecting...</p>
@@ -448,16 +449,16 @@ function PaymentInstructionsContent() {
         {verificationStatus === 'error' && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-8 max-w-md mx-4 text-center">
-              <div className="text-4xl mb-4">❌</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <XCircle className="w-12 h-12 mx-auto mb-4 text-rose-600" />
+              <h3 className="text-xl font-semibold text-stone-900 mb-2">
                 Payment Verification Error
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-stone-600 mb-4">
                 There was an error processing your payment verification
               </p>
               <button
                 onClick={() => setVerificationStatus('idle')}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
               >
                 Try Again
               </button>
@@ -472,11 +473,11 @@ function PaymentInstructionsContent() {
 export default function PaymentInstructionsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 to-stone-100 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-center">
             <div className="animate-spin text-4xl mr-3">⏳</div>
-            <p className="text-gray-600">Loading payment instructions...</p>
+            <p className="text-stone-600">Loading payment instructions...</p>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 'use client';
 import { useState } from 'react';
+import { CheckCircle2, Unlock } from 'lucide-react';
 
 interface ActivationCodeEntryProps {
   onSuccess?: () => void;
@@ -58,12 +59,12 @@ export function ActivationCodeEntry({ onSuccess, show = true }: ActivationCodeEn
 
   if (success) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
         <div className="flex items-center">
-          <div className="text-green-600 text-2xl mr-3">✓</div>
+          <CheckCircle2 className="w-7 h-7 text-emerald-600 mr-3 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-green-900">Account Activated!</h3>
-            <p className="text-sm text-green-700">Your subscription is now active.</p>
+            <h3 className="font-semibold text-emerald-900">Account Activated!</h3>
+            <p className="text-sm text-emerald-700">Your subscription is now active.</p>
           </div>
         </div>
       </div>
@@ -71,9 +72,10 @@ export function ActivationCodeEntry({ onSuccess, show = true }: ActivationCodeEn
   }
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h3 className="font-semibold text-blue-900 mb-3">
-        🔓 Activate Your Account
+    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+      <h3 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+        <Unlock className="w-4 h-4 text-indigo-600" />
+        Activate Your Account
       </h3>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -81,7 +83,7 @@ export function ActivationCodeEntry({ onSuccess, show = true }: ActivationCodeEn
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm uppercase tracking-wider"
+            className="w-full px-3 py-2 border border-indigo-300 rounded-lg text-sm uppercase tracking-wider"
             placeholder="XXXX-XXXX-XXXX-XXXX"
             maxLength={19}
             required
@@ -92,7 +94,7 @@ export function ActivationCodeEntry({ onSuccess, show = true }: ActivationCodeEn
           <select
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value)}
-            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-indigo-300 rounded-lg text-sm"
           >
             {plans.map((plan) => (
               <option key={plan.value} value={plan.value}>
@@ -111,7 +113,7 @@ export function ActivationCodeEntry({ onSuccess, show = true }: ActivationCodeEn
         <button
           type="submit"
           disabled={loading || !code.trim()}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           {loading ? 'Activating...' : 'Activate Account'}
         </button>

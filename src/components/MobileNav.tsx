@@ -1,6 +1,23 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useCallback, memo, useEffect } from 'react';
+import {
+  BarChart3,
+  FileText,
+  Plus,
+  Tag,
+  Building,
+  CreditCard,
+  Ticket,
+  Settings,
+  Check,
+  Key,
+  Store,
+  Lock,
+  LogOut,
+  X,
+  LayoutDashboard,
+} from 'lucide-react';
 import { useTrialRestrictions } from '@/contexts/TrialRestrictionContext';
 
 interface MobileNavProps {
@@ -9,23 +26,23 @@ interface MobileNavProps {
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊', requiresFutureOrders: false },
-  { href: '/quotes', label: 'Orders', icon: '📄', requiresFutureOrders: false },
-  { href: '/quotes/new', label: 'New quote', icon: '➕', requiresFutureOrders: true },
-  { href: '/products', label: 'Products', icon: '🏷️', requiresFutureOrders: false },
-  { href: '/company-products', label: 'Company Products', icon: '🏢', requiresFutureOrders: false },
-  { href: '/account/subscription', label: 'My Subscriptions', icon: '📋', requiresFutureOrders: false },
-  { href: '/subscription/checkout', label: 'Plans & Pricing', icon: '💳', requiresFutureOrders: false },
-  { href: '/activate-code', label: 'Redeem Code', icon: '🎟️', requiresFutureOrders: false },
-  { href: '/settings', label: 'Settings', icon: '⚙️', requiresFutureOrders: false },
+  { href: '/dashboard', label: 'Dashboard', icon: BarChart3, requiresFutureOrders: false },
+  { href: '/quotes', label: 'Orders', icon: FileText, requiresFutureOrders: false },
+  { href: '/quotes/new', label: 'New quote', icon: Plus, requiresFutureOrders: true },
+  { href: '/products', label: 'Products', icon: Tag, requiresFutureOrders: false },
+  { href: '/company-products', label: 'Company Products', icon: Building, requiresFutureOrders: false },
+  { href: '/account/subscription', label: 'My Subscriptions', icon: CreditCard, requiresFutureOrders: false },
+  { href: '/subscription/checkout', label: 'Plans & Pricing', icon: CreditCard, requiresFutureOrders: false },
+  { href: '/activate-code', label: 'Redeem Code', icon: Ticket, requiresFutureOrders: false },
+  { href: '/settings', label: 'Settings', icon: Settings, requiresFutureOrders: false },
 ];
 
 const adminNavItems = [
-  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: '🛡️' },
-  { href: '/admin/company-products', label: 'Company Products', icon: '🏢' },
-  { href: '/admin/activation-codes', label: 'Activation Codes', icon: '🔑' },
-  { href: '/admin/plans', label: 'Subscription Plans', icon: '💳' },
-  { href: '/admin/revenue', label: 'Revenue Analytics', icon: '📊' },
+  { href: '/admin/dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
+  { href: '/admin/company-products', label: 'Company Products', icon: Building },
+  { href: '/admin/activation-codes', label: 'Activation Codes', icon: Key },
+  { href: '/admin/plans', label: 'Subscription Plans', icon: CreditCard },
+  { href: '/admin/revenue', label: 'Revenue Analytics', icon: BarChart3 },
 ];
 
 function MobileNav({ isOpen, onClose }: MobileNavProps) {
@@ -84,18 +101,19 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
       />
 
       {/* Slide-in drawer */}
-      <div className="fixed inset-y-0 left-0 w-72 bg-white z-50 shadow-xl md:hidden flex flex-col">
+      <div className="fixed inset-y-0 left-0 w-72 bg-white z-50 elevated md:hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="text-lg font-semibold text-blue-600">
-            🏪 Concetto
+        <div className="flex items-center justify-between p-4 border-b border-stone-200">
+          <div className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
+            <Store className="w-5 h-5" />
+            Concetto
           </div>
           <button
             onClick={onClose}
-            className="p-3 text-gray-600 hover:bg-gray-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-3 text-slate-600 hover:bg-stone-100 rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Close navigation"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -116,17 +134,18 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
                 onClick={() => handleItemClick(item.href)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors mb-1 ${
                   active
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    : 'text-slate-600 hover:bg-stone-100'
                 } ${isRestricted ? 'opacity-60' : ''}`}
                 aria-current={active ? 'page' : undefined}
                 disabled={isRestricted}
               >
-                <span className="text-xl">{item.icon}</span>
+                <item.icon className={`w-5 h-5 ${active ? 'text-indigo-600' : 'text-slate-500'}`} />
                 <span className="flex-1 text-left">{item.label}</span>
                 {isRestricted && (
-                  <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded-full font-medium">
-                    🔒 Restricted
+                  <span className="text-xs text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full font-medium">
+                    <Lock className="w-3 h-3 inline-block mr-0.5" />
+                    Restricted
                   </span>
                 )}
               </button>
@@ -137,7 +156,7 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
           {isAdmin && (
             <>
               <div className="pt-4 pb-2">
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4">
                   Admin
                 </div>
               </div>
@@ -149,12 +168,12 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
                     onClick={() => handleItemClick(item.href)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors mb-1 ${
                       active
-                        ? 'bg-purple-50 text-purple-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-indigo-50 text-indigo-700 font-medium'
+                        : 'text-slate-600 hover:bg-stone-100'
                     }`}
                     aria-current={active ? 'page' : undefined}
                   >
-                    <span className="text-xl">{item.icon}</span>
+                    <item.icon className={`w-5 h-5 ${active ? 'text-indigo-600' : 'text-slate-500'}`} />
                     {item.label}
                   </button>
                 );
@@ -164,19 +183,19 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-stone-200">
           <button
             onClick={() => handleItemClick('/change-password')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-gray-600 hover:bg-gray-100 mb-1"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-slate-600 hover:bg-stone-100 mb-1"
           >
-            <span className="text-xl">🔒</span>
+            <Lock className="w-5 h-5 text-slate-500" />
             Change Password
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-gray-600 hover:bg-gray-100"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base text-slate-600 hover:bg-stone-100"
           >
-            <span className="text-xl">🚪</span>
+            <LogOut className="w-5 h-5 text-slate-500" />
             Logout
           </button>
         </div>
