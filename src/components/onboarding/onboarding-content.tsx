@@ -1,3 +1,23 @@
+import {
+  Home,
+  Map,
+  BarChart3,
+  Rocket,
+  FileText,
+  User,
+  Ruler,
+  Tag,
+  CheckCircle2,
+  ClipboardList,
+  Package,
+  Search,
+  BookOpen,
+  Building2,
+  Briefcase,
+  Settings,
+  NotebookPen,
+  Lock
+} from 'lucide-react';
 import { FeatureOnboardingContent } from '@/types/onboarding';
 
 export const dashboardOnboarding: FeatureOnboardingContent = {
@@ -14,10 +34,10 @@ export const dashboardOnboarding: FeatureOnboardingContent = {
         'You\'ll see your most important numbers at a glance - sales, quotes, and profits - all updated in real-time.'
       ],
       tips: [
-        '💡 Check your dashboard daily to stay on top of your business',
-        '📊 The numbers refresh automatically - no manual updates needed'
+        'Check your dashboard daily to stay on top of your business',
+        'The numbers refresh automatically - no manual updates needed'
       ],
-      icon: '🏠'
+      icon: Home
     },
     {
       id: 'navigate-dashboard',
@@ -28,10 +48,10 @@ export const dashboardOnboarding: FeatureOnboardingContent = {
         'At the bottom, find your top customers and their purchase history.'
       ],
       tips: [
-        '👆 Tap any chart or metric to see more details',
-        '📅 Use the date filters to view specific time periods'
+        'Tap any chart or metric to see more details',
+        'Use the date filters to view specific time periods'
       ],
-      icon: '🗺️'
+      icon: Map
     },
     {
       id: 'understand-metrics',
@@ -43,10 +63,10 @@ export const dashboardOnboarding: FeatureOnboardingContent = {
         'Popular Collections: Which blind styles customers buy most often'
       ],
       tips: [
-        '📈 Watch your conversion rate - higher means more sales success',
-        '🏆 Use popular collections data to stock best-selling products'
+        'Watch your conversion rate - higher means more sales success',
+        'Use popular collections data to stock best-selling products'
       ],
-      icon: '📊'
+      icon: BarChart3
     },
     {
       id: 'take-action',
@@ -57,10 +77,10 @@ export const dashboardOnboarding: FeatureOnboardingContent = {
         'Use conversion rates to improve your quote process and close more deals'
       ],
       tips: [
-        '🎯 Focus on products with high popularity to boost sales',
-        '🤝 Reach out to top customers with special offers or new products'
+        'Focus on products with high popularity to boost sales',
+        'Reach out to top customers with special offers or new products'
       ],
-      icon: '🚀'
+      icon: Rocket
     }
   ]
 };
@@ -79,10 +99,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Each quote includes customer info, window measurements, product selection, and automatic pricing calculations.'
       ],
       tips: [
-        '✨ Quotes save automatically as you work - never lose your progress',
-        '📋 You can edit quotes anytime before sending them to customers'
+        'Quotes save automatically as you work - never lose your progress',
+        'You can edit quotes anytime before sending them to customers'
       ],
-      icon: '📝'
+      icon: FileText
     },
     {
       id: 'quotes-step1',
@@ -93,10 +113,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Optionally add a reference number for your own tracking.'
       ],
       tips: [
-        '👤 Use the customer\'s preferred name for personalization',
-        '📍 Complete addresses help with delivery planning'
+        'Use the customer\'s preferred name for personalization',
+        'Complete addresses help with delivery planning'
       ],
-      icon: '👤'
+      icon: User
     },
     {
       id: 'quotes-step2',
@@ -107,10 +127,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Choose between inches or centimeters, based on your preference.'
       ],
       tips: [
-        '📏 Measure twice for accuracy - small errors affect pricing',
-        '🪟 Add notes about each window for reference during installation'
+        'Measure twice for accuracy - small errors affect pricing',
+        'Add notes about each window for reference during installation'
       ],
-      icon: '📏'
+      icon: Ruler
     },
     {
       id: 'quotes-step3',
@@ -121,10 +141,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Pricing calculates automatically based on your selections.'
       ],
       tips: [
-        '🏷️ Product codes help you quickly find the right items',
-        '💰 Compare different options to give customers choices'
+        'Product codes help you quickly find the right items',
+        'Compare different options to give customers choices'
       ],
-      icon: '🏷️'
+      icon: Tag
     },
     {
       id: 'quotes-review',
@@ -135,10 +155,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Add any delivery fees or installation charges, then save or send the quote.'
       ],
       tips: [
-        '✅ Double-check measurements and customer details',
-        '📧 Send quotes directly from the system or download as PDF'
+        'Double-check measurements and customer details',
+        'Send quotes directly from the system or download as PDF'
       ],
-      icon: '✅'
+      icon: CheckCircle2
     },
     {
       id: 'quotes-manage',
@@ -149,10 +169,10 @@ export const quotesOnboarding: FeatureOnboardingContent = {
         'Follow up on pending quotes to convert them into orders.'
       ],
       tips: [
-        '🔔 Check quote status regularly to follow up with customers',
-        '📊 Track your conversion rate to improve sales process'
+        'Check quote status regularly to follow up with customers',
+        'Track your conversion rate to improve sales process'
       ],
-      icon: '📋'
+      icon: ClipboardList
     }
   ]
 };
@@ -172,10 +192,10 @@ export const productsOnboarding: FeatureOnboardingContent = {
         'Products are organized by collections for easy navigation.'
       ],
       tips: [
-        '🔍 Use the search bar to find specific products quickly',
-        '📱 Access your catalog from any device, even on customer visits'
+        'Use the search bar to find specific products quickly',
+        'Access your catalog from any device, even on customer visits'
       ],
-      icon: '📦'
+      icon: Package
     },
     {
       id: 'products-browse',
@@ -186,10 +206,10 @@ export const productsOnboarding: FeatureOnboardingContent = {
         'Product cards show key details at a glance - code, description, and pricing.'
       ],
       tips: [
-        '💡 Click on any product to see full specifications and details',
-        '🏷️ Product codes help you reference items accurately in quotes'
+        'Click on any product to see full specifications and details',
+        'Product codes help you reference items accurately in quotes'
       ],
-      icon: '🔍'
+      icon: Search
     },
     {
       id: 'products-understand',
@@ -201,10 +221,10 @@ export const productsOnboarding: FeatureOnboardingContent = {
         'Description: Material type, features, and specifications'
       ],
       tips: [
-        '📏 Make sure you understand the unit (sqft vs sqm) for accurate pricing',
-        '🎨 Check product descriptions to match customer preferences'
+        'Make sure you understand the unit (sqft vs sqm) for accurate pricing',
+        'Check product descriptions to match customer preferences'
       ],
-      icon: '📖'
+      icon: BookOpen
     },
     {
       id: 'products-company',
@@ -215,10 +235,10 @@ export const productsOnboarding: FeatureOnboardingContent = {
         'Use them for proprietary offerings or special customer arrangements.'
       ],
       tips: [
-        '🏢 Company products appear only in your catalog',
-        '⚙️ Customize all details including pricing and descriptions'
+        'Company products appear only in your catalog',
+        'Customize all details including pricing and descriptions'
       ],
-      icon: '🏢'
+      icon: Building2
     },
     {
       id: 'products-in-quotes',
@@ -229,10 +249,10 @@ export const productsOnboarding: FeatureOnboardingContent = {
         'Both global and company products are available for quote creation.'
       ],
       tips: [
-        '🔗 Link product selection directly to customer preferences',
-        '💰 Product pricing updates automatically in quotes'
+        'Link product selection directly to customer preferences',
+        'Product pricing updates automatically in quotes'
       ],
-      icon: '💼'
+      icon: Briefcase
     }
   ]
 };
@@ -252,10 +272,10 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         'Configure preferences to match your business workflow.'
       ],
       tips: [
-        '⚙️ Review settings periodically to keep information current',
-        '🔄 Updates take effect immediately - no restart needed'
+        'Review settings periodically to keep information current',
+        'Updates take effect immediately - no restart needed'
       ],
-      icon: '⚙️'
+      icon: Settings
     },
     {
       id: 'settings-company',
@@ -267,10 +287,10 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         'Prepared By: Name of person creating quotes (typically yours)'
       ],
       tips: [
-        '📧 Use a professional email address that customers can contact',
-        '📱 Make sure phone numbers are current and accurate'
+        'Use a professional email address that customers can contact',
+        'Make sure phone numbers are current and accurate'
       ],
-      icon: '🏢'
+      icon: Building2
     },
     {
       id: 'settings-terms',
@@ -282,10 +302,10 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         'These sections help you provide professional, consistent communications.'
       ],
       tips: [
-        '📝 Keep terms clear and customer-friendly',
-        '✨ Personalize notes to reflect your business style'
+        'Keep terms clear and customer-friendly',
+        'Personalize notes to reflect your business style'
       ],
-      icon: '📄'
+      icon: NotebookPen
     },
     {
       id: 'settings-account',
@@ -296,10 +316,10 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         'Control notification preferences and email updates.'
       ],
       tips: [
-        '🔒 Use strong passwords and update them regularly',
-        '📧 Keep contact email updated for important notifications'
+        'Use strong passwords and update them regularly',
+        'Keep contact email updated for important notifications'
       ],
-      icon: '🔒'
+      icon: Lock
     },
     {
       id: 'settings-complete',
@@ -310,10 +330,10 @@ export const settingsOnboarding: FeatureOnboardingContent = {
         'Come back anytime to update information as your business grows.'
       ],
       tips: [
-        '🎯 Well-configured settings save time and improve professionalism',
-        '🚀 Your business info now appears consistently in all communications'
+        'Well-configured settings save time and improve professionalism',
+        'Your business info now appears consistently in all communications'
       ],
-      icon: '✅'
+      icon: CheckCircle2
     }
   ]
 };

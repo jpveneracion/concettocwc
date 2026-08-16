@@ -23,9 +23,14 @@ export default function LandingFooter(props: Partial<FooterProps> = {}) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-semibold text-white mb-4">
-              {companyName}
-            </h3>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white font-bold">C</span>
+              </div>
+              <h3 className="text-xl font-semibold text-white">
+                {companyName}
+              </h3>
+            </div>
             <p className="text-stone-400 text-sm">
               Modern quotation and ordering platform for window blinds professionals.
             </p>

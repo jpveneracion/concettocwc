@@ -1,4 +1,6 @@
-export type OnboardingIcon = string;
+import type { LucideIcon } from 'lucide-react';
+
+export type OnboardingIcon = LucideIcon;
 
 export interface OnboardingStep {
   id: string;

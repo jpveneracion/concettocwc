@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 
 interface PlanComparisonProps {
   onPlanSelect?: (planId: string) => void;
@@ -243,9 +244,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
               {isSelected(plan.id) && (
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
                   </div>
                   <span className="text-sm font-medium text-indigo-600">Selected</span>
                 </div>
@@ -259,7 +258,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
               </span>
               <span className="text-stone-600">/{plan.months === 1 ? 'month' : plan.months + ' months'}</span>
               {plan.periodDiscount > 0 && (
-                <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                <span className="ml-2 bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full font-medium">
                   Save {plan.periodDiscount}%
                 </span>
               )}
@@ -293,9 +292,7 @@ export default function PlanComparison({ onPlanSelect, selectedPlan }: PlanCompa
                 {plan.features && plan.features.length > 0 ? (
                   plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                       <span className="text-stone-700 text-sm">{feature}</span>
                     </li>
                   ))

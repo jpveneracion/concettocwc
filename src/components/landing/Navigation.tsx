@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn } from 'lucide-react';
 import type { NavigationProps } from '@/types/landing';
 import LoginModal from './LoginModal';
 
@@ -38,13 +38,18 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-md">
+    <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <a href="/" className="text-2xl font-bold text-indigo-600">
-              {logoText}
+            <a href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
+              <span className="text-xl font-bold text-stone-900 tracking-tight">
+                {logoText}
+              </span>
             </a>
           </div>
 
@@ -60,9 +65,16 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
                 {link.text}
               </a>
             ))}
+            <a
+              href="/login"
+              className="text-stone-700 hover:text-indigo-600 transition-colors font-medium flex items-center gap-1.5"
+            >
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </a>
             <button
               onClick={handleCtaClick}
-              className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm hover:shadow-md"
             >
               {ctaText}
             </button>
@@ -97,6 +109,14 @@ export default function Navigation(props: Partial<NavigationProps> = {}) {
                   {link.text}
                 </a>
               ))}
+              <a
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-stone-700 hover:text-indigo-600 transition-colors font-medium flex items-center gap-1.5"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </a>
               <button
                 onClick={handleCtaClick}
                 className="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors text-center w-full"

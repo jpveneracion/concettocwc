@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ArrowRight, ArrowLeft, Lightbulb, FileText, Wand2, Users, Zap } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Lightbulb, FileText, Wand2, Users, Hand, Shuffle, Ruler, Tag, CheckCircle2, Rocket } from 'lucide-react';
 import {
   OnboardingStep,
   FeatureOnboardingContent,
@@ -27,10 +27,10 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Whether you\'re a seasoned pro or new to the business, we have the perfect method to help you create accurate, professional quotes in minutes.'
       ],
       tips: [
-        '🎯 Both methods create the same professional quotes - just different workflows',
-        '⏱️ Most quotes take less than 5 minutes to complete'
+        'Both methods create the same professional quotes - just different workflows',
+        'Most quotes take less than 5 minutes to complete'
       ],
-      icon: '👋'
+      icon: Hand
     },
     {
       id: 'choose-method',
@@ -40,10 +40,10 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Switch between methods anytime using the toggle button at the top of the page.'
       ],
       tips: [
-        '🔄 Toggle between methods anytime - no need to commit to just one',
-        '💡 Start with Wizard Mode if you\'re new, then switch to Traditional Form as you get comfortable'
+        'Toggle between methods anytime - no need to commit to just one',
+        'Start with Wizard Mode if you\'re new, then switch to Traditional Form as you get comfortable'
       ],
-      icon: '🔀'
+      icon: Shuffle
     },
     {
       id: 'traditional-form',
@@ -54,11 +54,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Ideal for experienced users who can work quickly without step-by-step guidance.'
       ],
       tips: [
-        '⚡ Fastest method once you\'re familiar with the process',
-        '👀 See everything at a glance - perfect for quick edits and changes',
-        '🎯 Best for users who create quotes daily and know exactly what information they need'
+        'Fastest method once you\'re familiar with the process',
+        'See everything at a glance - perfect for quick edits and changes',
+        'Best for users who create quotes daily and know exactly what information they need'
       ],
-      icon: '📝'
+      icon: FileText
     },
     {
       id: 'wizard-intro',
@@ -69,11 +69,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Get helpful tips and guidance at each stage to ensure accuracy and professionalism.'
       ],
       tips: [
-        '🧙 Perfect for training new team members or less experienced staff',
-        '✅ Built-in checks help prevent mistakes and missing information',
-        '📱 Works great on mobile devices - focus on one task at a time'
+        'Perfect for training new team members or less experienced staff',
+        'Built-in checks help prevent mistakes and missing information',
+        'Works great on mobile devices - focus on one task at a time'
       ],
-      icon: '🧙'
+      icon: Wand2
     },
     {
       id: 'wizard-step-1',
@@ -84,11 +84,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Add today\'s date and optionally a reference number for your own tracking system.'
       ],
       tips: [
-        '👤 Use the customer\'s preferred name for a personal touch',
-        '📍 Complete addresses help with delivery and installation planning later',
-        '📅 The quote date helps customers know when the pricing was provided'
+        'Use the customer\'s preferred name for a personal touch',
+        'Complete addresses help with delivery and installation planning later',
+        'The quote date helps customers know when the pricing was provided'
       ],
-      icon: '👤'
+      icon: Users
     },
     {
       id: 'wizard-step-2',
@@ -99,11 +99,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Choose between inches or centimeters, depending on your preference and customer needs.'
       ],
       tips: [
-        '📏 Measure twice for accuracy - even small errors can affect final pricing',
-        '🪟 Add location notes like "Master Bedroom" or "Kitchen Window" for easy reference',
-        '💡 Take photos during measurement to reference during installation'
+        'Measure twice for accuracy - even small errors can affect final pricing',
+        'Add location notes like "Master Bedroom" or "Kitchen Window" for easy reference',
+        'Take photos during measurement to reference during installation'
       ],
-      icon: '📏'
+      icon: Ruler
     },
     {
       id: 'wizard-step-3',
@@ -114,11 +114,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'The system shows product details, specifications, and availability to help you make the right choice.'
       ],
       tips: [
-        '🏷️ Product codes help you find items quickly and ensure accuracy',
-        '💰 Compare different options to give customers choices that fit their budget',
-        '🎨 Consider both style and function when selecting products for each room'
+        'Product codes help you find items quickly and ensure accuracy',
+        'Compare different options to give customers choices that fit their budget',
+        'Consider both style and function when selecting products for each room'
       ],
-      icon: '🏷️'
+      icon: Tag
     },
     {
       id: 'wizard-step-4',
@@ -129,11 +129,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Add delivery fees or installation charges, then choose to save as draft or send directly to the customer.'
       ],
       tips: [
-        '✅ Double-check all measurements and customer details before sending',
-        '💡 The system calculates totals automatically - no math errors',
-        '📧 Send quotes directly from the system or download as PDF for email'
+        'Double-check all measurements and customer details before sending',
+        'The system calculates totals automatically - no math errors',
+        'Send quotes directly from the system or download as PDF for email'
       ],
-      icon: '✅'
+      icon: CheckCircle2
     },
     {
       id: 'get-started',
@@ -144,11 +144,11 @@ const createOrdersOnboardingContent: CreateOrdersOnboardingContent = {
         'Start creating professional quotes that will impress your customers and grow your business.'
       ],
       tips: [
-        '🎯 Start with Wizard Mode if you\'re new or training staff',
-        '⚡ Switch to Traditional Form once you\'re comfortable with the process',
-        '🏆 Both methods create the same professional, accurate quotes'
+        'Start with Wizard Mode if you\'re new or training staff',
+        'Switch to Traditional Form once you\'re comfortable with the process',
+        'Both methods create the same professional, accurate quotes'
       ],
-      icon: '🚀'
+      icon: Rocket
     }
   ]
 };
@@ -263,12 +263,16 @@ export default function CreateOrdersOnboardingModal({
         {currentStep === 2 && (
           <div className="flex gap-2 mb-4">
             <div className="flex-1 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-center">
-              <div className="text-2xl mb-1">📝</div>
+              <div className="flex justify-center mb-1">
+                <FileText className="w-6 h-6 text-indigo-600" />
+              </div>
               <div className="text-xs font-semibold text-indigo-900">Traditional Form</div>
               <div className="text-xs text-indigo-700">Experienced Users</div>
             </div>
             <div className="flex-1 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-center">
-              <div className="text-2xl mb-1">🧙</div>
+              <div className="flex justify-center mb-1">
+                <Wand2 className="w-6 h-6 text-indigo-600" />
+              </div>
               <div className="text-xs font-semibold text-indigo-900">Wizard Mode</div>
               <div className="text-xs text-indigo-700">Step-by-Step Guide</div>
             </div>
@@ -284,7 +288,7 @@ export default function CreateOrdersOnboardingModal({
                 index === currentStep
                   ? 'w-6 sm:w-8 ' + colorClasses.indicator
                   : index < currentStep
-                  ? 'w-1.5 sm:w-2 bg-green-500'
+                  ? 'w-1.5 sm:w-2 bg-emerald-500'
                   : 'w-1.5 sm:w-2 bg-stone-300'
               }`}
               aria-label={`Step ${index + 1} of ${createOrdersOnboardingContent.steps.length}`}
@@ -295,7 +299,9 @@ export default function CreateOrdersOnboardingModal({
         {/* Content */}
         <div className="text-center mb-4 sm:mb-6">
           {/* Icon */}
-          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{step.icon}</div>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-3 sm:mb-4">
+            <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600" />
+          </div>
 
           {/* Title */}
           <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mb-3 sm:mb-4 px-2">

@@ -43,7 +43,7 @@ export default function ActivateCodePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
           <div className="text-center mb-6 md:mb-8">

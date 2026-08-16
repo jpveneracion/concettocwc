@@ -51,6 +51,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FileText, Wand2 } from 'lucide-react';
 import { CreateOrdersOnboardingModal } from '@/components/onboarding';
 
 export default function CreateOrdersPageWithOnboarding() {
@@ -85,7 +86,17 @@ export default function CreateOrdersPageWithOnboarding() {
               onClick={() => setUseWizard(!useWizard)}
               className="px-4 py-2 border border-stone-300 rounded-lg text-sm hover:bg-stone-50"
             >
-              {useWizard ? '📝 Traditional Form' : '🧙 Wizard Mode'}
+              {useWizard ? (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Traditional Form
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4" />
+                  Wizard Mode
+                </div>
+              )}
             </button>
           </div>
         </div>
@@ -94,13 +105,17 @@ export default function CreateOrdersPageWithOnboarding() {
         <div className="bg-white rounded-xl border border-stone-200 p-6">
           {useWizard ? (
             <div className="text-center py-8">
-              <div className="text-4xl mb-4">🧙</div>
+              <div className="flex justify-center mb-4">
+                <Wand2 className="w-10 h-10 text-indigo-600" />
+              </div>
               <h3 className="text-lg font-semibold text-stone-900 mb-2">Wizard Mode</h3>
               <p className="text-stone-600">Step-by-step guidance for creating quotes</p>
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="text-4xl mb-4">📝</div>
+              <div className="flex justify-center mb-4">
+                <FileText className="w-10 h-10 text-indigo-600" />
+              </div>
               <h3 className="text-lg font-semibold text-stone-900 mb-2">Traditional Form</h3>
               <p className="text-stone-600">All fields on one page for experienced users</p>
             </div>

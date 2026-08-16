@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Smartphone, Wand2, FileCheck, FileText, LucideIcon } from 'lucide-react';
+import { Smartphone, Wand2, FileCheck, FileText, ArrowRight, LucideIcon } from 'lucide-react';
 import type { SolutionFeatureProps } from '@/types/landing';
 
 const solutionFeatures: SolutionFeatureProps[] = [
@@ -67,7 +67,9 @@ export default function SolutionSection() {
             <FileText className="w-12 h-12 text-stone-400 mx-auto" />
             <p className="text-sm text-stone-600 mt-2">Manual</p>
           </div>
-          <div className="text-2xl text-indigo-600">→</div>
+          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+            <ArrowRight className="w-5 h-5 text-indigo-600" />
+          </div>
           <div className="text-center">
             <Smartphone className="w-12 h-12 text-indigo-600 mx-auto" />
             <p className="text-sm text-stone-600 mt-2">Digital</p>

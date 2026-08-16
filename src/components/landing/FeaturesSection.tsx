@@ -8,6 +8,7 @@ import {
   Shield,
   Smartphone,
   Settings,
+  Check,
   LucideIcon
 } from 'lucide-react';
 import type { FeatureCardProps } from '@/types/landing';
@@ -81,14 +82,34 @@ export default function FeaturesSection() {
                     <p className="text-stone-600 text-sm mb-3">
                       {feature.description}
                     </p>
-                    <div className="text-xs font-medium text-indigo-600">
-                      ✓ {feature.benefit}
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-indigo-600">
+                      <Check className="w-4 h-4" />
+                      {feature.benefit}
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Stats */}
+        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {[
+            { value: '99.9%', label: 'Uptime reliability' },
+            { value: '10k+', label: 'Documents generated' },
+            { value: '5.0', label: 'Customer satisfaction rating' }
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="text-center bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-xl border border-stone-200 p-6"
+            >
+              <div className="text-3xl font-bold text-indigo-600 tracking-tight">
+                {stat.value}
+              </div>
+              <div className="text-sm text-stone-600 mt-1">{stat.label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

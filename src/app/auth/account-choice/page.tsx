@@ -105,7 +105,7 @@ export default function AccountChoicePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-indigo-50 p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 md:p-8">
         <div className="text-center mb-6">
           <h1 className="text-xl md:text-2xl font-bold text-indigo-600 mb-2">Complete Your Account</h1>

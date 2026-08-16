@@ -150,7 +150,7 @@ export default function FeatureOnboardingModal({
                 index === currentStep
                   ? 'w-6 sm:w-8 ' + colors.indicator
                   : index < currentStep
-                  ? 'w-1.5 sm:w-2 bg-green-500'
+                  ? 'w-1.5 sm:w-2 bg-emerald-500'
                   : 'w-1.5 sm:w-2 bg-stone-300'
               }`}
               aria-label={`Step ${index + 1} of ${content.steps.length}`}
@@ -161,7 +161,9 @@ export default function FeatureOnboardingModal({
         {/* Content */}
         <div className="text-center mb-4 sm:mb-6">
           {/* Icon */}
-          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{step.icon}</div>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-3 sm:mb-4">
+            <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600" />
+          </div>
 
           {/* Title */}
           <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mb-3 sm:mb-4 px-2">

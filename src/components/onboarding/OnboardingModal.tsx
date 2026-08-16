@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ArrowRight, ArrowLeft, Lightbulb } from 'lucide-react';
+import { X, ArrowRight, ArrowLeft, Lightbulb, Hand, FileText, BarChart3, Tag, Settings, Sparkles, LucideIcon } from 'lucide-react';
 
 interface OnboardingStep {
   id: string;
   title: string;
   content: string[];
   tips?: string[];
-  icon: string;
+  icon: LucideIcon;
   actionLabel?: string;
   actionLink?: string;
 }
@@ -16,16 +16,16 @@ interface OnboardingStep {
 const onboardingSteps: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Concetto! 🎉',
+    title: 'Welcome to Concetto!',
     content: [
       'You\'re about to transform how you manage your blinds business. Concetto makes it easy to create quotes, track orders, and grow your business.',
       'This quick tour will show you the essential features you\'ll use every day. It only takes a few minutes, and you can skip anytime.'
     ],
     tips: [
-      '💡 This tour works on any device - phone, tablet, or computer',
-      '⏱️ Takes about 3 minutes to complete all sections'
+      'This tour works on any device - phone, tablet, or computer',
+      'Takes about 3 minutes to complete all sections'
     ],
-    icon: '👋'
+    icon: Hand
   },
   {
     id: 'quotes',
@@ -35,10 +35,10 @@ const onboardingSteps: OnboardingStep[] = [
       'No more manual calculations or complicated spreadsheets. Just enter the info and let the system do the work.'
     ],
     tips: [
-      '📋 Quotes save automatically as you work',
-      '📱 Create quotes on-site using your mobile device'
+      'Quotes save automatically as you work',
+      'Create quotes on-site using your mobile device'
     ],
-    icon: '📝'
+    icon: FileText
   },
   {
     id: 'dashboard',
@@ -48,10 +48,10 @@ const onboardingSteps: OnboardingStep[] = [
       'Track trends over time and spot opportunities to grow your business.'
     ],
     tips: [
-      '📊 Check your dashboard daily for quick insights',
-      '📈 Use trends to plan inventory and marketing'
+      'Check your dashboard daily for quick insights',
+      'Use trends to plan inventory and marketing'
     ],
-    icon: '📊'
+    icon: BarChart3
   },
   {
     id: 'products',
@@ -61,10 +61,10 @@ const onboardingSteps: OnboardingStep[] = [
       'Create company-specific products with custom pricing for your unique offerings.'
     ],
     tips: [
-      '🔍 Search and filter to find the right products quickly',
-      '🏷️ Product codes make quote creation fast and accurate'
+      'Search and filter to find the right products quickly',
+      'Product codes make quote creation fast and accurate'
     ],
-    icon: '🏷️'
+    icon: Tag
   },
   {
     id: 'settings',
@@ -74,23 +74,23 @@ const onboardingSteps: OnboardingStep[] = [
       'Your details appear on quotes and documents - keep them updated for a professional touch.'
     ],
     tips: [
-      '⚙️ Set up once, use everywhere - updates apply automatically',
-      '🏢 Your company branding appears on all documents'
+      'Set up once, use everywhere - updates apply automatically',
+      'Your company branding appears on all documents'
     ],
-    icon: '⚙️'
+    icon: Settings
   },
   {
     id: 'get-started',
-    title: 'You\'re Ready to Go! 🚀',
+    title: 'You\'re Ready to Go!',
     content: [
       'You\'ve learned the essentials - now it\'s time to put Concetto to work for your business.',
       'Start with creating your first quote, or explore your dashboard to see what\'s possible.'
     ],
     tips: [
-      '🎯 Focus on one feature at a time - quotes are a great starting point',
-      '❓ Need help? Each section has its own detailed guide'
+      'Focus on one feature at a time - quotes are a great starting point',
+      'Need help? Each section has its own detailed guide'
     ],
-    icon: '✨'
+    icon: Sparkles
   }
 ];
 
@@ -155,7 +155,7 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
                 index === currentStep
                   ? 'w-6 sm:w-8 bg-indigo-600'
                   : index < currentStep
-                  ? 'w-1.5 sm:w-2 bg-green-500'
+                  ? 'w-1.5 sm:w-2 bg-emerald-500'
                   : 'w-1.5 sm:w-2 bg-stone-300'
               }`}
               aria-label={`Step ${index + 1} of ${onboardingSteps.length}`}
@@ -166,7 +166,9 @@ export default function OnboardingModal({ isOpen, onClose, onSkip, onComplete }:
         {/* Content */}
         <div className="text-center mb-4 sm:mb-6">
           {/* Icon */}
-          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">{step.icon}</div>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-indigo-100 rounded-2xl flex items-center justify-center mb-3 sm:mb-4">
+            <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600" />
+          </div>
 
           {/* Title */}
           <h2 className="text-xl sm:text-2xl font-bold text-stone-900 mb-3 sm:mb-4 px-2">

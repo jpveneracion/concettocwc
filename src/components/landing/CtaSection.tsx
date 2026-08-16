@@ -82,7 +82,7 @@ export default function CtaSection(props: Partial<CtaSectionProps> = {}) {
               key={index} 
               className="flex items-center gap-3 text-white text-left"
             >
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
                 <Check className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm sm:text-base">{benefit}</span>
