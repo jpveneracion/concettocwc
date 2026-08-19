@@ -50,6 +50,19 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
   const router = useRouter();
   const { canCreateFutureOrders } = useTrialRestrictions();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+
+  const brandText = companyName ? `BQMS - ${companyName}` : 'BQMS';
+  const brandFontSize = Math.max(11, Math.min(18, Math.floor(260 / Math.max(brandText.length, 1))));
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.name) setCompanyName(String(data.name));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -104,9 +117,9 @@ function MobileNav({ isOpen, onClose }: MobileNavProps) {
       <div className="fixed inset-y-0 left-0 w-72 bg-white z-50 elevated md:hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-stone-200">
-          <div className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
-            <Store className="w-5 h-5" />
-            Concetto
+          <div className="text-lg font-semibold text-indigo-600 flex items-center gap-2 min-w-0">
+            <Store className="w-5 h-5 flex-shrink-0" />
+            <span className="truncate" style={{ fontSize: `${brandFontSize}px` }}>{brandText}</span>
           </div>
           <button
             onClick={onClose}

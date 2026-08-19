@@ -50,6 +50,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [countError, setCountError] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState('');
+
+  const brandText = companyName ? `BQMS - ${companyName}` : 'BQMS';
+  const brandFontSize = Math.max(11, Math.min(18, Math.floor(230 / Math.max(brandText.length, 1))));
 
   async function handleLogout() {
     try {
@@ -117,6 +121,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     checkAdminStatus();
   }, []);
 
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && data.name) setCompanyName(String(data.name));
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="flex flex-col md:h-screen bg-stone-50">
       {/* Trial Restriction Banner */}
@@ -127,8 +140,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-stone-200">
           <div className="text-lg font-semibold text-indigo-600 flex items-center gap-2">
-            <Store className="w-5 h-5" />
-            Concetto
+            <Store className="w-5 h-5 flex-shrink-0" />
+            <span className="truncate" style={{ fontSize: `${brandFontSize}px` }}>{brandText}</span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -143,8 +156,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-52 md:flex-shrink-0 lg:w-52 lg:flex-shrink-0 bg-white border-r border-stone-200 flex-col p-4 gap-1" aria-label="Main navigation">
         <div className="text-lg font-semibold text-indigo-600 mb-4 pb-4 border-b border-stone-200 flex items-center gap-2">
-          <Store className="w-5 h-5" />
-          Concetto
+          <Store className="w-5 h-5 flex-shrink-0" />
+          <span className="truncate" style={{ fontSize: `${brandFontSize}px` }}>{brandText}</span>
         </div>
         <nav role="navigation" aria-label="Main navigation">
           {navItems.map((item) => {
